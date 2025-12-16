@@ -215,7 +215,11 @@ def load_compartment_data(compartment):
         # Load diagnostics
         diag_file = os.path.join(csv_dir, "diagnostics_summary.csv")
         if os.path.exists(diag_file):
-            data['diagnostics'] = pd.read_csv(diag_file)
+            diag_df = pd.read_csv(diag_file)
+            # Set first column as index if it looks like parameter names
+            if diag_df.columns[0] in ['Unnamed: 0', 'parameter', 'index']:
+                diag_df = diag_df.set_index(diag_df.columns[0])
+            data['diagnostics'] = diag_df
         else:
             data['diagnostics'] = None
         
@@ -980,11 +984,26 @@ def plot_ess_rhat(comp_data):
     
     diag = comp_data['diagnostics']
     
+    # Check if first column should be index
+    if 'Unnamed: 0' in diag.columns:
+        diag = diag.set_index('Unnamed: 0')
+    elif diag.columns[0] in ['parameter', 'index', 'name']:
+        diag = diag.set_index(diag.columns[0])
+    
     # Filter for cell type effects
-    diag = diag[diag.index.str.contains('celltype_effect', na=False)]
+    if isinstance(diag.index, pd.RangeIndex):
+        # No parameter names, can't filter
+        st.warning("⚠️ Diagnostic data doesn't have parameter names")
+        return None
+    
+    # Convert index to string if needed
+    diag.index = diag.index.astype(str)
+    
+    # Filter for celltype_effect parameters
+    diag = diag[diag.index.str.contains('celltype_effect', na=False, case=False)]
     
     if len(diag) == 0:
-        st.warning("⚠️ No cell type diagnostics found")
+        st.warning("⚠️ No cell type diagnostics found in data")
         return None
     
     # Create figure with two subplots
@@ -994,8 +1013,18 @@ def plot_ess_rhat(comp_data):
         horizontal_spacing=0.15
     )
     
-    # ESS plot
-    ess_bulk = diag['ess_bulk'].values if 'ess_bulk' in diag.columns else diag['ess_mean'].values
+    # ESS plot - try different column names
+    ess_col = None
+    for col in ['ess_bulk', 'ess_mean', 'ess', 'n_eff']:
+        if col in diag.columns:
+            ess_col = col
+            break
+    
+    if ess_col is None:
+        st.warning("⚠️ ESS column not found in diagnostics")
+        return None
+    
+    ess_bulk = diag[ess_col].values
     
     fig.add_trace(
         go.Bar(
@@ -1018,7 +1047,26 @@ def plot_ess_rhat(comp_data):
                  annotation_text="Min recommended (400)", annotation_position="top")
     
     # R-hat plot
-    rhat = diag['r_hat'].values
+    rhat_col = None
+    for col in ['r_hat', 'rhat', 'Rhat', 'R_hat']:
+        if col in diag.columns:
+            rhat_col = col
+            break
+    
+    if rhat_col is None:
+        st.warning("⚠️ R-hat column not found in diagnostics")
+        # Continue with ESS plot only
+        fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
+        fig.update_layout(
+            title='Bayesian Diagnostic Statistics (ESS only)',
+            height=max(500, len(diag) * 25),
+            template=PLOTLY_TEMPLATE,
+            showlegend=False,
+            hovermode='closest'
+        )
+        return fig
+    
+    rhat = diag[rhat_col].values
     
     colors = ['green' if r < 1.01 else 'orange' if r < 1.05 else 'red' for r in rhat]
     
