@@ -775,8 +775,8 @@ def plot_energy_diagnostic(comp_data):
     
     return fig
 
-def plot_trace_diagnostic(comp_data, selected_cell=None):
-    """Generate trace plots for selected cell type or all"""
+def plot_trace_diagnostic(comp_data, n_celltypes=6):
+    """Generate trace plots for first N cell types"""
     if comp_data['posterior_overweight'] is None:
         st.info("ℹ️ Posterior data not available")
         return None
@@ -788,52 +788,22 @@ def plot_trace_diagnostic(comp_data, selected_cell=None):
     n_samples = len(df_over)
     samples_per_chain = n_samples // 4
     
-    # Get cell type mapping
-    ct_map = comp_data['celltype_map']
-    
-    def get_cell_name(idx):
-        if ct_map is not None and idx < len(ct_map):
-            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
-        return f'Cell {idx}'
-    
-    # Get cell columns
-    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')]
-    
-    # Filter to selected cell if specified
-    if selected_cell:
-        # Find matching cell
-        matching_cols = []
-        for col in cell_cols:
-            idx = int(col.split('_')[1])
-            cell_name = get_cell_name(idx)
-            if selected_cell.lower() in cell_name.lower():
-                matching_cols.append((col, cell_name))
-        
-        if not matching_cols:
-            st.warning(f"⚠️ No matching cell found for '{selected_cell}'")
-            return None
-        
-        cell_cols_to_plot = matching_cols
-        n_to_show = len(matching_cols)
-    else:
-        # Show first 6
-        cell_cols_to_plot = [(col, get_cell_name(int(col.split('_')[1]))) 
-                             for col in cell_cols[:6]]
-        n_to_show = 6
+    # Select first n_celltypes
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
     
     n_cols = 2
-    n_rows = int(np.ceil(n_to_show / n_cols))
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
     
     fig = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[name for _, name in cell_cols_to_plot],
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
     )
     
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
     
-    for idx, (col, cell_name) in enumerate(cell_cols_to_plot):
+    for idx, col in enumerate(cell_cols):
         r = idx // n_cols + 1
         c = idx % n_cols + 1
         
@@ -861,10 +831,8 @@ def plot_trace_diagnostic(comp_data, selected_cell=None):
         fig.update_xaxes(title_text='Iteration' if r == n_rows else '', row=r, col=c)
         fig.update_yaxes(title_text='Effect Size' if c == 1 else '', row=r, col=c)
     
-    title = f'Trace Plots - {selected_cell}' if selected_cell else 'Trace Plots - Overweight Effect (First 6 Cell Types)'
-    
     fig.update_layout(
-        title=title,
+        title='Trace Plots - Overweight Effect (First 6 Cell Types)',
         height=n_rows * 300,
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
@@ -872,8 +840,8 @@ def plot_trace_diagnostic(comp_data, selected_cell=None):
     
     return fig
 
-def plot_rank_diagnostic(comp_data, selected_cell=None):
-    """Generate rank plots for selected cell type or all"""
+def plot_rank_diagnostic(comp_data, n_celltypes=6):
+    """Generate rank plots for convergence diagnostic"""
     if comp_data['posterior_overweight'] is None:
         st.info("ℹ️ Posterior data not available")
         return None
@@ -883,49 +851,21 @@ def plot_rank_diagnostic(comp_data, selected_cell=None):
     n_samples = len(df_over)
     samples_per_chain = n_samples // 4
     
-    # Get cell type mapping
-    ct_map = comp_data['celltype_map']
-    
-    def get_cell_name(idx):
-        if ct_map is not None and idx < len(ct_map):
-            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
-        return f'Cell {idx}'
-    
-    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')]
-    
-    # Filter to selected cell if specified
-    if selected_cell:
-        matching_cols = []
-        for col in cell_cols:
-            idx = int(col.split('_')[1])
-            cell_name = get_cell_name(idx)
-            if selected_cell.lower() in cell_name.lower():
-                matching_cols.append((col, cell_name))
-        
-        if not matching_cols:
-            st.warning(f"⚠️ No matching cell found for '{selected_cell}'")
-            return None
-        
-        cell_cols_to_plot = matching_cols
-        n_to_show = len(matching_cols)
-    else:
-        cell_cols_to_plot = [(col, get_cell_name(int(col.split('_')[1]))) 
-                             for col in cell_cols[:6]]
-        n_to_show = 6
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
     
     n_cols = 2
-    n_rows = int(np.ceil(n_to_show / n_cols))
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
     
     fig = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[name for _, name in cell_cols_to_plot],
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
     )
     
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
     
-    for idx, (col, cell_name) in enumerate(cell_cols_to_plot):
+    for idx, col in enumerate(cell_cols):
         r = idx // n_cols + 1
         c = idx % n_cols + 1
         
@@ -957,10 +897,8 @@ def plot_rank_diagnostic(comp_data, selected_cell=None):
         fig.update_xaxes(title_text='Rank' if r == n_rows else '', row=r, col=c)
         fig.update_yaxes(title_text='Frequency' if c == 1 else '', row=r, col=c)
     
-    title = f'Rank Plots - {selected_cell}' if selected_cell else 'Rank Plots - Convergence Diagnostic (First 6 Cell Types)'
-    
     fig.update_layout(
-        title=title,
+        title='Rank Plots - Convergence Diagnostic (First 6 Cell Types)',
         height=n_rows * 300,
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
@@ -969,8 +907,8 @@ def plot_rank_diagnostic(comp_data, selected_cell=None):
     
     return fig
 
-def plot_autocorrelation(comp_data, selected_cell=None, max_lag=40):
-    """Generate autocorrelation plots for selected cell type or all"""
+def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
+    """Generate autocorrelation plots"""
     if comp_data['posterior_overweight'] is None:
         st.info("ℹ️ Posterior data not available")
         return None
@@ -980,49 +918,21 @@ def plot_autocorrelation(comp_data, selected_cell=None, max_lag=40):
     n_samples = len(df_over)
     samples_per_chain = n_samples // 4
     
-    # Get cell type mapping
-    ct_map = comp_data['celltype_map']
-    
-    def get_cell_name(idx):
-        if ct_map is not None and idx < len(ct_map):
-            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
-        return f'Cell {idx}'
-    
-    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')]
-    
-    # Filter to selected cell if specified
-    if selected_cell:
-        matching_cols = []
-        for col in cell_cols:
-            idx = int(col.split('_')[1])
-            cell_name = get_cell_name(idx)
-            if selected_cell.lower() in cell_name.lower():
-                matching_cols.append((col, cell_name))
-        
-        if not matching_cols:
-            st.warning(f"⚠️ No matching cell found for '{selected_cell}'")
-            return None
-        
-        cell_cols_to_plot = matching_cols
-        n_to_show = len(matching_cols)
-    else:
-        cell_cols_to_plot = [(col, get_cell_name(int(col.split('_')[1]))) 
-                             for col in cell_cols[:6]]
-        n_to_show = 6
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
     
     n_cols = 2
-    n_rows = int(np.ceil(n_to_show / n_cols))
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
     
     fig = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[name for _, name in cell_cols_to_plot],
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
     )
     
     colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
     
-    for idx, (col, cell_name) in enumerate(cell_cols_to_plot):
+    for idx, col in enumerate(cell_cols):
         r = idx // n_cols + 1
         c = idx % n_cols + 1
         
@@ -1064,10 +974,8 @@ def plot_autocorrelation(comp_data, selected_cell=None, max_lag=40):
         fig.update_xaxes(title_text='Lag' if r == n_rows else '', row=r, col=c)
         fig.update_yaxes(title_text='Autocorrelation' if c == 1 else '', row=r, col=c, range=[-0.2, 1.1])
     
-    title = f'Autocorrelation Plots - {selected_cell}' if selected_cell else 'Autocorrelation Plots (First 6 Cell Types)'
-    
     fig.update_layout(
-        title=title,
+        title='Autocorrelation Plots (First 6 Cell Types)',
         height=n_rows * 300,
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
@@ -1075,8 +983,8 @@ def plot_autocorrelation(comp_data, selected_cell=None, max_lag=40):
     
     return fig
 
-def plot_ess_rhat(comp_data, selected_cell=None):
-    """Generate ESS and R-hat diagnostic plots or table"""
+def plot_ess_rhat(comp_data):
+    """Generate ESS and R-hat diagnostic plots"""
     if comp_data['diagnostics'] is None:
         st.info("ℹ️ Diagnostic summary not available")
         return None
@@ -1104,65 +1012,14 @@ def plot_ess_rhat(comp_data, selected_cell=None):
         st.warning("⚠️ No cell type diagnostics found in data")
         return None
     
-    # Get cell names
-    ct_map = comp_data['celltype_map']
+    # Create figure with two subplots
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=['Effective Sample Size (ESS)', 'R-hat Convergence Statistic'],
+        horizontal_spacing=0.15
+    )
     
-    def get_cell_name(param_name):
-        # Extract index from parameter name like "celltype_effect_overweight[0]"
-        import re
-        match = re.search(r'\[(\d+)\]', param_name)
-        if match:
-            idx = int(match.group(1))
-            if ct_map is not None and idx < len(ct_map):
-                return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
-        return param_name
-    
-    # Add cell names
-    diag['cell_name'] = diag.index.map(get_cell_name)
-    
-    # If specific cell selected, show as table
-    if selected_cell:
-        # Filter for this cell
-        cell_diag = diag[diag['cell_name'].str.contains(selected_cell, case=False, na=False)]
-        
-        if len(cell_diag) > 0:
-            # Show as formatted table
-            st.markdown(f"### Diagnostics for {selected_cell}")
-            
-            # Get columns
-            ess_col = None
-            for col in ['ess_bulk', 'ess_mean', 'ess', 'n_eff']:
-                if col in cell_diag.columns:
-                    ess_col = col
-                    break
-            
-            rhat_col = None
-            for col in ['r_hat', 'rhat', 'Rhat', 'R_hat']:
-                if col in cell_diag.columns:
-                    rhat_col = col
-                    break
-            
-            # Create display table
-            display_df = pd.DataFrame({
-                'Comparison': cell_diag.index.str.extract(r'(overweight|obese)', expand=False).fillna('obese_vs_overweight'),
-            })
-            
-            if ess_col:
-                display_df['ESS'] = cell_diag[ess_col].values
-            if rhat_col:
-                display_df['R-hat'] = cell_diag[rhat_col].values
-            
-            # Style the table
-            st.dataframe(display_df.style.format({
-                'ESS': '{:.0f}',
-                'R-hat': '{:.4f}'
-            }).background_gradient(subset=['ESS'], cmap='Greens')
-            .background_gradient(subset=['R-hat'], cmap='RdYlGn_r', vmin=1.0, vmax=1.05))
-            
-            return "table"
-    
-    # Otherwise show full plot
-    # Aggregate by cell name (sum ESS, take mean R-hat)
+    # ESS plot - try different column names
     ess_col = None
     for col in ['ess_bulk', 'ess_mean', 'ess', 'n_eff']:
         if col in diag.columns:
@@ -1173,36 +1030,15 @@ def plot_ess_rhat(comp_data, selected_cell=None):
         st.warning("⚠️ ESS column not found in diagnostics")
         return None
     
-    rhat_col = None
-    for col in ['r_hat', 'rhat', 'Rhat', 'R_hat']:
-        if col in diag.columns:
-            rhat_col = col
-            break
-    
-    # Group by cell name
-    grouped = diag.groupby('cell_name').agg({
-        ess_col: 'mean',
-        rhat_col: 'mean' if rhat_col else lambda x: np.nan
-    }).reset_index()
-    
-    grouped = grouped.sort_values(ess_col, ascending=True)
-    
-    # Create figure with two subplots
-    fig = make_subplots(
-        rows=1, cols=2,
-        subplot_titles=['Effective Sample Size (ESS)', 'R-hat Convergence Statistic'],
-        horizontal_spacing=0.15
-    )
-    
-    ess_vals = grouped[ess_col].values
+    ess_bulk = diag[ess_col].values
     
     fig.add_trace(
         go.Bar(
-            y=grouped['cell_name'],
-            x=ess_vals,
+            y=[f"Cell {i}" for i in range(len(ess_bulk))],
+            x=ess_bulk,
             orientation='h',
             marker=dict(
-                color=ess_vals,
+                color=ess_bulk,
                 colorscale='Viridis',
                 showscale=True,
                 colorbar=dict(title="ESS", x=0.45)
@@ -1216,34 +1052,53 @@ def plot_ess_rhat(comp_data, selected_cell=None):
     fig.add_vline(x=400, line_dash="dash", line_color="red", opacity=0.5, row=1, col=1,
                  annotation_text="Min recommended (400)", annotation_position="top")
     
-    if rhat_col and not grouped[rhat_col].isna().all():
-        rhat_vals = grouped[rhat_col].values
-        colors = ['green' if r < 1.01 else 'orange' if r < 1.05 else 'red' for r in rhat_vals]
-        
-        fig.add_trace(
-            go.Bar(
-                y=grouped['cell_name'],
-                x=rhat_vals,
-                orientation='h',
-                marker=dict(color=colors),
-                hovertemplate='<b>%{y}</b><br>R-hat: %{x:.4f}<extra></extra>'
-            ),
-            row=1, col=2
+    # R-hat plot
+    rhat_col = None
+    for col in ['r_hat', 'rhat', 'Rhat', 'R_hat']:
+        if col in diag.columns:
+            rhat_col = col
+            break
+    
+    if rhat_col is None:
+        st.warning("⚠️ R-hat column not found in diagnostics")
+        # Continue with ESS plot only
+        fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
+        fig.update_layout(
+            title='Bayesian Diagnostic Statistics (ESS only)',
+            height=max(500, len(diag) * 25),
+            template=PLOTLY_TEMPLATE,
+            showlegend=False,
+            hovermode='closest'
         )
-        
-        # Add reference lines
-        fig.add_vline(x=1.01, line_dash="dash", line_color="green", opacity=0.5, row=1, col=2,
-                     annotation_text="Excellent (<1.01)", annotation_position="top")
-        fig.add_vline(x=1.05, line_dash="dash", line_color="orange", opacity=0.5, row=1, col=2,
-                     annotation_text="Acceptable (<1.05)", annotation_position="bottom")
-        
-        fig.update_xaxes(title_text='R-hat Value', row=1, col=2, range=[0.99, max(1.1, rhat_vals.max() * 1.05)])
+        return fig
+    
+    rhat = diag[rhat_col].values
+    
+    colors = ['green' if r < 1.01 else 'orange' if r < 1.05 else 'red' for r in rhat]
+    
+    fig.add_trace(
+        go.Bar(
+            y=[f"Cell {i}" for i in range(len(rhat))],
+            x=rhat,
+            orientation='h',
+            marker=dict(color=colors),
+            hovertemplate='<b>%{y}</b><br>R-hat: %{x:.4f}<extra></extra>'
+        ),
+        row=1, col=2
+    )
+    
+    # Add reference lines
+    fig.add_vline(x=1.01, line_dash="dash", line_color="green", opacity=0.5, row=1, col=2,
+                 annotation_text="Excellent (<1.01)", annotation_position="top")
+    fig.add_vline(x=1.05, line_dash="dash", line_color="orange", opacity=0.5, row=1, col=2,
+                 annotation_text="Acceptable (<1.05)", annotation_position="bottom")
     
     fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
+    fig.update_xaxes(title_text='R-hat Value', row=1, col=2, range=[0.99, max(1.1, rhat.max() * 1.05)])
     
     fig.update_layout(
         title='Bayesian Diagnostic Statistics',
-        height=max(500, len(grouped) * 25),
+        height=max(500, len(diag) * 25),
         template=PLOTLY_TEMPLATE,
         showlegend=False,
         hovermode='closest'
