@@ -3,6 +3,11 @@ Comprehensive Cell Analysis Viewer - Interactive Plots
 =======================================================
 Real-time interactive visualizations using Plotly and ArviZ.
 All plots support zoom, pan, hover tooltips, and interactive legends.
+
+FIXES APPLIED (v2.0):
+- Fixed celltype name display: Now reads column 1 (celltype_name) instead of column 0 (celltype_idx)
+- Improved error handling for missing z-score files
+- Added debug messages for troubleshooting cell type loading issues
 """
 
 import streamlit as st
@@ -256,15 +261,26 @@ def get_available_cells(compartment):
     """Get cell types from Z-score data"""
     comp_data = load_compartment_data(compartment)
     if comp_data['zscores'] is not None:
-        cells = sorted(comp_data['zscores']['CellType'].unique().tolist())
-        if len(cells) == 0:
-            # Try alternative column names
-            for col in ['celltype', 'cell_type', 'Cell_Type', 'CELLTYPE']:
-                if col in comp_data['zscores'].columns:
+        # Try different possible column names for cell type
+        possible_cols = ['CellType', 'celltype', 'cell_type', 'Cell_Type', 'CELLTYPE']
+        cells = []
+        
+        for col in possible_cols:
+            if col in comp_data['zscores'].columns:
+                try:
                     cells = sorted(comp_data['zscores'][col].unique().tolist())
                     if len(cells) > 0:
                         break
+                except Exception as e:
+                    continue
+        
+        if len(cells) == 0:
+            # Debug: show what columns are available
+            st.sidebar.warning(f"⚠️ No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+        
         return cells
+    else:
+        st.sidebar.error(f"❌ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
     return []
 
 def get_cell_signatures(cell_type):
@@ -445,8 +461,19 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         
         cell_names = []
         for i in range(n_cells):
-            if ct_map is not None and i < len(ct_map):
-                name = str(ct_map.iloc[i, 0])
+            if ct_map is not None and len(ct_map) > 0:
+                # Try to get from celltype_name column (more robust)
+                if 'celltype_name' in ct_map.columns and 'celltype_idx' in ct_map.columns:
+                    ct_row = ct_map[ct_map['celltype_idx'] == i]
+                    if len(ct_row) > 0:
+                        name = str(ct_row['celltype_name'].iloc[0])
+                    else:
+                        name = f"Cell_{i}"
+                # Fallback: use column 1 (celltype_name) instead of column 0 (celltype_idx)
+                elif len(ct_map.columns) >= 2 and i < len(ct_map):
+                    name = str(ct_map.iloc[i, 1])  # FIX: Changed from 0 to 1
+                else:
+                    name = f"Cell_{i}"
             else:
                 name = f"Cell_{i}"
             cell_names.append(name.replace('_', ' ').title())
