@@ -327,6 +327,7 @@ def format_signature_name(sig_name, max_length=40):
 # DUAL HEATMAP SYSTEM
 # ============================================================================
 
+<<<<<<< HEAD
 def load_stabl_selected_features(compartment):
     """Load STABL-selected features"""
     stabl_map = {
@@ -334,6 +335,152 @@ def load_stabl_selected_features(compartment):
         'Immune Coarse': 'data/stabl/immune_coarse_selected.csv',
         'Non-Immune': 'data/stabl/non_immune_selected.csv'
     }
+=======
+def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
+    """Generate interactive STABL Z-score heatmap"""
+    if comp_data['zscores'] is None or comp_data['stabl'] is None:
+        st.warning("⚠️ STABL data not available")
+        return None
+    
+    zscores = comp_data['zscores']
+    zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
+    
+    if len(zscores) == 0:
+        st.warning(f"⚠️ No Z-scores found for {cell_type}")
+        return None
+    
+    zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
+                           left_on='Sample', right_on='sample_id', how='inner')
+    zscores = zscores[zscores['bmi_category'].notna()]
+    
+    heatmap_data = zscores.groupby(['Signature', 'bmi_category'])['Z'].mean().unstack(fill_value=0)
+    heatmap_data = heatmap_data[['Normal', 'Overweight', 'Obese']]
+    
+    heatmap_data['abs_mean'] = heatmap_data.abs().mean(axis=1)
+    heatmap_data = heatmap_data.sort_values('abs_mean', ascending=False).drop('abs_mean', axis=1)
+    heatmap_data = heatmap_data.head(30)
+    
+    stabl_features = comp_data['stabl']['feature'].tolist() if comp_data['stabl'] is not None else []
+    
+    # Add STABL marker to signature names
+    signatures = []
+    for sig in heatmap_data.index:
+        feature_name = f"{cell_type}||{sig}"
+        if feature_name in stabl_features:
+            signatures.append(f"{sig} *")
+        else:
+            signatures.append(sig)
+    
+    # Create interactive heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=heatmap_data.values,
+        x=['Normal', 'Overweight', 'Obese'],
+        y=signatures,
+        colorscale='RdBu_r',
+        zmid=0,
+        zmin=-2,
+        zmax=2,
+        text=heatmap_data.values,
+        texttemplate='%{text:.2f}',
+        textfont={"size": 10},
+        colorbar=dict(title="Mean Z-score"),
+        hovertemplate='<b>%{y}</b><br>BMI: %{x}<br>Z-score: %{z:.3f}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text=f'{cell_type} - {sig_name}<br>STABL Z-scores by BMI Group',
+            font=dict(size=16, color='#2c3e50')
+        ),
+        xaxis_title='BMI Category',
+        yaxis_title='Signatures (* = STABL-selected)',
+        height=max(600, len(heatmap_data) * 25),
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    return fig
+
+def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
+    """Generate interactive Bayesian effect size heatmap"""
+    if comp_data['bayesian'] is None:
+        st.warning("⚠️ Bayesian data not available")
+        return None
+    
+    bayes = comp_data['bayesian'].copy()
+    
+    def normalize_name(name):
+        return str(name).upper().replace('_', ' ').replace('-', ' ').strip()
+    
+    bayes['cell_normalized'] = bayes['feature'].apply(
+        lambda x: normalize_name(str(x).split('||')[0]) if '||' in str(x) else normalize_name(x)
+    )
+    
+    cell_norm = normalize_name(cell_type)
+    cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
+    
+    if len(cell_bayes) == 0:
+        st.warning(f"⚠️ No Bayesian results for {cell_type}")
+        return None
+    
+    cell_bayes['signature'] = cell_bayes['feature'].apply(
+        lambda x: x.split('||')[1] if '||' in str(x) else x
+    )
+    
+    effect_data = []
+    for col_prefix in ['overweight_vs_normal', 'obese_vs_normal', 'obese_vs_overweight']:
+        for col_suffix in ['_mean', '']:
+            col = col_prefix + col_suffix
+            if col in cell_bayes.columns:
+                effect_data.append(cell_bayes.set_index('signature')[col].rename(col_prefix))
+                break
+    
+    if len(effect_data) == 0:
+        st.warning("⚠️ No effect size columns found")
+        return None
+    
+    heatmap_data = pd.concat(effect_data, axis=1).T
+    col_order = heatmap_data.abs().sum(axis=0).sort_values(ascending=False).index
+    heatmap_data = heatmap_data[col_order].iloc[:, :30]
+    
+    # Create interactive heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=heatmap_data.values,
+        x=heatmap_data.columns,
+        y=['Overweight vs Normal', 'Obese vs Normal', 'Obese vs Overweight'],
+        colorscale='RdBu_r',
+        zmid=0,
+        zmin=-0.4,
+        zmax=0.4,
+        text=heatmap_data.values,
+        texttemplate='%{text:.3f}',
+        textfont={"size": 9},
+        colorbar=dict(title="Effect Size"),
+        hovertemplate='<b>%{x}</b><br>%{y}<br>Effect: %{z:.4f}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text=f'{cell_type} - Bayesian Effect Sizes<br>Posterior Mean by Comparison',
+            font=dict(size=16, color='#2c3e50')
+        ),
+        xaxis_title='Signatures',
+        yaxis_title='Comparison',
+        height=500,
+        width=max(800, len(heatmap_data.columns) * 30),
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        xaxis=dict(tickangle=-45)
+    )
+    
+    return fig
+
+def plot_overlapped_ridges_interactive(cell_type, comp_data):
+    """Generate interactive overlapped ridge plot"""
+    if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
+        st.info("ℹ️ Posterior data not available - ridge plot skipped")
+        return None
+>>>>>>> 2be84e2bb7315b1df9c5968cff91bc20fd711a85
     
     try:
         df = pd.read_csv(stabl_map[compartment])
