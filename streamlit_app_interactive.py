@@ -20,12 +20,6 @@ warnings.filterwarnings('ignore')
 
 # Try optional imports
 try:
-    import arviz as az
-    ARVIZ_AVAILABLE = True
-except ImportError:
-    ARVIZ_AVAILABLE = False
-
-try:
     from lifelines import CoxPHFitter
     LIFELINES_AVAILABLE = True
 except ImportError:
@@ -191,17 +185,61 @@ def load_compartment_data(compartment):
     except:
         data['celltype_map'] = None
     
+    # Load posterior CSVs instead of .nc file
     try:
-        if ARVIZ_AVAILABLE:
-            trace_file = os.path.join(DATA_DIR, "bayesian", f"{comp_key}_posterior_trace.nc")
-            if os.path.exists(trace_file):
-                data['trace'] = az.from_netcdf(trace_file)
+        csv_dir = os.path.join(DATA_DIR, "bayesian_csvs", comp_key)
+        
+        # Load posterior samples
+        post_over_file = os.path.join(csv_dir, "posterior_overweight.csv")
+        post_ob_file = os.path.join(csv_dir, "posterior_obese.csv")
+        post_obo_file = os.path.join(csv_dir, "posterior_obese_vs_overweight.csv")
+        
+        if os.path.exists(post_over_file) and os.path.exists(post_ob_file):
+            data['posterior_overweight'] = pd.read_csv(post_over_file)
+            data['posterior_obese'] = pd.read_csv(post_ob_file)
+            
+            if os.path.exists(post_obo_file):
+                data['posterior_obese_vs_overweight'] = pd.read_csv(post_obo_file)
             else:
-                data['trace'] = None
+                # Calculate if not present
+                df_over = data['posterior_overweight']
+                df_ob = data['posterior_obese']
+                df_obo = df_over.copy()
+                df_obo.iloc[:, 1:] = df_ob.iloc[:, 1:].values - df_over.iloc[:, 1:].values
+                data['posterior_obese_vs_overweight'] = df_obo
         else:
-            data['trace'] = None
-    except:
-        data['trace'] = None
+            data['posterior_overweight'] = None
+            data['posterior_obese'] = None
+            data['posterior_obese_vs_overweight'] = None
+        
+        # Load diagnostics
+        diag_file = os.path.join(csv_dir, "diagnostics_summary.csv")
+        if os.path.exists(diag_file):
+            data['diagnostics'] = pd.read_csv(diag_file)
+        else:
+            data['diagnostics'] = None
+        
+        # Load energy
+        energy_file = os.path.join(csv_dir, "energy.csv")
+        if os.path.exists(energy_file):
+            data['energy'] = pd.read_csv(energy_file)
+        else:
+            data['energy'] = None
+        
+        # Load credible intervals
+        hdi_file = os.path.join(csv_dir, "credible_intervals.csv")
+        if os.path.exists(hdi_file):
+            data['credible_intervals'] = pd.read_csv(hdi_file)
+        else:
+            data['credible_intervals'] = None
+            
+    except Exception as e:
+        data['posterior_overweight'] = None
+        data['posterior_obese'] = None
+        data['posterior_obese_vs_overweight'] = None
+        data['diagnostics'] = None
+        data['energy'] = None
+        data['credible_intervals'] = None
     
     return data
 
@@ -365,16 +403,26 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
 
 def plot_overlapped_ridges_interactive(cell_type, comp_data):
     """Generate interactive overlapped ridge plot"""
-    if comp_data['trace'] is None:
-        st.info("ℹ️ Posterior trace not available - ridge plot skipped")
+    if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
+        st.info("ℹ️ Posterior data not available - ridge plot skipped")
         return None
     
     try:
-        trace = comp_data['trace']
+        # Read from CSV DataFrames
+        df_over = comp_data['posterior_overweight']
+        df_ob = comp_data['posterior_obese']
         
-        post_over = trace.posterior["celltype_effect_overweight"].values.reshape(-1, trace.posterior["celltype_effect_overweight"].values.shape[-1])
-        post_ob = trace.posterior["celltype_effect_obese"].values.reshape(-1, trace.posterior["celltype_effect_obese"].values.shape[-1])
-        post_obo = post_ob - post_over
+        if comp_data['posterior_obese_vs_overweight'] is not None:
+            df_obo = comp_data['posterior_obese_vs_overweight']
+        else:
+            # Calculate if not present
+            df_obo = df_over.copy()
+            df_obo.iloc[:, 1:] = df_ob.iloc[:, 1:].values - df_over.iloc[:, 1:].values
+        
+        # Convert to numpy arrays (skip first column which is 'sample')
+        post_over = df_over.iloc[:, 1:].values
+        post_ob = df_ob.iloc[:, 1:].values
+        post_obo = df_obo.iloc[:, 1:].values
         
         ct_map = comp_data['celltype_map']
         n_cells = post_ob.shape[1]
