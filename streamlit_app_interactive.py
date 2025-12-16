@@ -729,6 +729,329 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
     
     return fig1, fig2
 
+def plot_energy_diagnostic(comp_data):
+    """Generate interactive energy diagnostic plot"""
+    if comp_data['energy'] is None:
+        st.info("ℹ️ Energy data not available")
+        return None
+    
+    energy = comp_data['energy']
+    
+    fig = go.Figure()
+    
+    # Plot each chain separately
+    for chain in sorted(energy['chain'].unique()):
+        chain_data = energy[energy['chain'] == chain]
+        fig.add_trace(go.Scatter(
+            x=chain_data['draw'],
+            y=chain_data['energy'],
+            mode='lines',
+            name=f'Chain {chain}',
+            line=dict(width=1),
+            opacity=0.7,
+            hovertemplate=f'Chain {chain}<br>Iteration: %{{x}}<br>Energy: %{{y:.2f}}<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title='MCMC Energy Diagnostic',
+        xaxis_title='Iteration',
+        yaxis_title='Energy',
+        height=500,
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        showlegend=True
+    )
+    
+    return fig
+
+def plot_trace_diagnostic(comp_data, n_celltypes=6):
+    """Generate trace plots for first N cell types"""
+    if comp_data['posterior_overweight'] is None:
+        st.info("ℹ️ Posterior data not available")
+        return None
+    
+    # Get posterior data
+    df_over = comp_data['posterior_overweight']
+    
+    # Assume 4 chains based on total samples
+    n_samples = len(df_over)
+    samples_per_chain = n_samples // 4
+    
+    # Select first n_celltypes
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
+    
+    n_cols = 2
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
+    
+    fig = make_subplots(
+        rows=n_rows, cols=n_cols,
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+    
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    for idx, col in enumerate(cell_cols):
+        r = idx // n_cols + 1
+        c = idx % n_cols + 1
+        
+        # Split into chains
+        for chain in range(4):
+            start = chain * samples_per_chain
+            end = (chain + 1) * samples_per_chain
+            chain_data = df_over[col].iloc[start:end].values
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=np.arange(len(chain_data)),
+                    y=chain_data,
+                    mode='lines',
+                    name=f'Chain {chain}',
+                    line=dict(color=colors[chain], width=1),
+                    opacity=0.7,
+                    showlegend=(idx == 0),
+                    legendgroup=f'chain_{chain}',
+                    hovertemplate=f'Chain {chain}<br>Iteration: %{{x}}<br>Value: %{{y:.3f}}<extra></extra>'
+                ),
+                row=r, col=c
+            )
+        
+        fig.update_xaxes(title_text='Iteration' if r == n_rows else '', row=r, col=c)
+        fig.update_yaxes(title_text='Effect Size' if c == 1 else '', row=r, col=c)
+    
+    fig.update_layout(
+        title='Trace Plots - Overweight Effect (First 6 Cell Types)',
+        height=n_rows * 300,
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    return fig
+
+def plot_rank_diagnostic(comp_data, n_celltypes=6):
+    """Generate rank plots for convergence diagnostic"""
+    if comp_data['posterior_overweight'] is None:
+        st.info("ℹ️ Posterior data not available")
+        return None
+    
+    df_over = comp_data['posterior_overweight']
+    
+    n_samples = len(df_over)
+    samples_per_chain = n_samples // 4
+    
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
+    
+    n_cols = 2
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
+    
+    fig = make_subplots(
+        rows=n_rows, cols=n_cols,
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+    
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    for idx, col in enumerate(cell_cols):
+        r = idx // n_cols + 1
+        c = idx % n_cols + 1
+        
+        # Get all samples and compute ranks
+        all_samples = df_over[col].values
+        ranks = stats.rankdata(all_samples)
+        
+        # Split ranks by chain
+        for chain in range(4):
+            start = chain * samples_per_chain
+            end = (chain + 1) * samples_per_chain
+            chain_ranks = ranks[start:end]
+            
+            # Create histogram
+            fig.add_trace(
+                go.Histogram(
+                    x=chain_ranks,
+                    name=f'Chain {chain}',
+                    marker=dict(color=colors[chain]),
+                    opacity=0.6,
+                    showlegend=(idx == 0),
+                    legendgroup=f'chain_{chain}',
+                    hovertemplate=f'Chain {chain}<br>Rank: %{{x}}<br>Count: %{{y}}<extra></extra>',
+                    nbinsx=20
+                ),
+                row=r, col=c
+            )
+        
+        fig.update_xaxes(title_text='Rank' if r == n_rows else '', row=r, col=c)
+        fig.update_yaxes(title_text='Frequency' if c == 1 else '', row=r, col=c)
+    
+    fig.update_layout(
+        title='Rank Plots - Convergence Diagnostic (First 6 Cell Types)',
+        height=n_rows * 300,
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        barmode='overlay'
+    )
+    
+    return fig
+
+def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
+    """Generate autocorrelation plots"""
+    if comp_data['posterior_overweight'] is None:
+        st.info("ℹ️ Posterior data not available")
+        return None
+    
+    df_over = comp_data['posterior_overweight']
+    
+    n_samples = len(df_over)
+    samples_per_chain = n_samples // 4
+    
+    cell_cols = [c for c in df_over.columns if c.startswith('celltype_')][:n_celltypes]
+    
+    n_cols = 2
+    n_rows = int(np.ceil(len(cell_cols) / n_cols))
+    
+    fig = make_subplots(
+        rows=n_rows, cols=n_cols,
+        subplot_titles=[f'Cell Type {col.split("_")[1]}' for col in cell_cols],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+    
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    for idx, col in enumerate(cell_cols):
+        r = idx // n_cols + 1
+        c = idx % n_cols + 1
+        
+        # Compute autocorrelation for each chain
+        for chain in range(4):
+            start = chain * samples_per_chain
+            end = (chain + 1) * samples_per_chain
+            chain_data = df_over[col].iloc[start:end].values
+            
+            # Compute autocorrelation
+            acf_values = []
+            for lag in range(max_lag + 1):
+                if lag == 0:
+                    acf_values.append(1.0)
+                else:
+                    acf = np.corrcoef(chain_data[:-lag], chain_data[lag:])[0, 1]
+                    acf_values.append(acf)
+            
+            fig.add_trace(
+                go.Scatter(
+                    x=list(range(max_lag + 1)),
+                    y=acf_values,
+                    mode='lines+markers',
+                    name=f'Chain {chain}',
+                    line=dict(color=colors[chain], width=2),
+                    marker=dict(size=4),
+                    showlegend=(idx == 0),
+                    legendgroup=f'chain_{chain}',
+                    hovertemplate=f'Chain {chain}<br>Lag: %{{x}}<br>ACF: %{{y:.3f}}<extra></extra>'
+                ),
+                row=r, col=c
+            )
+        
+        # Add significance bands
+        sig_level = 1.96 / np.sqrt(samples_per_chain)
+        fig.add_hline(y=sig_level, line_dash="dash", line_color="gray", opacity=0.5, row=r, col=c)
+        fig.add_hline(y=-sig_level, line_dash="dash", line_color="gray", opacity=0.5, row=r, col=c)
+        
+        fig.update_xaxes(title_text='Lag' if r == n_rows else '', row=r, col=c)
+        fig.update_yaxes(title_text='Autocorrelation' if c == 1 else '', row=r, col=c, range=[-0.2, 1.1])
+    
+    fig.update_layout(
+        title='Autocorrelation Plots (First 6 Cell Types)',
+        height=n_rows * 300,
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    return fig
+
+def plot_ess_rhat(comp_data):
+    """Generate ESS and R-hat diagnostic plots"""
+    if comp_data['diagnostics'] is None:
+        st.info("ℹ️ Diagnostic summary not available")
+        return None
+    
+    diag = comp_data['diagnostics']
+    
+    # Filter for cell type effects
+    diag = diag[diag.index.str.contains('celltype_effect', na=False)]
+    
+    if len(diag) == 0:
+        st.warning("⚠️ No cell type diagnostics found")
+        return None
+    
+    # Create figure with two subplots
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=['Effective Sample Size (ESS)', 'R-hat Convergence Statistic'],
+        horizontal_spacing=0.15
+    )
+    
+    # ESS plot
+    ess_bulk = diag['ess_bulk'].values if 'ess_bulk' in diag.columns else diag['ess_mean'].values
+    
+    fig.add_trace(
+        go.Bar(
+            y=[f"Cell {i}" for i in range(len(ess_bulk))],
+            x=ess_bulk,
+            orientation='h',
+            marker=dict(
+                color=ess_bulk,
+                colorscale='Viridis',
+                showscale=True,
+                colorbar=dict(title="ESS", x=0.45)
+            ),
+            hovertemplate='<b>%{y}</b><br>ESS: %{x:.0f}<extra></extra>'
+        ),
+        row=1, col=1
+    )
+    
+    # Add reference line for good ESS (>400)
+    fig.add_vline(x=400, line_dash="dash", line_color="red", opacity=0.5, row=1, col=1,
+                 annotation_text="Min recommended (400)", annotation_position="top")
+    
+    # R-hat plot
+    rhat = diag['r_hat'].values
+    
+    colors = ['green' if r < 1.01 else 'orange' if r < 1.05 else 'red' for r in rhat]
+    
+    fig.add_trace(
+        go.Bar(
+            y=[f"Cell {i}" for i in range(len(rhat))],
+            x=rhat,
+            orientation='h',
+            marker=dict(color=colors),
+            hovertemplate='<b>%{y}</b><br>R-hat: %{x:.4f}<extra></extra>'
+        ),
+        row=1, col=2
+    )
+    
+    # Add reference lines
+    fig.add_vline(x=1.01, line_dash="dash", line_color="green", opacity=0.5, row=1, col=2,
+                 annotation_text="Excellent (<1.01)", annotation_position="top")
+    fig.add_vline(x=1.05, line_dash="dash", line_color="orange", opacity=0.5, row=1, col=2,
+                 annotation_text="Acceptable (<1.05)", annotation_position="bottom")
+    
+    fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
+    fig.update_xaxes(title_text='R-hat Value', row=1, col=2, range=[0.99, max(1.1, rhat.max() * 1.05)])
+    
+    fig.update_layout(
+        title='Bayesian Diagnostic Statistics',
+        height=max(500, len(diag) * 25),
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+        hovermode='closest'
+    )
+    
+    return fig
+
 def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
     if not LIFELINES_AVAILABLE or tpm is None:
@@ -934,6 +1257,7 @@ def main():
         tabs = st.tabs([
             "🎯 STABL & Bayesian",
             "🌊 Ridge Plot",
+            "🔍 Diagnostics",
             "🧬 Gene BMI",
             "💊 Gene Survival"
         ])
@@ -963,8 +1287,62 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         
-        # Tab 3: Gene BMI
+        # Tab 3: Bayesian Diagnostics
         with tabs[2]:
+            st.markdown("### 🔍 Bayesian MCMC Diagnostics")
+            st.info("💡 All diagnostic plots are interactive • Assess sampling quality and convergence")
+            
+            # ESS and R-hat
+            st.markdown("#### 📊 ESS & R-hat Statistics")
+            st.markdown("**ESS (Effective Sample Size):** Higher is better (>400 recommended)")
+            st.markdown("**R-hat:** Closer to 1.0 is better (<1.01 excellent, <1.05 acceptable)")
+            with st.spinner("Generating ESS/R-hat plot..."):
+                fig = plot_ess_rhat(comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Energy plot
+            st.markdown("#### ⚡ Energy Diagnostic")
+            st.markdown("**Energy transitions:** Chains should mix well and explore the parameter space efficiently")
+            with st.spinner("Generating energy plot..."):
+                fig = plot_energy_diagnostic(comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Trace plots
+            st.markdown("#### 📈 Trace Plots (First 6 Cell Types)")
+            st.markdown("**Traces:** Chains should mix well (look like 'hairy caterpillars')")
+            with st.spinner("Generating trace plots..."):
+                fig = plot_trace_diagnostic(comp_data, n_celltypes=6)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Rank plots
+            st.markdown("#### 📊 Rank Plots (First 6 Cell Types)")
+            st.markdown("**Rank histograms:** All chains should have uniform distributions (good mixing)")
+            with st.spinner("Generating rank plots..."):
+                fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Autocorrelation
+            st.markdown("#### 🔗 Autocorrelation Plots (First 6 Cell Types)")
+            st.markdown("**Autocorrelation:** Should decay quickly to zero (independent samples)")
+            with st.spinner("Generating autocorrelation plots..."):
+                fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        # Tab 4: Gene BMI
+        with tabs[3]:
             st.markdown("### 📈 Gene-Level BMI Associations")
             st.info("💡 Hover for statistics • Click-drag to zoom • Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
@@ -974,8 +1352,8 @@ def main():
                 if fig2:
                     st.plotly_chart(fig2, use_container_width=True)
         
-        # Tab 4: Gene Survival
-        with tabs[3]:
+        # Tab 5: Gene Survival
+        with tabs[4]:
             st.markdown("### 💊 Gene-Level Survival Analysis")
             st.info("💡 Forest plot with confidence intervals • Hover for full statistics")
             with st.spinner("Running survival analysis..."):
