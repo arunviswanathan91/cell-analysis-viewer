@@ -1100,6 +1100,281 @@ def plot_ess_rhat(comp_data):
     
     return fig
 
+def plot_compartment_directional_effects(comp_data):
+    """Generate directional effect size plot (up vs down) for compartment"""
+    if comp_data['credible_intervals'] is None:
+        st.info("ℹ️ Credible intervals data not available")
+        return None
+    
+    hdi_df = comp_data['credible_intervals']
+    
+    # Filter for credible only
+    credible = hdi_df[hdi_df['credible'] == True].copy()
+    
+    if len(credible) == 0:
+        st.warning("⚠️ No credible effects found")
+        return None
+    
+    # Get cell type mapping
+    ct_map = comp_data['celltype_map']
+    
+    # Add cell names
+    def get_cell_name(idx):
+        if ct_map is not None and idx < len(ct_map):
+            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
+        return f'Cell {idx}'
+    
+    credible['cell_name'] = credible['celltype_index'].apply(get_cell_name)
+    
+    # Calculate positive and negative sums per cell type and comparison
+    records = []
+    for comp in ['overweight', 'obese', 'obese_vs_overweight']:
+        comp_data_df = credible[credible['comparison'] == comp]
+        
+        for cell in comp_data_df['cell_name'].unique():
+            cell_data = comp_data_df[comp_data_df['cell_name'] == cell]
+            pos_sum = cell_data[cell_data['mean'] > 0]['mean'].sum()
+            neg_sum = cell_data[cell_data['mean'] < 0]['mean'].sum()
+            
+            records.append({
+                'cell': cell,
+                'comparison': comp,
+                'pos': pos_sum,
+                'neg': neg_sum
+            })
+    
+    if not records:
+        return None
+    
+    df = pd.DataFrame(records)
+    
+    # Create pivot tables
+    pos_pivot = df.pivot(index='cell', columns='comparison', values='pos').fillna(0)
+    neg_pivot = df.pivot(index='cell', columns='comparison', values='neg').fillna(0)
+    
+    # Reorder columns
+    comp_order = ['overweight', 'obese', 'obese_vs_overweight']
+    pos_pivot = pos_pivot.reindex(columns=comp_order, fill_value=0)
+    neg_pivot = neg_pivot.reindex(columns=comp_order, fill_value=0)
+    
+    # Sort by total magnitude
+    total_mag = pos_pivot.sum(axis=1) + abs(neg_pivot.sum(axis=1))
+    order = total_mag.sort_values(ascending=True).index
+    pos_pivot = pos_pivot.loc[order]
+    neg_pivot = neg_pivot.loc[order]
+    
+    # Create figure
+    fig = go.Figure()
+    
+    comp_colors = {
+        'overweight': '#2166ac',
+        'obese': '#b2182b',
+        'obese_vs_overweight': '#762a83'
+    }
+    
+    comp_labels = {
+        'overweight': 'Overweight vs Normal',
+        'obese': 'Obese vs Normal',
+        'obese_vs_overweight': 'Obese vs Overweight'
+    }
+    
+    # Add bars for each comparison
+    for comp in comp_order:
+        # Positive (up-regulated)
+        fig.add_trace(go.Bar(
+            name=f'{comp_labels[comp]} (Up)',
+            y=pos_pivot.index,
+            x=pos_pivot[comp],
+            orientation='h',
+            marker=dict(color=comp_colors[comp], opacity=0.9),
+            hovertemplate='<b>%{y}</b><br>Up: %{x:.3f}<extra></extra>',
+            legendgroup=comp,
+            showlegend=True
+        ))
+        
+        # Negative (down-regulated)
+        fig.add_trace(go.Bar(
+            name=f'{comp_labels[comp]} (Down)',
+            y=neg_pivot.index,
+            x=neg_pivot[comp],
+            orientation='h',
+            marker=dict(color=comp_colors[comp], opacity=0.5),
+            hovertemplate='<b>%{y}</b><br>Down: %{x:.3f}<extra></extra>',
+            legendgroup=comp,
+            showlegend=True
+        ))
+    
+    # Add zero line
+    fig.add_vline(x=0, line_width=2, line_color='black')
+    
+    fig.update_layout(
+        title='Directional Effect Sizes (Up vs Down) by Cell Type',
+        xaxis_title='Cumulative Effect Size',
+        yaxis_title='Cell Type',
+        height=max(500, len(pos_pivot) * 40),
+        template=PLOTLY_TEMPLATE,
+        barmode='relative',
+        hovermode='closest',
+        legend=dict(orientation='v', yanchor='top', y=1, xanchor='left', x=1.02)
+    )
+    
+    return fig
+
+def plot_compartment_credible_counts(comp_data):
+    """Generate stacked bar plot of credible feature counts"""
+    if comp_data['credible_intervals'] is None:
+        st.info("ℹ️ Credible intervals data not available")
+        return None
+    
+    hdi_df = comp_data['credible_intervals']
+    
+    # Filter for credible only
+    credible = hdi_df[hdi_df['credible'] == True].copy()
+    
+    if len(credible) == 0:
+        st.warning("⚠️ No credible effects found")
+        return None
+    
+    # Get cell type mapping
+    ct_map = comp_data['celltype_map']
+    
+    def get_cell_name(idx):
+        if ct_map is not None and idx < len(ct_map):
+            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
+        return f'Cell {idx}'
+    
+    credible['cell_name'] = credible['celltype_index'].apply(get_cell_name)
+    
+    # Count credible features per cell type and comparison
+    count_data = credible.groupby(['cell_name', 'comparison']).size().reset_index(name='count')
+    
+    # Pivot
+    pivot = count_data.pivot(index='cell_name', columns='comparison', values='count').fillna(0)
+    
+    # Reorder columns
+    comp_order = ['overweight', 'obese', 'obese_vs_overweight']
+    pivot = pivot.reindex(columns=comp_order, fill_value=0)
+    
+    # Sort by total
+    pivot['total'] = pivot.sum(axis=1)
+    pivot = pivot.sort_values('total', ascending=True).drop('total', axis=1)
+    
+    # Create stacked bar plot
+    fig = go.Figure()
+    
+    comp_colors = {
+        'overweight': '#2166ac',
+        'obese': '#b2182b',
+        'obese_vs_overweight': '#762a83'
+    }
+    
+    comp_labels = {
+        'overweight': 'Overweight vs Normal',
+        'obese': 'Obese vs Normal',
+        'obese_vs_overweight': 'Obese vs Overweight'
+    }
+    
+    for comp in comp_order:
+        fig.add_trace(go.Bar(
+            name=comp_labels[comp],
+            y=pivot.index,
+            x=pivot[comp],
+            orientation='h',
+            marker=dict(color=comp_colors[comp]),
+            hovertemplate='<b>%{y}</b><br>Count: %{x}<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title='Number of Credible Features by Cell Type',
+        xaxis_title='Number of Credible Features',
+        yaxis_title='Cell Type',
+        height=max(500, len(pivot) * 35),
+        template=PLOTLY_TEMPLATE,
+        barmode='stack',
+        hovermode='closest',
+        legend=dict(orientation='v', yanchor='top', y=1, xanchor='left', x=1.02)
+    )
+    
+    return fig
+
+def plot_compartment_effect_sizes(comp_data):
+    """Generate stacked bar plot of average effect sizes"""
+    if comp_data['credible_intervals'] is None:
+        st.info("ℹ️ Credible intervals data not available")
+        return None
+    
+    hdi_df = comp_data['credible_intervals']
+    
+    # Filter for credible only
+    credible = hdi_df[hdi_df['credible'] == True].copy()
+    
+    if len(credible) == 0:
+        st.warning("⚠️ No credible effects found")
+        return None
+    
+    # Get cell type mapping
+    ct_map = comp_data['celltype_map']
+    
+    def get_cell_name(idx):
+        if ct_map is not None and idx < len(ct_map):
+            return str(ct_map.iloc[idx, 0]).replace('_', ' ').title()
+        return f'Cell {idx}'
+    
+    credible['cell_name'] = credible['celltype_index'].apply(get_cell_name)
+    credible['abs_mean'] = credible['mean'].abs()
+    
+    # Average absolute effect size per cell type and comparison
+    effect_data = credible.groupby(['cell_name', 'comparison'])['abs_mean'].mean().reset_index()
+    
+    # Pivot
+    pivot = effect_data.pivot(index='cell_name', columns='comparison', values='abs_mean').fillna(0)
+    
+    # Reorder columns
+    comp_order = ['overweight', 'obese', 'obese_vs_overweight']
+    pivot = pivot.reindex(columns=comp_order, fill_value=0)
+    
+    # Sort by total
+    pivot['total'] = pivot.sum(axis=1)
+    pivot = pivot.sort_values('total', ascending=True).drop('total', axis=1)
+    
+    # Create stacked bar plot
+    fig = go.Figure()
+    
+    comp_colors = {
+        'overweight': '#2166ac',
+        'obese': '#b2182b',
+        'obese_vs_overweight': '#762a83'
+    }
+    
+    comp_labels = {
+        'overweight': 'Overweight vs Normal',
+        'obese': 'Obese vs Normal',
+        'obese_vs_overweight': 'Obese vs Overweight'
+    }
+    
+    for comp in comp_order:
+        fig.add_trace(go.Bar(
+            name=comp_labels[comp],
+            y=pivot.index,
+            x=pivot[comp],
+            orientation='h',
+            marker=dict(color=comp_colors[comp]),
+            hovertemplate='<b>%{y}</b><br>Avg Effect: %{x:.3f}<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title='Average Effect Size by Cell Type',
+        xaxis_title='Average Absolute Effect Size',
+        yaxis_title='Cell Type',
+        height=max(500, len(pivot) * 35),
+        template=PLOTLY_TEMPLATE,
+        barmode='stack',
+        hovermode='closest',
+        legend=dict(orientation='v', yanchor='top', y=1, xanchor='left', x=1.02)
+    )
+    
+    return fig
+
 def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
     if not LIFELINES_AVAILABLE or tpm is None:
@@ -1386,6 +1661,34 @@ def main():
             st.markdown("**Autocorrelation:** Should decay quickly to zero (independent samples)")
             with st.spinner("Generating autocorrelation plots..."):
                 fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Compartment-level statistics
+            st.markdown("#### 📊 Compartment-Level Statistics")
+            st.markdown("**Overview:** Aggregate statistics across all cell types in this compartment")
+            
+            # Credible counts
+            st.markdown("##### Number of Credible Features")
+            with st.spinner("Generating credible counts plot..."):
+                fig = plot_compartment_credible_counts(comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            # Effect sizes
+            st.markdown("##### Average Effect Sizes")
+            with st.spinner("Generating effect sizes plot..."):
+                fig = plot_compartment_effect_sizes(comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            # Directional effects
+            st.markdown("##### Directional Effects (Up vs Down)")
+            st.markdown("**Interpretation:** Positive (solid) = up-regulated, Negative (faded) = down-regulated")
+            with st.spinner("Generating directional effects plot..."):
+                fig = plot_compartment_directional_effects(comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         
