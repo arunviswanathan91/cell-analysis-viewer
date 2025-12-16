@@ -189,6 +189,11 @@ def load_compartment_data(compartment):
     try:
         csv_dir = os.path.join(DATA_DIR, "bayesian_csvs", comp_key)
         
+        # Try to load celltype_mapping from bayesian_csvs directory
+        ct_map_csv = os.path.join(csv_dir, "celltype_mapping.csv")
+        if os.path.exists(ct_map_csv):
+            data['celltype_map'] = pd.read_csv(ct_map_csv)
+        
         # Load posterior samples
         post_over_file = os.path.join(csv_dir, "posterior_overweight.csv")
         post_ob_file = os.path.join(csv_dir, "posterior_obese.csv")
