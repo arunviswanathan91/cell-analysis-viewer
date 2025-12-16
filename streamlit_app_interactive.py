@@ -35,7 +35,7 @@ except ImportError:
 # ==================================================================================
 
 st.set_page_config(
-    page_title="Cell Analysis Viewer",
+    page_title="Obesity-Driven Pancreatic Cancer Analysis",
     page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -65,11 +65,41 @@ st.markdown("""
         border-left: 5px solid #1f77b4;
         margin: 1rem 0;
     }
+    .method-box {
+        background-color: #f0f8ff;
+        padding: 1.5rem;
+        border-radius: 0.8rem;
+        border-left: 6px solid #4CAF50;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .warning-box {
+        background-color: #fff3cd;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 5px solid #ffc107;
+        margin: 1rem 0;
+    }
     .stButton>button {
         width: 100%;
         background-color: #1f77b4;
         color: white;
         font-weight: bold;
+    }
+    /* Better signature name display */
+    .stSelectbox label {
+        font-weight: 600 !important;
+        color: #2c3e50 !important;
+    }
+    /* Better metric display */
+    .stMetric {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+    }
+    /* Improve text contrast */
+    .stMarkdown p, .stMarkdown li {
+        color: #2c3e50 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -289,6 +319,18 @@ def get_cell_signatures(cell_type):
     cell_sigs = [e for e in entries 
                 if e['cell_type'].upper().replace('_', ' ') == cell_type.upper().replace('_', ' ')]
     return cell_sigs
+
+def format_signature_name(sig_name, max_length=40):
+    """Format signature name for display - remove _Signature suffix and truncate if needed"""
+    # Remove common suffixes
+    display_name = sig_name.replace('_Signature', '').replace('_signature', '')
+    display_name = display_name.replace('_', ' ')
+    
+    # Truncate if too long
+    if len(display_name) > max_length:
+        display_name = display_name[:max_length-3] + '...'
+    
+    return display_name
 
 # ==================================================================================
 # ============================= INTERACTIVE PLOTTING ===============================
@@ -1248,16 +1290,78 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
 # ==================================================================================
 
 def main():
-    # Header
-    st.markdown('<div class="main-header">🔬 Interactive Cell Analysis Viewer</div>', 
+    # Main Header
+    st.markdown('<div class="main-header">🔬 Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>All interactive visualizations powered by Plotly</b><br>
-    Hover for details • Zoom with box select • Pan with click-drag • Reset with double-click
+    <b>📊 Interactive Analysis Platform</b><br>
+    Exploring the relationship between BMI, tumor microenvironment cell types, and metabolic signatures in pancreatic adenocarcinoma (PAAD).
+    All visualizations powered by Plotly: Hover for details • Zoom with box select • Pan with click-drag • Reset with double-click
     </div>
     """, unsafe_allow_html=True)
+    
+    # Methodology Section (Collapsible)
+    with st.expander("📖 **About the Analysis Methods**", expanded=False):
+        st.markdown("""
+        ### 🧬 Data & Methods Overview
+        
+        This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
+        
+        ---
+        
+        #### 🔹 **BayesPrism** - Cell Type Deconvolution
+        A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
+        
+        📚 **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
+        
+        ---
+        
+        #### 🔹 **STABL** - Feature Selection
+        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
+        
+        📚 **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+        
+        ---
+        
+        #### 🔹 **Bayesian Hierarchical Model** - Effect Size Estimation
+        A three-group hierarchical model comparing:
+        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (≥ 30)
+        
+        The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
+        
+        📚 **References:**
+        - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
+        - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
+        
+        ---
+        
+        #### 🔹 **Diagnostic Metrics**
+        - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
+        - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
+        - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
+        - **Credible Intervals:** Bayesian equivalent of confidence intervals (95% HDI)
+        
+        ---
+        
+        #### 📊 **Dataset**
+        - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
+        - **Samples:** 140 tumor samples with clinical annotations
+        - **Cell Types:** Deconvolved into immune and non-immune cell populations
+        - **Signatures:** 30+ metabolic and functional gene signatures per cell type
+        
+        ---
+        
+        #### 🎯 **Analysis Workflow**
+        1. **Deconvolution:** BayesPrism → Cell type proportions
+        2. **Expression:** TPM values → Gene expression matrix
+        3. **Signatures:** Aggregate genes → Signature scores (Z-scores)
+        4. **Selection:** STABL → Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical → Effect sizes with uncertainty
+        6. **Validation:** MCMC diagnostics → Convergence checks
+        7. **Survival:** Cox regression → Clinical relevance
+        """)
     
     # Sidebar
     st.sidebar.title("📊 Data Selection")
@@ -1300,11 +1404,18 @@ def main():
         st.warning(f"⚠️ No signatures found for {selected_cell}")
         return
     
-    sig_options = {f"{s['signature']} ({len(s['genes'])} genes)": s for s in signatures}
+    # Create formatted options for display
+    sig_options = {}
+    for s in signatures:
+        formatted_name = format_signature_name(s['signature'], max_length=35)
+        display_text = f"{formatted_name} ({len(s['genes'])} genes)"
+        sig_options[display_text] = s
+    
     selected_sig_display = st.sidebar.selectbox(
         f"Choose signature ({len(signatures)} available):",
         options=list(sig_options.keys()),
-        index=0
+        index=0,
+        help="Signature names are truncated for readability. Full name shown in results."
     )
     selected_sig_info = sig_options[selected_sig_display]
     sig_name = selected_sig_info['signature']
@@ -1314,15 +1425,19 @@ def main():
     st.sidebar.markdown("---")
     generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
     
-    # Current selection
+    # Current selection with full signature name
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Current Selection")
     st.sidebar.info(f"""
     **Compartment:** {compartment}  
     **Cell Type:** {selected_cell_display}  
-    **Signature:** {sig_name}  
+    **Signature:** {format_signature_name(sig_name, max_length=50)}  
     **Genes:** {len(genes)}
     """)
+    
+    # Show full signature name in a smaller font if truncated
+    if len(sig_name) > 50:
+        st.sidebar.caption(f"Full name: {sig_name.replace('_', ' ')}")
     
     # Main content
     if generate:
@@ -1350,15 +1465,48 @@ def main():
         
         # Tab 1: STABL & Bayesian
         with tabs[0]:
-            st.markdown("### 📊 STABL Z-scores (Interactive Heatmap)")
-            st.info("💡 Hover over cells for exact values • ⭐ marks STABL-selected features")
+            st.markdown("### 📊 STABL Feature Selection")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>🔬 What is STABL?</b><br>
+            STABL (STABility-driven feature seLection) identifies robust biomarkers by:
+            <ol>
+            <li>Running feature selection on multiple bootstrap samples</li>
+            <li>Counting how often each feature is selected</li>
+            <li>Keeping only features selected consistently (stable features)</li>
+            </ol>
+            <b>⭐ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### 📈 Z-score Heatmap")
+            st.caption("Z-scores represent standardized signature expression across BMI categories")
             with st.spinner("Generating interactive STABL heatmap..."):
                 fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
             
-            st.markdown("### 📊 Bayesian Effect Sizes (Interactive Heatmap)")
-            st.info("💡 Hover for exact effect sizes • Click legend to toggle comparisons")
+            st.markdown("---")
+            
+            st.markdown("### 📊 Bayesian Effect Size Estimation")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>🧮 Bayesian Hierarchical Model</b><br>
+            Estimates how much each cell type's signature changes with increasing BMI:
+            <ul>
+            <li><b>Blue bars:</b> Overweight vs Normal effect</li>
+            <li><b>Red bars:</b> Obese vs Normal effect</li>
+            <li><b>Green bars:</b> Obese vs Overweight effect</li>
+            <li><b>Error bars:</b> 95% Credible Intervals (uncertainty)</li>
+            </ul>
+            <b>Interpretation:</b> Positive = signature increased with higher BMI, Negative = signature decreased
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### 📊 Effect Sizes with Credible Intervals")
+            st.caption("Hover for exact effect sizes • Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
@@ -1366,8 +1514,24 @@ def main():
         
         # Tab 2: Ridge Plot
         with tabs[1]:
-            st.markdown("### 🌊 Overlapped Posterior Distributions")
-            st.info("💡 Interactive ridge plot • Hover for comparison details • Scroll to zoom")
+            st.markdown("### 🌊 Posterior Distribution Visualization")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>📊 Ridge Plots Explained</b><br>
+            Each "ridge" shows the full distribution of MCMC samples for one cell type:
+            <ul>
+            <li><b>Width:</b> Uncertainty in effect size estimate</li>
+            <li><b>Peak location:</b> Most likely effect size</li>
+            <li><b>Overlap with zero:</b> Effect may not be significant</li>
+            <li><b>Vertical lines:</b> Mean effect sizes for each BMI comparison</li>
+            </ul>
+            <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("#### 🌊 Overlapped Posterior Distributions")
+            st.caption("Interactive ridge plot • Hover for details • Scroll to zoom • Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
@@ -1376,12 +1540,55 @@ def main():
         # Tab 3: Bayesian Diagnostics
         with tabs[2]:
             st.markdown("### 🔍 Bayesian MCMC Diagnostics")
-            st.info("💡 All diagnostic plots are interactive • Assess sampling quality and convergence")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>📖 Understanding MCMC Diagnostics</b><br><br>
+            
+            Bayesian inference uses <b>Markov Chain Monte Carlo (MCMC)</b> to sample from the posterior distribution. 
+            These diagnostics help us verify that the sampling worked correctly:<br><br>
+            
+            <b>✅ Good Convergence Indicators:</b>
+            <ul>
+            <li><b>R-hat < 1.01:</b> Multiple chains agree (excellent convergence)</li>
+            <li><b>ESS > 400:</b> Enough independent samples for reliable inference</li>
+            <li><b>Energy transitions:</b> Smooth mixing without getting stuck</li>
+            <li><b>"Hairy caterpillar" traces:</b> Chains explore the space efficiently</li>
+            </ul>
+            
+            <b>⚠️ Warning Signs:</b>
+            <ul>
+            <li><b>R-hat > 1.05:</b> Chains haven't converged (need more samples)</li>
+            <li><b>ESS < 100:</b> High autocorrelation (samples aren't independent)</li>
+            <li><b>Divergent transitions:</b> Sampling geometry problems</li>
+            <li><b>Trending traces:</b> Chain hasn't reached equilibrium</li>
+            </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
             # ESS and R-hat
             st.markdown("#### 📊 ESS & R-hat Statistics")
-            st.markdown("**ESS (Effective Sample Size):** Higher is better (>400 recommended)")
-            st.markdown("**R-hat:** Closer to 1.0 is better (<1.01 excellent, <1.05 acceptable)")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("""
+                **Effective Sample Size (ESS)**
+                - Measures number of *independent* samples
+                - Accounts for autocorrelation
+                - **Target:** ESS > 400 per parameter
+                - **Good:** Green bars (high ESS)
+                - **Poor:** Red bars (low ESS, need longer chains)
+                """)
+            with col2:
+                st.markdown("""
+                **R-hat (Gelman-Rubin)**
+                - Compares within-chain vs between-chain variance
+                - Tests if multiple chains converged to same distribution
+                - **Excellent:** R-hat < 1.01 (chains agree perfectly)
+                - **Acceptable:** R-hat < 1.05
+                - **Problem:** R-hat > 1.05 (chains disagree, not converged)
+                """)
+            
             with st.spinner("Generating ESS/R-hat plot..."):
                 fig = plot_ess_rhat(comp_data)
                 if fig:
@@ -1391,7 +1598,13 @@ def main():
             
             # Energy plot
             st.markdown("#### ⚡ Energy Diagnostic")
-            st.markdown("**Energy transitions:** Chains should mix well and explore the parameter space efficiently")
+            st.markdown("""
+            **Hamiltonian Monte Carlo Energy**
+            - Monitors the "energy" of the sampling process (from physics analogy)
+            - **Good:** Energy transitions are smooth and explore well
+            - **Problem:** Divergent transitions indicate sampling difficulties
+            - **Interpretation:** Chains should transition smoothly between energy states
+            """)
             with st.spinner("Generating energy plot..."):
                 fig = plot_energy_diagnostic(comp_data)
                 if fig:
@@ -1401,7 +1614,13 @@ def main():
             
             # Trace plots
             st.markdown("#### 📈 Trace Plots (First 6 Cell Types)")
-            st.markdown("**Traces:** Chains should mix well (look like 'hairy caterpillars')")
+            st.markdown("""
+            **What to Look For:**
+            - **"Hairy caterpillar":** Good mixing (chains bouncing around randomly)
+            - **Flat mixing:** All chains overlap (converged to same distribution)
+            - **⚠️ Trends:** Bad (chain drifting, not converged)
+            - **⚠️ Stuck chains:** Bad (chain not exploring)
+            """)
             with st.spinner("Generating trace plots..."):
                 fig = plot_trace_diagnostic(comp_data, n_celltypes=6)
                 if fig:
