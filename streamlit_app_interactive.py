@@ -357,10 +357,9 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
         height=500,
         width=max(800, len(heatmap_data.columns) * 30),
         template=PLOTLY_TEMPLATE,
-        hovermode='closest'
+        hovermode='closest',
+        xaxis=dict(tickangle=-45)
     )
-    
-    fig.update_xaxis(tickangle=-45)
     
     return fig
 
