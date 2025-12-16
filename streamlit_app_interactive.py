@@ -367,7 +367,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     for sig in heatmap_data.index:
         feature_name = f"{cell_type}||{sig}"
         if feature_name in stabl_features:
-            signatures.append(f"{sig} ⭐")
+            signatures.append(f"{sig} *")
         else:
             signatures.append(sig)
     
@@ -393,7 +393,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='BMI Category',
-        yaxis_title='Signatures (⭐ = STABL-selected)',
+        yaxis_title='Signatures (* = STABL-selected)',
         height=max(600, len(heatmap_data) * 25),
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
