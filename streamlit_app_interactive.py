@@ -1,0 +1,950 @@
+"""
+Comprehensive Cell Analysis Viewer - Interactive Plots
+=======================================================
+Real-time interactive visualizations using Plotly and ArviZ.
+All plots support zoom, pan, hover tooltips, and interactive legends.
+"""
+
+import streamlit as st
+import os
+import json
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from scipy import stats
+from scipy.stats import gaussian_kde
+import warnings
+warnings.filterwarnings('ignore')
+
+# Try optional imports
+try:
+    import arviz as az
+    ARVIZ_AVAILABLE = True
+except ImportError:
+    ARVIZ_AVAILABLE = False
+
+try:
+    from lifelines import CoxPHFitter
+    LIFELINES_AVAILABLE = True
+except ImportError:
+    LIFELINES_AVAILABLE = False
+
+# ==================================================================================
+# ============================= PAGE CONFIGURATION =================================
+# ==================================================================================
+
+st.set_page_config(
+    page_title="Cell Analysis Viewer",
+    page_icon="🔬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    .sub-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    .info-box {
+        background-color: #e8f4f8;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 5px solid #1f77b4;
+        margin: 1rem 0;
+    }
+    .stButton>button {
+        width: 100%;
+        background-color: #1f77b4;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==================================================================================
+# ============================= CONFIGURATION ======================================
+# ==================================================================================
+
+DATA_DIR = "data"
+LOG_TRANSFORM = True
+BMI_COLORS = {'Normal': '#2ECC71', 'Overweight': '#F39C12', 'Obese': '#E74C3C'}
+COLOR_OVERWEIGHT = "#1f78b4"
+COLOR_OBESE = "#e31a1c"
+COLOR_OBO = "#33a02c"
+
+# Plotly template
+PLOTLY_TEMPLATE = "plotly_white"
+
+# ==================================================================================
+# ============================= DATA LOADING =======================================
+# ==================================================================================
+
+@st.cache_data
+def load_signatures():
+    """Load signatures from JSON"""
+    try:
+        sig_file = os.path.join(DATA_DIR, "signatures", "ALL_CELL_SIGNATURES_FLAT.json")
+        with open(sig_file, 'r') as f:
+            data = json.load(f)
+        return data.get('entries', [])
+    except Exception as e:
+        st.error(f"Error loading signatures: {e}")
+        return []
+
+@st.cache_data
+def load_clinical_data():
+    """Load clinical data"""
+    try:
+        clinical_file = os.path.join(DATA_DIR, "clinical", "cptac_complete_clinical.csv")
+        clinical = pd.read_csv(clinical_file)
+        
+        col_mapping = {'sampleId': 'sample_id', 'SampleId': 'sample_id', 'SAMPLE_ID': 'sample_id'}
+        for old_col, new_col in col_mapping.items():
+            if old_col in clinical.columns:
+                clinical = clinical.rename(columns={old_col: new_col})
+        
+        def categorize_bmi(bmi):
+            try:
+                val = float(bmi)
+                if val < 25:
+                    return 'Normal'
+                elif val < 30:
+                    return 'Overweight'
+                else:
+                    return 'Obese'
+            except:
+                return np.nan
+        
+        clinical['bmi_category'] = clinical['BMI'].apply(categorize_bmi)
+        clinical['vital_status_binary'] = clinical['VITAL_STATUS'].apply(
+            lambda x: 1 if str(x).strip().upper() == 'DECEASED' else 0
+        )
+        clinical['follow_up_months'] = pd.to_numeric(clinical['FOLLOW_UP_DAYS'], errors='coerce') / 30.44
+        
+        return clinical
+    except Exception as e:
+        st.error(f"Error loading clinical data: {e}")
+        return None
+
+@st.cache_data
+def load_tpm_data():
+    """Load TPM expression data"""
+    try:
+        tpm_file = os.path.join(DATA_DIR, "tpm_expression", "bulk_combined_with_symbols_cleaned.csv")
+        tpm = pd.read_csv(tpm_file, index_col=0)
+        
+        if LOG_TRANSFORM:
+            tpm = np.log2(tpm + 1)
+        
+        return tpm
+    except Exception as e:
+        st.error(f"Error loading TPM data: {e}")
+        return None
+
+@st.cache_data
+def load_compartment_data(compartment):
+    """Load all data for a compartment"""
+    comp_map = {
+        'Immune Fine': 'immune_fine',
+        'Immune Coarse': 'immune_coarse',
+        'Non-Immune': 'non_immune'
+    }
+    comp_key = comp_map[compartment]
+    
+    data = {}
+    
+    try:
+        zscore_file = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        data['zscores'] = pd.read_csv(zscore_file)
+    except:
+        data['zscores'] = None
+    
+    try:
+        stabl_file = os.path.join(DATA_DIR, "stabl", f"{comp_key}_selected.csv")
+        data['stabl'] = pd.read_csv(stabl_file)
+    except:
+        data['stabl'] = None
+    
+    try:
+        bayes_file = os.path.join(DATA_DIR, "bayesian", f"{comp_key}_results.csv")
+        data['bayesian'] = pd.read_csv(bayes_file)
+    except:
+        data['bayesian'] = None
+    
+    try:
+        ctmap_file = os.path.join(DATA_DIR, "bayesian", f"{comp_key}_celltype_mapping.csv")
+        data['celltype_map'] = pd.read_csv(ctmap_file)
+    except:
+        data['celltype_map'] = None
+    
+    try:
+        if ARVIZ_AVAILABLE:
+            trace_file = os.path.join(DATA_DIR, "bayesian", f"{comp_key}_posterior_trace.nc")
+            if os.path.exists(trace_file):
+                data['trace'] = az.from_netcdf(trace_file)
+            else:
+                data['trace'] = None
+        else:
+            data['trace'] = None
+    except:
+        data['trace'] = None
+    
+    return data
+
+def get_available_cells(compartment):
+    """Get cell types from Z-score data"""
+    comp_data = load_compartment_data(compartment)
+    if comp_data['zscores'] is not None:
+        cells = sorted(comp_data['zscores']['CellType'].unique().tolist())
+        return cells
+    return []
+
+def get_cell_signatures(cell_type):
+    """Get signatures for this cell type"""
+    entries = load_signatures()
+    cell_sigs = [e for e in entries 
+                if e['cell_type'].upper().replace('_', ' ') == cell_type.upper().replace('_', ' ')]
+    return cell_sigs
+
+# ==================================================================================
+# ============================= INTERACTIVE PLOTTING ===============================
+# ==================================================================================
+
+def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
+    """Generate interactive STABL Z-score heatmap"""
+    if comp_data['zscores'] is None or comp_data['stabl'] is None:
+        st.warning("⚠️ STABL data not available")
+        return None
+    
+    zscores = comp_data['zscores']
+    zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
+    
+    if len(zscores) == 0:
+        st.warning(f"⚠️ No Z-scores found for {cell_type}")
+        return None
+    
+    zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
+                           left_on='Sample', right_on='sample_id', how='inner')
+    zscores = zscores[zscores['bmi_category'].notna()]
+    
+    heatmap_data = zscores.groupby(['Signature', 'bmi_category'])['Z'].mean().unstack(fill_value=0)
+    heatmap_data = heatmap_data[['Normal', 'Overweight', 'Obese']]
+    
+    heatmap_data['abs_mean'] = heatmap_data.abs().mean(axis=1)
+    heatmap_data = heatmap_data.sort_values('abs_mean', ascending=False).drop('abs_mean', axis=1)
+    heatmap_data = heatmap_data.head(30)
+    
+    stabl_features = comp_data['stabl']['feature'].tolist() if comp_data['stabl'] is not None else []
+    
+    # Add STABL marker to signature names
+    signatures = []
+    for sig in heatmap_data.index:
+        feature_name = f"{cell_type}||{sig}"
+        if feature_name in stabl_features:
+            signatures.append(f"{sig} ⭐")
+        else:
+            signatures.append(sig)
+    
+    # Create interactive heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=heatmap_data.values,
+        x=['Normal', 'Overweight', 'Obese'],
+        y=signatures,
+        colorscale='RdBu_r',
+        zmid=0,
+        zmin=-2,
+        zmax=2,
+        text=heatmap_data.values,
+        texttemplate='%{text:.2f}',
+        textfont={"size": 10},
+        colorbar=dict(title="Mean Z-score"),
+        hovertemplate='<b>%{y}</b><br>BMI: %{x}<br>Z-score: %{z:.3f}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text=f'{cell_type} - {sig_name}<br>STABL Z-scores by BMI Group',
+            font=dict(size=16, color='#2c3e50')
+        ),
+        xaxis_title='BMI Category',
+        yaxis_title='Signatures (⭐ = STABL-selected)',
+        height=max(600, len(heatmap_data) * 25),
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    return fig
+
+def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
+    """Generate interactive Bayesian effect size heatmap"""
+    if comp_data['bayesian'] is None:
+        st.warning("⚠️ Bayesian data not available")
+        return None
+    
+    bayes = comp_data['bayesian'].copy()
+    
+    def normalize_name(name):
+        return str(name).upper().replace('_', ' ').replace('-', ' ').strip()
+    
+    bayes['cell_normalized'] = bayes['feature'].apply(
+        lambda x: normalize_name(str(x).split('||')[0]) if '||' in str(x) else normalize_name(x)
+    )
+    
+    cell_norm = normalize_name(cell_type)
+    cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
+    
+    if len(cell_bayes) == 0:
+        st.warning(f"⚠️ No Bayesian results for {cell_type}")
+        return None
+    
+    cell_bayes['signature'] = cell_bayes['feature'].apply(
+        lambda x: x.split('||')[1] if '||' in str(x) else x
+    )
+    
+    effect_data = []
+    for col_prefix in ['overweight_vs_normal', 'obese_vs_normal', 'obese_vs_overweight']:
+        for col_suffix in ['_mean', '']:
+            col = col_prefix + col_suffix
+            if col in cell_bayes.columns:
+                effect_data.append(cell_bayes.set_index('signature')[col].rename(col_prefix))
+                break
+    
+    if len(effect_data) == 0:
+        st.warning("⚠️ No effect size columns found")
+        return None
+    
+    heatmap_data = pd.concat(effect_data, axis=1).T
+    col_order = heatmap_data.abs().sum(axis=0).sort_values(ascending=False).index
+    heatmap_data = heatmap_data[col_order].iloc[:, :30]
+    
+    # Create interactive heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=heatmap_data.values,
+        x=heatmap_data.columns,
+        y=['Overweight vs Normal', 'Obese vs Normal', 'Obese vs Overweight'],
+        colorscale='RdBu_r',
+        zmid=0,
+        zmin=-0.4,
+        zmax=0.4,
+        text=heatmap_data.values,
+        texttemplate='%{text:.3f}',
+        textfont={"size": 9},
+        colorbar=dict(title="Effect Size"),
+        hovertemplate='<b>%{x}</b><br>%{y}<br>Effect: %{z:.4f}<extra></extra>'
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text=f'{cell_type} - Bayesian Effect Sizes<br>Posterior Mean by Comparison',
+            font=dict(size=16, color='#2c3e50')
+        ),
+        xaxis_title='Signatures',
+        yaxis_title='Comparison',
+        height=500,
+        width=max(800, len(heatmap_data.columns) * 30),
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    fig.update_xaxis(tickangle=-45)
+    
+    return fig
+
+def plot_overlapped_ridges_interactive(cell_type, comp_data):
+    """Generate interactive overlapped ridge plot"""
+    if comp_data['trace'] is None:
+        st.info("ℹ️ Posterior trace not available - ridge plot skipped")
+        return None
+    
+    try:
+        trace = comp_data['trace']
+        
+        post_over = trace.posterior["celltype_effect_overweight"].values.reshape(-1, trace.posterior["celltype_effect_overweight"].values.shape[-1])
+        post_ob = trace.posterior["celltype_effect_obese"].values.reshape(-1, trace.posterior["celltype_effect_obese"].values.shape[-1])
+        post_obo = post_ob - post_over
+        
+        ct_map = comp_data['celltype_map']
+        n_cells = post_ob.shape[1]
+        
+        cell_names = []
+        for i in range(n_cells):
+            if ct_map is not None and i < len(ct_map):
+                name = str(ct_map.iloc[i, 0])
+            else:
+                name = f"Cell_{i}"
+            cell_names.append(name.replace('_', ' ').title())
+        
+        sorted_pairs = sorted(enumerate(cell_names), key=lambda x: x[1].lower())
+        indices = [p[0] for p in sorted_pairs]
+        names = [p[1] for p in sorted_pairs]
+        
+        if len(indices) > 14:
+            means = post_ob.mean(axis=0)
+            abs_order = np.argsort(np.abs(means))[::-1][:14]
+            indices = [idx for idx in indices if idx in abs_order]
+            names = [name for idx, name in zip(indices, names) if idx in abs_order]
+        
+        indices = indices[::-1]
+        names = names[::-1]
+        
+        # Create figure with subplots (one per cell type)
+        fig = go.Figure()
+        
+        KDE_POINTS = 200
+        RIDGE_HEIGHT = 1.0
+        SPACING = 1.5
+        
+        all_samples = np.hstack([
+            post_over[:, indices].flatten(),
+            post_ob[:, indices].flatten(),
+            post_obo[:, indices].flatten()
+        ])
+        x_min, x_max = np.percentile(all_samples, [0.5, 99.5])
+        x_span = max(1e-6, x_max - x_min)
+        xgrid = np.linspace(x_min - 0.03*x_span, x_max + 0.03*x_span, KDE_POINTS)
+        
+        means_over = post_over.mean(axis=0)
+        means_ob = post_ob.mean(axis=0)
+        means_obo = post_obo.mean(axis=0)
+        
+        y_base = 0
+        
+        for i, (ct_idx, ct_name) in enumerate(zip(indices, names)):
+            s_over = post_over[:, ct_idx]
+            s_ob = post_ob[:, ct_idx]
+            s_obo = post_obo[:, ct_idx]
+            
+            # Compute KDEs
+            try:
+                kde_over = gaussian_kde(s_over)
+                d_over = kde_over(xgrid)
+                d_over = (d_over / d_over.max()) * RIDGE_HEIGHT
+            except:
+                d_over = np.zeros_like(xgrid)
+            
+            try:
+                kde_ob = gaussian_kde(s_ob)
+                d_ob = kde_ob(xgrid)
+                d_ob = (d_ob / d_ob.max()) * RIDGE_HEIGHT
+            except:
+                d_ob = np.zeros_like(xgrid)
+            
+            try:
+                kde_obo = gaussian_kde(s_obo)
+                d_obo = kde_obo(xgrid)
+                d_obo = (d_obo / d_obo.max()) * RIDGE_HEIGHT
+            except:
+                d_obo = np.zeros_like(xgrid)
+            
+            y_offset = y_base + i * SPACING
+            
+            # Add traces for each comparison
+            fig.add_trace(go.Scatter(
+                x=xgrid, y=d_ob + y_offset,
+                fill='tonexty' if i > 0 else 'tozeroy',
+                fillcolor=f'rgba(227, 26, 28, 0.5)',
+                line=dict(color='rgba(227, 26, 28, 0.8)', width=1.5),
+                name=f'{ct_name} - Obese',
+                hovertemplate=f'<b>{ct_name}</b><br>Obese vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
+                showlegend=(i == 0),
+                legendgroup='obese'
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=xgrid, y=d_over + y_offset,
+                fill='tonexty',
+                fillcolor=f'rgba(31, 120, 180, 0.5)',
+                line=dict(color='rgba(31, 120, 180, 0.8)', width=1.5),
+                name=f'{ct_name} - Overweight',
+                hovertemplate=f'<b>{ct_name}</b><br>Overweight vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
+                showlegend=(i == 0),
+                legendgroup='overweight'
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=xgrid, y=d_obo + y_offset,
+                fill='tonexty',
+                fillcolor=f'rgba(51, 160, 44, 0.5)',
+                line=dict(color='rgba(51, 160, 44, 0.8)', width=1.5),
+                name=f'{ct_name} - Obese vs Overweight',
+                hovertemplate=f'<b>{ct_name}</b><br>Obese vs Overweight<br>Effect: %{{x:.3f}}<extra></extra>',
+                showlegend=(i == 0),
+                legendgroup='obo'
+            ))
+            
+            # Add mean markers
+            fig.add_trace(go.Scatter(
+                x=[means_ob[ct_idx]], y=[y_offset + RIDGE_HEIGHT * 0.5],
+                mode='markers',
+                marker=dict(color='black', size=8, symbol='line-ns-open'),
+                hovertemplate=f'<b>{ct_name}</b><br>Mean (Obese): %{{x:.3f}}<extra></extra>',
+                showlegend=False
+            ))
+        
+        # Add zero reference line
+        fig.add_vline(x=0, line_dash="dash", line_color="darkred", line_width=2, opacity=0.7)
+        
+        fig.update_layout(
+            title=dict(
+                text='Overlapped Posterior Distributions by Cell Type',
+                font=dict(size=16, color='#2c3e50')
+            ),
+            xaxis_title='Effect Size',
+            yaxis=dict(
+                showticklabels=False,
+                showgrid=False,
+                zeroline=False
+            ),
+            height=max(600, len(indices) * 80),
+            template=PLOTLY_TEMPLATE,
+            hovermode='closest',
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+        
+        return fig
+        
+    except Exception as e:
+        st.warning(f"⚠️ Error creating ridge plot: {e}")
+        return None
+
+def plot_gene_bmi_interactive(genes, clinical, tpm):
+    """Generate interactive gene-level BMI analysis plots"""
+    if tpm is None:
+        st.warning("⚠️ TPM data not available")
+        return None, None
+    
+    tpm_t = tpm.T
+    tpm_t.index.name = 'sample_id'
+    tpm_t = tpm_t.reset_index()
+    
+    merged = clinical.merge(tpm_t, on='sample_id', how='inner')
+    merged = merged[merged['BMI'].notna()].copy()
+    
+    results = []
+    for gene in genes:
+        if gene not in merged.columns:
+            continue
+        
+        gene_data = merged[['BMI', gene]].dropna()
+        if len(gene_data) < 20:
+            continue
+        
+        try:
+            slope, intercept, r_val, p_val, std_err = stats.linregress(gene_data['BMI'], gene_data[gene])
+            results.append({
+                'gene': gene,
+                'slope': slope,
+                'r_squared': r_val**2,
+                'p_value': p_val
+            })
+        except:
+            continue
+    
+    if not results:
+        st.warning("⚠️ No genes analyzed")
+        return None, None
+    
+    results_df = pd.DataFrame(results).sort_values('p_value')
+    
+    # Plot 1: Interactive bar plot of slopes
+    plot_df = results_df.sort_values('slope')
+    
+    colors = []
+    for _, row in plot_df.iterrows():
+        if row['p_value'] < 0.05:
+            colors.append('#E74C3C' if row['slope'] > 0 else '#3498DB')
+        else:
+            colors.append('#FADBD8' if row['slope'] > 0 else '#D6EAF8')
+    
+    sig_markers = []
+    for _, row in plot_df.iterrows():
+        if row['p_value'] < 0.001:
+            sig_markers.append('***')
+        elif row['p_value'] < 0.01:
+            sig_markers.append('**')
+        elif row['p_value'] < 0.05:
+            sig_markers.append('*')
+        else:
+            sig_markers.append('ns')
+    
+    fig1 = go.Figure()
+    
+    fig1.add_trace(go.Bar(
+        y=plot_df['gene'],
+        x=plot_df['slope'],
+        orientation='h',
+        marker=dict(color=colors, line=dict(color='black', width=1)),
+        text=[f"{s:.4f} {m}" for s, m in zip(plot_df['slope'], sig_markers)],
+        textposition='outside',
+        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>R²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
+        customdata=np.column_stack((plot_df['r_squared'], plot_df['p_value']))
+    ))
+    
+    fig1.add_vline(x=0, line_dash="solid", line_color="black", line_width=2)
+    
+    fig1.update_layout(
+        title='Gene-Level BMI Association<br>Δ Expression per Δ BMI',
+        xaxis_title='Expression Change per 1 Unit BMI Increase',
+        yaxis_title='Genes',
+        height=max(500, len(plot_df) * 25),
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+        hovermode='closest'
+    )
+    
+    # Plot 2: Interactive scatter plots for top genes
+    top_genes = results_df.head(min(9, len(results_df)))
+    
+    n_genes = len(top_genes)
+    n_cols = min(3, n_genes)
+    n_rows = int(np.ceil(n_genes / n_cols))
+    
+    fig2 = make_subplots(
+        rows=n_rows, cols=n_cols,
+        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, R²={row['r_squared']:.3f})" 
+                       for _, row in top_genes.iterrows()],
+        vertical_spacing=0.12,
+        horizontal_spacing=0.1
+    )
+    
+    for idx, (_, row) in enumerate(top_genes.iterrows()):
+        r = idx // n_cols + 1
+        c = idx % n_cols + 1
+        
+        gene = row['gene']
+        gene_data = merged[['BMI', gene, 'bmi_category']].dropna()
+        
+        # Add scatter points by BMI category
+        for cat in ['Normal', 'Overweight', 'Obese']:
+            cat_data = gene_data[gene_data['bmi_category'] == cat]
+            if len(cat_data) > 0:
+                fig2.add_trace(
+                    go.Scatter(
+                        x=cat_data['BMI'],
+                        y=cat_data[gene],
+                        mode='markers',
+                        name=cat,
+                        marker=dict(color=BMI_COLORS[cat], size=6, opacity=0.6,
+                                  line=dict(color='black', width=0.5)),
+                        hovertemplate=f'<b>{cat}</b><br>BMI: %{{x:.1f}}<br>Expression: %{{y:.3f}}<extra></extra>',
+                        showlegend=(idx == 0),
+                        legendgroup=cat
+                    ),
+                    row=r, col=c
+                )
+        
+        # Add regression line
+        bmi_range = np.linspace(gene_data['BMI'].min(), gene_data['BMI'].max(), 100)
+        pred = row['slope'] * bmi_range + (gene_data[gene].mean() - row['slope'] * gene_data['BMI'].mean())
+        
+        fig2.add_trace(
+            go.Scatter(
+                x=bmi_range,
+                y=pred,
+                mode='lines',
+                line=dict(color='black', width=2.5, dash='dash'),
+                name='Regression',
+                showlegend=(idx == 0),
+                hovertemplate='Predicted: %{y:.3f}<extra></extra>'
+            ),
+            row=r, col=c
+        )
+        
+        fig2.update_xaxes(title_text='BMI' if r == n_rows else '', row=r, col=c)
+        fig2.update_yaxes(title_text='Expression' if c == 1 else '', row=r, col=c)
+    
+    fig2.update_layout(
+        title_text='Gene-Level BMI vs Expression (Top Genes)',
+        height=n_rows * 350,
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest'
+    )
+    
+    return fig1, fig2
+
+def plot_gene_survival_interactive(genes, clinical, tpm):
+    """Generate interactive gene-level survival forest plot"""
+    if not LIFELINES_AVAILABLE or tpm is None:
+        st.info("ℹ️ Survival analysis not available")
+        return None
+    
+    tpm_t = tpm.T
+    tpm_t.index.name = 'sample_id'
+    tpm_t = tpm_t.reset_index()
+    
+    merged = clinical.merge(tpm_t, on='sample_id', how='inner')
+    merged = merged[merged['follow_up_months'] > 0].copy()
+    
+    results = []
+    for gene in genes:
+        if gene not in merged.columns:
+            continue
+        
+        surv_data = merged[['follow_up_months', 'vital_status_binary', gene]].copy()
+        surv_data = surv_data.dropna()
+        
+        if len(surv_data) < 20 or surv_data['vital_status_binary'].sum() < 3:
+            continue
+        
+        if surv_data[gene].std() < 1e-6:
+            continue
+        
+        surv_data['expression_std'] = (surv_data[gene] - surv_data[gene].mean()) / surv_data[gene].std()
+        
+        try:
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(surv_data[['follow_up_months', 'vital_status_binary', 'expression_std']],
+                   duration_col='follow_up_months',
+                   event_col='vital_status_binary')
+            
+            hr = np.exp(cph.params_['expression_std'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['expression_std', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['expression_std', '95% upper-bound'])
+            p_value = cph.summary.loc['expression_std', 'p']
+            
+            if hr < 1e6 and ci_upper < 1e6:
+                results.append({
+                    'gene': gene,
+                    'n_patients': len(surv_data),
+                    'n_events': int(surv_data['vital_status_binary'].sum()),
+                    'hr': hr,
+                    'ci_lower': ci_lower,
+                    'ci_upper': ci_upper,
+                    'p_value': p_value
+                })
+        except:
+            continue
+    
+    if not results:
+        st.info("ℹ️ No genes passed survival criteria")
+        return None
+    
+    results_df = pd.DataFrame(results).sort_values('hr', ascending=False).head(20)
+    
+    # Create interactive forest plot
+    fig = go.Figure()
+    
+    colors = ['#E74C3C' if p < 0.05 else '#95A5A6' for p in results_df['p_value']]
+    
+    # Add HR points
+    fig.add_trace(go.Scatter(
+        x=results_df['hr'],
+        y=results_df['gene'],
+        mode='markers',
+        marker=dict(color=colors, size=12, line=dict(color='black', width=1.5)),
+        name='Hazard Ratio',
+        hovertemplate='<b>%{y}</b><br>HR: %{x:.3f}<br>CI: %{customdata[0]:.2f} - %{customdata[1]:.2f}<br>p-value: %{customdata[2]:.3e}<br>N: %{customdata[3]}<extra></extra>',
+        customdata=np.column_stack((results_df['ci_lower'], results_df['ci_upper'], 
+                                   results_df['p_value'], results_df['n_patients']))
+    ))
+    
+    # Add confidence intervals
+    for _, row in results_df.iterrows():
+        fig.add_trace(go.Scatter(
+            x=[row['ci_lower'], row['ci_upper']],
+            y=[row['gene'], row['gene']],
+            mode='lines',
+            line=dict(color='#E74C3C' if row['p_value'] < 0.05 else '#95A5A6', width=2),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+    
+    # Add HR=1 reference line
+    fig.add_vline(x=1, line_dash="dash", line_color="black", line_width=2, opacity=0.7,
+                 annotation_text="No effect (HR=1)", annotation_position="top")
+    
+    fig.update_layout(
+        title='Gene-Level Survival Analysis<br>(Cox Proportional Hazards)',
+        xaxis_title='Hazard Ratio (95% CI)',
+        yaxis_title='Genes',
+        height=max(500, len(results_df) * 30),
+        template=PLOTLY_TEMPLATE,
+        showlegend=False,
+        hovermode='closest'
+    )
+    
+    fig.update_xaxes(type='log' if results_df['hr'].max() > 5 else 'linear')
+    
+    return fig
+
+# ==================================================================================
+# ============================= MAIN APP ===========================================
+# ==================================================================================
+
+def main():
+    # Header
+    st.markdown('<div class="main-header">🔬 Interactive Cell Analysis Viewer</div>', 
+                unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="info-box">
+    <b>All interactive visualizations powered by Plotly</b><br>
+    Hover for details • Zoom with box select • Pan with click-drag • Reset with double-click
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Sidebar
+    st.sidebar.title("📊 Data Selection")
+    
+    # Step 1: Compartment
+    st.sidebar.markdown("### Step 1: Select Compartment")
+    compartment = st.sidebar.selectbox(
+        "Choose compartment:",
+        options=['Immune Fine', 'Immune Coarse', 'Non-Immune'],
+        index=0
+    )
+    
+    # Load data
+    with st.spinner(f"Loading {compartment} data..."):
+        comp_data = load_compartment_data(compartment)
+        clinical = load_clinical_data()
+        tpm = load_tpm_data()
+    
+    # Step 2: Cell Type
+    st.sidebar.markdown("### Step 2: Select Cell Type")
+    available_cells = get_available_cells(compartment)
+    
+    if not available_cells:
+        st.error("❌ No cell types found")
+        return
+    
+    cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
+    selected_cell_display = st.sidebar.selectbox(
+        f"Choose cell type ({len(available_cells)} available):",
+        options=list(cell_display.keys()),
+        index=0
+    )
+    selected_cell = cell_display[selected_cell_display]
+    
+    # Step 3: Signature
+    st.sidebar.markdown("### Step 3: Select Signature")
+    signatures = get_cell_signatures(selected_cell)
+    
+    if not signatures:
+        st.warning(f"⚠️ No signatures found for {selected_cell}")
+        return
+    
+    sig_options = {f"{s['signature']} ({len(s['genes'])} genes)": s for s in signatures}
+    selected_sig_display = st.sidebar.selectbox(
+        f"Choose signature ({len(signatures)} available):",
+        options=list(sig_options.keys()),
+        index=0
+    )
+    selected_sig_info = sig_options[selected_sig_display]
+    sig_name = selected_sig_info['signature']
+    genes = selected_sig_info['genes']
+    
+    # Generate button
+    st.sidebar.markdown("---")
+    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
+    
+    # Current selection
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Current Selection")
+    st.sidebar.info(f"""
+    **Compartment:** {compartment}  
+    **Cell Type:** {selected_cell_display}  
+    **Signature:** {sig_name}  
+    **Genes:** {len(genes)}
+    """)
+    
+    # Main content
+    if generate:
+        st.markdown(f'<div class="sub-header">📈 Interactive Analysis Results</div>', 
+                   unsafe_allow_html=True)
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Compartment", compartment)
+        with col2:
+            st.metric("Cell Type", selected_cell_display)
+        with col3:
+            st.metric("Signature", sig_name.replace('_', ' '))
+        with col4:
+            st.metric("Genes", len(genes))
+        
+        # Tabs
+        tabs = st.tabs([
+            "🎯 STABL & Bayesian",
+            "🌊 Ridge Plot",
+            "🧬 Gene BMI",
+            "💊 Gene Survival"
+        ])
+        
+        # Tab 1: STABL & Bayesian
+        with tabs[0]:
+            st.markdown("### 📊 STABL Z-scores (Interactive Heatmap)")
+            st.info("💡 Hover over cells for exact values • ⭐ marks STABL-selected features")
+            with st.spinner("Generating interactive STABL heatmap..."):
+                fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("### 📊 Bayesian Effect Sizes (Interactive Heatmap)")
+            st.info("💡 Hover for exact effect sizes • Click legend to toggle comparisons")
+            with st.spinner("Generating interactive Bayesian heatmap..."):
+                fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        # Tab 2: Ridge Plot
+        with tabs[1]:
+            st.markdown("### 🌊 Overlapped Posterior Distributions")
+            st.info("💡 Interactive ridge plot • Hover for comparison details • Scroll to zoom")
+            with st.spinner("Generating interactive ridge plot..."):
+                fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        # Tab 3: Gene BMI
+        with tabs[2]:
+            st.markdown("### 📈 Gene-Level BMI Associations")
+            st.info("💡 Hover for statistics • Click-drag to zoom • Double-click to reset")
+            with st.spinner("Running BMI regression analysis..."):
+                fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
+                if fig1:
+                    st.plotly_chart(fig1, use_container_width=True)
+                if fig2:
+                    st.plotly_chart(fig2, use_container_width=True)
+        
+        # Tab 4: Gene Survival
+        with tabs[3]:
+            st.markdown("### 💊 Gene-Level Survival Analysis")
+            st.info("💡 Forest plot with confidence intervals • Hover for full statistics")
+            with st.spinner("Running survival analysis..."):
+                fig = plot_gene_survival_interactive(genes, clinical, tpm)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style='text-align: center; color: #666; padding: 2rem;'>
+    <b>Interactive Cell Analysis Viewer</b><br>
+    Real-time interactive visualizations with Plotly<br>
+    <i>Zoom • Pan • Hover • Explore</i>
+    </div>
+    """, unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
