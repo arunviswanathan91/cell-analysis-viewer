@@ -37,7 +37,7 @@ except ImportError:
 
 st.set_page_config(
     page_title="Obesity-Driven Pancreatic Cancer Analysis",
-    page_icon="\U0001F52C",  # microscope
+    page_icon="ðŸ”¬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -307,11 +307,11 @@ def get_available_cells(compartment):
         
         if len(cells) == 0:
             # Debug: show what columns are available
-            st.sidebar.warning(f"âš ï¸ No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+            pass  # UI removed
         
         return cells
     else:
-        st.sidebar.error(f"âŒ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        pass  # UI removed
     return []
 
 def get_cell_signatures(cell_type):
@@ -1425,14 +1425,14 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
 # ==================================================================================
 
 def main():
-    # Initialize session state for dropdown persistence
+    # Session state
     if "compartment" not in st.session_state:
         st.session_state.compartment = "Immune Fine"
-    if "selected_cell" not in st.session_state:
-        st.session_state.selected_cell = None
-    if "prev_compartment" not in st.session_state:
-        st.session_state.prev_compartment = None
-    
+    if "cell" not in st.session_state:
+        st.session_state.cell = None
+    if "signature" not in st.session_state:
+        st.session_state.signature = None
+
     # Main Header
     st.markdown('<div class="main-header">ðŸ”¬ Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
                 unsafe_allow_html=True)
@@ -1448,7 +1448,7 @@ def main():
     # Methodology Section (Collapsible)
     with st.expander("ðŸ“– **About the Analysis Methods**", expanded=False):
         st.markdown("""
-        ### 🧬 Data & Methods Overview
+        ### ðŸ§¬ Data & Methods Overview
         
         This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
@@ -1496,7 +1496,7 @@ def main():
         
         ---
         
-        #### 🎯 **Analysis Workflow**
+        #### ðŸŽ¯ **Analysis Workflow**
         1. **Deconvolution:** BayesPrism â†’ Cell type proportions
         2. **Expression:** TPM values â†’ Gene expression matrix
         3. **Signatures:** Aggregate genes â†’ Signature scores (Z-scores)
@@ -1511,19 +1511,11 @@ def main():
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
-    
-    compartment_options = ["Immune Fine", "Immune Coarse", "Non-Immune"]
-    compartment_idx = compartment_options.index(st.session_state.compartment) if st.session_state.compartment in compartment_options else 0
-    
     compartment = st.sidebar.selectbox(
         "Choose compartment:",
-        options=compartment_options,
-        index=compartment_idx,
-        key="main_compartment_selector"
+        options=['Immune Fine', 'Immune Coarse', 'Non-Immune'],
+        index=["Immune Fine", "Immune Coarse", "Non-Immune"].index(st.session_state.compartment), key="compartment"
     )
-    
-    # Update session state
-    st.session_state.compartment = compartment
     
     # Load data
     with st.spinner(f"Loading {compartment} data..."):
@@ -1535,36 +1527,23 @@ def main():
     st.sidebar.markdown("### Step 2: Select Cell Type")
     available_cells = get_available_cells(compartment)
     
+    # Auto-reset cell if not in available cells
+    if st.session_state.cell not in available_cells:
+        st.session_state.cell = available_cells[0] if available_cells else None
+    
+    
     if not available_cells:
-        st.error("No cell types found")
-        st.stop()
+        st.error("âŒ No cell types found")
+        return
     
-    # Reset cell type if compartment changed
-    if st.session_state.prev_compartment != compartment:
-        st.session_state.selected_cell = None
-        st.session_state.prev_compartment = compartment
-    
-    cell_display = {cell.replace("_", " ").title(): cell for cell in available_cells}
-    
-    # Find default index
-    cell_idx = 0
-    if st.session_state.selected_cell and st.session_state.selected_cell in available_cells:
-        try:
-            cell_idx = list(cell_display.values()).index(st.session_state.selected_cell)
-        except ValueError:
-            cell_idx = 0
-    
+    cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
     selected_cell_display = st.sidebar.selectbox(
         f"Choose cell type ({len(available_cells)} available):",
         options=list(cell_display.keys()),
-        index=cell_idx,
-        key="main_cell_selector"
+        index=list(cell_display.values()).index(st.session_state.cell) if st.session_state.cell in available_cells else 0,
+        key="cell"
     )
     selected_cell = cell_display[selected_cell_display]
-    
-    # Update session state
-    st.session_state.selected_cell = selected_cell
-    
     
     # Step 3: Signature
     st.sidebar.markdown("### Step 3: Select Signature")
@@ -1581,10 +1560,18 @@ def main():
         display_text = f"{formatted_name} ({len(s['genes'])} genes)"
         sig_options[display_text] = s
     
+    
+    # Signature state management
+    sig_keys = list(sig_options.keys())
+    if st.session_state.signature not in sig_keys:
+        st.session_state.signature = sig_keys[0] if sig_keys else None
+    sig_index = sig_keys.index(st.session_state.signature) if st.session_state.signature in sig_keys else 0
+    
     selected_sig_display = st.sidebar.selectbox(
         f"Choose signature ({len(signatures)} available):",
         options=list(sig_options.keys()),
-        index=0,
+        index=sig_index,
+        key="signature",
         help="Signature names are truncated for readability. Full name shown in results."
     )
     selected_sig_info = sig_options[selected_sig_display]
@@ -1593,7 +1580,7 @@ def main():
     
     # Generate button
     st.sidebar.markdown("---")
-    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
+    generate = st.sidebar.button("ðŸš€ Generate Analysis", type="primary")
     
     # Current selection with full signature name
     st.sidebar.markdown("---")
