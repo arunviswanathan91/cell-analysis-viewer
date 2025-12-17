@@ -378,20 +378,20 @@ def plot_signature_count_dashboard():
     """Create stacked bar graphs showing signature counts per cell type per compartment"""
     organized = organize_signatures_by_compartment()
     
-    # Create figure with 3 subplots (one per compartment)
+    # Create figure with 3 subplots (one per compartment) - horizontal layout
     fig = make_subplots(
-        rows=3, cols=1,
-        subplot_titles=['Immune Fine - Signature Counts per Cell Type',
-                       'Immune Coarse - Signature Counts per Cell Type',
-                       'Non-Immune - Signature Counts per Cell Type'],
-        vertical_spacing=0.12
+        rows=1, cols=3,
+        subplot_titles=['Immune Fine',
+                       'Immune Coarse',
+                       'Non-Immune'],
+        horizontal_spacing=0.08
     )
     
     compartments = ['Immune Fine', 'Immune Coarse', 'Non-Immune']
     colors = px.colors.qualitative.Set3
     
     for idx, comp in enumerate(compartments):
-        row = idx + 1
+        col = idx + 1  # Changed from row to col
         comp_data = organized[comp]
         
         if not comp_data:
@@ -405,7 +405,7 @@ def plot_signature_count_dashboard():
                     showlegend=False,
                     hovertemplate='No data available<extra></extra>'
                 ),
-                row=row, col=1
+                row=1, col=col
             )
             continue
         
@@ -429,18 +429,18 @@ def plot_signature_count_dashboard():
                 showlegend=False,
                 hovertemplate='<b>%{x}</b><br>Signatures: %{y}<extra></extra>'
             ),
-            row=row, col=1
+            row=1, col=col
         )
         
-        fig.update_xaxes(title_text='Cell Types', row=row, col=1, tickangle=-45)
-        fig.update_yaxes(title_text='Number of Signatures', row=row, col=1)
+        fig.update_xaxes(title_text='Cell Types', row=1, col=col, tickangle=-45)
+        fig.update_yaxes(title_text='Number of Signatures', row=1, col=col)
     
     fig.update_layout(
         title=dict(
-            text='Signature Database Overview - Counts per Cell Type by Compartment',
-            font=dict(size=18, color='#2c3e50')
+            text='Signature Database Overview - Signature Counts Across Compartments',
+            font=dict(size=16, color='#2c3e50')
         ),
-        height=1200,
+        height=500,
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
         showlegend=False
@@ -1838,7 +1838,7 @@ def main():
                 explorer_comp = st.selectbox(
                     "Select Compartment:",
                     options=['Immune Fine', 'Immune Coarse', 'Non-Immune'],
-                    key='explorer_comp'
+                    key='explorer_comp_db'
                 )
             
             # Get cell types for selected compartment
@@ -1850,11 +1850,11 @@ def main():
                     selected_explorer_cell_display = st.selectbox(
                         "Select Cell Type:",
                         options=list(explorer_cell_display.keys()),
-                        key='explorer_cell'
+                        key='explorer_cell_db'
                     )
-                    selected_explorer_cell = explorer_cell_display[selected_explorer_cell_display]
+                    selected_explorer_cell = explorer_cell_display.get(selected_explorer_cell_display, None)
                 else:
-                    st.warning("No cell types available for this compartment")
+                    st.warning("⚠️ No cell types available for this compartment")
                     selected_explorer_cell = None
             
             # Display signatures for selected cell type
