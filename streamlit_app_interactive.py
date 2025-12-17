@@ -1354,7 +1354,7 @@ def main():
         ---
         
         #### 🎯 **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism → Cell type proportions
+        1. **Deconvolution:** BayesPrism → Cell type proportions/Cell-specific expression matrix
         2. **Expression:** TPM values → Gene expression matrix
         3. **Signatures:** Aggregate genes → Signature scores (Z-scores)
         4. **Selection:** STABL → Robust BMI-associated features
