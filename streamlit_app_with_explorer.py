@@ -1740,39 +1740,39 @@ def main():
     # Methodology Section (Collapsible)
     with st.expander("ðŸ“– **About the Analysis Methods**", expanded=False):
         st.markdown("""
-        ### ðŸ§¬ Data & Methods Overview
+        ### Data & Methods Overview
         
         This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
         ---
         
-        #### ðŸ”¹ **BayesPrism** - Cell Type Deconvolution
+        #### **BayesPrism** - Cell Type Deconvolution
         A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
         
-        ðŸ“š **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
+         **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
         
         ---
         
-        #### ðŸ”¹ **STABL** - Feature Selection
+        ####**STABL** - Feature Selection
         Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
-        ðŸ“š **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+        **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
-        #### ðŸ”¹ **Bayesian Hierarchical Model** - Effect Size Estimation
+        #### **Bayesian Hierarchical Model** - Effect Size Estimation
         A three-group hierarchical model comparing:
         - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
-        ðŸ“š **References:**
+         **References:**
         - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
         - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
         
         ---
         
-        #### ðŸ”¹ **Diagnostic Metrics**
+        #### **Diagnostic Metrics**
         - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
         - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
         - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
@@ -1780,7 +1780,7 @@ def main():
         
         ---
         
-        #### ðŸ“Š **Dataset**
+        #### **Dataset**
         - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
         - **Samples:** 140 tumor samples with clinical annotations
         - **Cell Types:** Deconvolved into immune and non-immune cell populations
@@ -1788,7 +1788,7 @@ def main():
         
         ---
         
-        #### ðŸŽ¯ **Analysis Workflow**
+        #### **Analysis Workflow**
         1. **Deconvolution:** BayesPrism â†’ Cell type proportions/Cell-specific expression matrix
         2. **Expression:** TPM values â†’ Gene expression matrix
         3. **Signatures:** Aggregate genes â†’ Signature scores (Z-scores)
@@ -1799,7 +1799,7 @@ def main():
         """)
     
     # Sidebar
-    st.sidebar.title("ðŸ“Š Data Selection")
+    st.sidebar.title( "Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -1820,7 +1820,7 @@ def main():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.error("âŒ No cell types found")
+        st.error("No cell types found")
         return
     
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -1876,7 +1876,7 @@ def main():
     
     # Main content
     if generate:
-        st.markdown(f'<div class="sub-header">ðŸ“ˆ Interactive Analysis Results</div>', 
+        st.markdown(f'<div class="sub-header"> Interactive Analysis Results</div>', 
                    unsafe_allow_html=True)
         
         col1, col2, col3, col4 = st.columns(4)
@@ -1891,20 +1891,20 @@ def main():
         
         # Tabs
         tabs = st.tabs([
-            "ðŸŽ¯ STABL & Bayesian",
-            "ðŸŒŠ Ridge Plot",
-            "ðŸ” Diagnostics",
-            "ðŸ§¬ Gene BMI",
-            "ðŸ’Š Gene Survival"
+            "STABL & Bayesian",
+            "Ridge Plot",
+            "Diaagnostics",
+            "Gene BMI",
+            "Gene Survival"
         ])
         
-        # Tab 1: STABL & Bayesian
+        # Tab 1: Stabl & Bayesian
         with tabs[0]:
-            st.markdown("### ðŸ“Š STABL Feature Selection")
+            st.markdown("### Stabl Feature Selection")
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ”¬ What is STABL?</b><br>
+            <b>What is Stabl?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
