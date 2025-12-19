@@ -1611,65 +1611,116 @@ def main():
     # Continue with Statistical Analysis mode (toggle ON)
     
     # Methodology Section (Collapsible)
-    with st.expander("ðŸ“- **About the Analysis Methods**", expanded=False):
+    with st.expander("📖 About the Analysis Methods", expanded=False):
         st.markdown("""
-        ###  Data & Methods Overview
+        ### 🔬 Data & Methods Overview
         
-        This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
-        
-        ---
-        
-        ####  **BayesPrism** - Cell Type Deconvolution
-        A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
-        
-         **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
+        This analysis integrates deconvolution, signature-based profiling, sparse machine learning, 
+        and Bayesian hierarchical modeling to quantify how obesity reshapes the tumor microenvironment 
+        in pancreatic ductal adenocarcinoma (PDAC).
         
         ---
         
-        ####  **STABL** - Feature Selection
-        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
+        #### 🧬 **BayesPrism** — Cell-Type Deconvolution
+        A fully Bayesian framework that deconvolves bulk RNA-seq data using single-cell references to infer:
+        - Cell-type proportions per tumor sample  
+        - Cell-type–specific gene expression profiles  
         
-         **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+        BayesPrism models technical noise and biological variability, enabling robust recovery of immune 
+        and stromal programs from bulk CPTAC transcriptomes.
         
-        ---
-        
-        ####  **Bayesian Hierarchical Model** - Effect Size Estimation
-        A three-group hierarchical model comparing:
-        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
-        
-        The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
-        
-         **References:**
-        - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
-        - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
+        **Reference:** Danko Lab, BayesPrism  
+        https://github.com/Danko-Lab/BayesPrism
         
         ---
         
-        ####  **Diagnostic Metrics**
-        - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
-        - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
-        - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
-        - **Credible Intervals:** Bayesian equivalent of confidence intervals (95% HDI)
+        #### 🧠 **Signature Scoring** — Functional Program Quantification
+        Curated gene sets representing metabolic, immune, and stress-response programs are aggregated into 
+        per-sample, per-cell-type signature scores.
+        
+        - Input: TPM-normalized expression from BayesPrism cell-specific profiles  
+        - Method: Mean expression per gene set, followed by global Z-score standardization  
+        - Output: Comparable functional activity scores across BMI groups and cell types  
+        
+        This enables pathway-level interpretation beyond single-gene effects.
         
         ---
         
-        ####  **Dataset**
-        - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
-        - **Samples:** 140 tumor samples with clinical annotations
-        - **Cell Types:** Deconvolved into immune and non-immune cell populations
-        - **Signatures:** 30+ metabolic and functional gene signatures per cell type
+        #### 🎯 **STABL** — Sparse and Reliable Feature Selection
+        STABL (Stability-Driven Adaptive Lasso) is a general machine learning framework designed to identify 
+        a **small, reliable set of biomarkers** from high-dimensional data.
+        
+        Key characteristics:
+        - Integrates **noise injection** to probe feature robustness  
+        - Uses a **data-driven signal-to-noise threshold** to control false discoveries  
+        - Performs **multivariable sparse modeling**, selecting features that remain stable across perturbations  
+        - Produces a compact, interpretable biomarker set while maintaining predictive performance  
+        
+        In this study, STABL is applied to Z-scored signature matrices to identify the most stable 
+        BMI-associated functional programs across immune and non-immune compartments.
+        
+        **Reference:** Bellan et al., STABL  
+        https://github.com/gregbellan/Stabl
         
         ---
         
-        ####  **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism -> Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values -> Gene expression matrix
-        3. **Signatures:** Aggregate genes -> Signature scores (Z-scores)
-        4. **Selection:** STABL -> Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical -> Effect sizes with uncertainty
-        6. **Validation:** MCMC diagnostics -> Convergence checks
-        7. **Survival:** Cox regression -> Clinical relevance
+        #### 📊 **Bayesian Hierarchical Modeling** — Effect Size Estimation
+        To quantify BMI-associated changes while accounting for biological variability, we fit a 
+        three-group Bayesian hierarchical model comparing:
+        
+        - **Normal BMI** (< 25)  
+        - **Overweight** (25–30)  
+        - **Obese** (> 30)  
+        
+        The model:
+        - Estimates group-wise effect sizes for each selected signature  
+        - Shares information across cell types and signatures (partial pooling)  
+        - Uses **Markov Chain Monte Carlo (MCMC)** to sample posterior distributions  
+        - Provides full uncertainty quantification (credible intervals, posterior probabilities)  
+        
+        This yields interpretable, probabilistic estimates of obesity-driven transcriptional shifts.
+        
+        **References:**  
+        Bayesian hierarchical models — https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling  
+        MCMC — https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
+        
+        ---
+        
+        #### 🩺 **Model Diagnostics**
+        Posterior sampling quality is assessed using:
+        
+        - **R-hat:** Convergence metric (target < 1.01)  
+        - **ESS:** Effective sample size (target > 400)  
+        - **Energy / BFMI:** Hamiltonian Monte Carlo efficiency  
+        - **Trace & rank plots:** Visual convergence checks  
+        - **95% HDI:** Highest density credible intervals for effect sizes  
+        
+        Only well-converged models are retained for interpretation.
+        
+        ---
+        
+        #### 🗂️ **Dataset**
+        - **Cohort:** CPTAC Pancreatic Adenocarcinoma (PAAD)  
+        - **Samples:** ~140 primary tumors with clinical annotations  
+        - **Data:** Bulk RNA-seq, deconvolved into immune and non-immune cell types  
+        - **Signatures:** 30+ curated metabolic and functional programs per cell type  
+        
+        ---
+        
+        #### 🔄 **Analysis Workflow**
+        1. **Bulk RNA-seq** → CPTAC PAAD transcriptomes  
+        2. **Deconvolution** → BayesPrism cell fractions & cell-specific expression  
+        3. **Normalization** → TPM → global Z-scoring  
+        4. **Signature Scoring** → Pathway activity matrices  
+        5. **Feature Selection** → STABL identifies stable BMI-associated signatures  
+        6. **Modeling** → Bayesian hierarchical estimation of group effects  
+        7. **Diagnostics** → MCMC convergence & quality control  
+        8. **Clinical Link** → Survival analysis (Cox regression)  
+        
+        Together, this framework enables robust, interpretable dissection of how obesity reshapes 
+        metabolic and immune programs in the PDAC tumor microenvironment.
         """)
+
     
     # Sidebar
     st.sidebar.title(" Data Selection")
