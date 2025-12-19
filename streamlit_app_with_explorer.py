@@ -1613,39 +1613,39 @@ def main():
     # Methodology Section (Collapsible)
     with st.expander("ðŸ“- **About the Analysis Methods**", expanded=False):
         st.markdown("""
-        ### ðŸ§¬ Data & Methods Overview
+        ###  Data & Methods Overview
         
         This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
         ---
         
-        #### ðŸ”¹ **BayesPrism** - Cell Type Deconvolution
+        ####  **BayesPrism** - Cell Type Deconvolution
         A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
         
-        ðŸ“š **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
+         **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
         
         ---
         
-        #### ðŸ”¹ **STABL** - Feature Selection
+        ####  **STABL** - Feature Selection
         Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
-        ðŸ“š **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+         **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
-        #### ðŸ”¹ **Bayesian Hierarchical Model** - Effect Size Estimation
+        ####  **Bayesian Hierarchical Model** - Effect Size Estimation
         A three-group hierarchical model comparing:
         - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
-        ðŸ“š **References:**
+         **References:**
         - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
         - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
         
         ---
         
-        #### ðŸ”¹ **Diagnostic Metrics**
+        ####  **Diagnostic Metrics**
         - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
         - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
         - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
@@ -1653,7 +1653,7 @@ def main():
         
         ---
         
-        #### ðŸ“Š **Dataset**
+        ####  **Dataset**
         - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
         - **Samples:** 140 tumor samples with clinical annotations
         - **Cell Types:** Deconvolved into immune and non-immune cell populations
@@ -1661,18 +1661,18 @@ def main():
         
         ---
         
-        #### ðŸŽ¯ **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism â’ Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values â’ Gene expression matrix
-        3. **Signatures:** Aggregate genes â’ Signature scores (Z-scores)
-        4. **Selection:** STABL â’ Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical â’ Effect sizes with uncertainty
-        6. **Validation:** MCMC diagnostics â’ Convergence checks
-        7. **Survival:** Cox regression â’ Clinical relevance
+        ####  **Analysis Workflow**
+        1. **Deconvolution:** BayesPrism -> Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values -> Gene expression matrix
+        3. **Signatures:** Aggregate genes -> Signature scores (Z-scores)
+        4. **Selection:** STABL -> Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical -> Effect sizes with uncertainty
+        6. **Validation:** MCMC diagnostics -> Convergence checks
+        7. **Survival:** Cox regression -> Clinical relevance
         """)
     
     # Sidebar
-    st.sidebar.title("ðŸ“Š Data Selection")
+    st.sidebar.title(" Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -1749,7 +1749,7 @@ def main():
     
     # Main content
     if generate:
-        st.markdown(f'<div class="sub-header">ðŸ“ˆ Interactive Analysis Results</div>', 
+        st.markdown(f'<div class="sub-header">Interactive Analysis Results</div>', 
                    unsafe_allow_html=True)
         
         col1, col2, col3, col4 = st.columns(4)
@@ -1764,31 +1764,31 @@ def main():
         
         # Tabs
         tabs = st.tabs([
-            "ðŸŽ¯ STABL & Bayesian",
+            " STABL & Bayesian",
             "ðŸŒŠ Ridge Plot",
             "ðŸ” Diagnostics",
-            "ðŸ§¬ Gene BMI",
-            "ðŸ’Š Gene Survival"
+            " Gene BMI",
+            "Gene Survival"
         ])
         
         # Tab 1: STABL & Bayesian
         with tabs[0]:
-            st.markdown("### ðŸ“Š STABL Feature Selection")
+            st.markdown("###  STABL Feature Selection")
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ”¬ What is STABL?</b><br>
+            <b> What is STABL?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
             <li>Counting how often each feature is selected</li>
             <li>Keeping only features selected consistently (stable features)</li>
             </ol>
-            <b>â­ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            <b>­ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ðŸ“ˆ Z-score Heatmap")
+            st.markdown("#### Z-score Heatmap")
             st.caption("Z-scores represent standardized signature expression across BMI categories")
             with st.spinner("Generating interactive STABL heatmap..."):
                 fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
@@ -1797,11 +1797,11 @@ def main():
             
             st.markdown("---")
             
-            st.markdown("### ðŸ“Š Bayesian Effect Size Estimation")
+            st.markdown("###  Bayesian Effect Size Estimation")
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ§® Bayesian Hierarchical Model</b><br>
+            <b> Bayesian Hierarchical Model</b><br>
             Estimates how much each cell type's signature changes with increasing BMI:
             <ul>
             <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -1813,8 +1813,8 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ðŸ“Š Effect Sizes with Credible Intervals")
-            st.caption("Hover for exact effect sizes â€¢ Click legend to toggle comparisons")
+            st.markdown("####  Effect Sizes with Credible Intervals")
+            st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
@@ -1826,7 +1826,7 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ“Š Ridge Plots Explained</b><br>
+            <b> Ridge Plots Explained</b><br>
             Each "ridge" shows the full distribution of MCMC samples for one cell type:
             <ul>
             <li><b>Width:</b> Uncertainty in effect size estimate</li>
@@ -1839,7 +1839,7 @@ def main():
             """, unsafe_allow_html=True)
             
             st.markdown("#### ðŸŒŠ Overlapped Posterior Distributions")
-            st.caption("Interactive ridge plot â€¢ Hover for details â€¢ Scroll to zoom â€¢ Double-click to reset")
+            st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
@@ -1875,7 +1875,7 @@ def main():
             """, unsafe_allow_html=True)
             
             # ESS and R-hat
-            st.markdown("#### ðŸ“Š ESS & R-hat Statistics")
+            st.markdown("####  ESS & R-hat Statistics")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -1921,7 +1921,7 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### ðŸ“ˆ Trace Plots (First 6 Cell Types)")
+            st.markdown("#### Trace Plots (First 6 Cell Types)")
             st.markdown("""
             **What to Look For:**
             - **"Hairy caterpillar":** Good mixing (chains bouncing around randomly)
@@ -1937,7 +1937,7 @@ def main():
             st.markdown("---")
             
             # Rank plots
-            st.markdown("#### ðŸ“Š Rank Plots (First 6 Cell Types)")
+            st.markdown("####  Rank Plots (First 6 Cell Types)")
             st.markdown("**Rank histograms:** All chains should have uniform distributions (good mixing)")
             with st.spinner("Generating rank plots..."):
                 fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
@@ -1956,8 +1956,8 @@ def main():
         
         # Tab 4: Gene BMI
         with tabs[3]:
-            st.markdown("### ðŸ“ˆ Gene-Level BMI Associations")
-            st.info("ðŸ’¡ Hover for statistics â€¢ Click-drag to zoom â€¢ Double-click to reset")
+            st.markdown("### Gene-Level BMI Associations")
+            st.info("Hover for statistics | Click-drag to zoom | Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
@@ -1967,8 +1967,8 @@ def main():
         
         # Tab 5: Gene Survival
         with tabs[4]:
-            st.markdown("### ðŸ’Š Gene-Level Survival Analysis")
-            st.info("ðŸ’¡ Forest plot with confidence intervals â€¢ Hover for full statistics")
+            st.markdown("### Gene-Level Survival Analysis")
+            st.info("Forest plot with confidence intervals | Hover for full statistics")
             with st.spinner("Running survival analysis..."):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
@@ -1980,7 +1980,7 @@ def main():
     <div style='text-align: center; color: #666; padding: 2rem;'>
     <b>Interactive Cell Analysis Viewer</b><br>
     Real-time interactive visualizations with Plotly<br>
-    <i>Zoom â€¢ Pan â€¢ Hover â€¢ Explore</i>
+    <i>Zoom | Pan | Hover | Explore</i>
     </div>
     """, unsafe_allow_html=True)
 
