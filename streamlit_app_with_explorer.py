@@ -1613,19 +1613,28 @@ def main():
     # Methodology Section (Collapsible)
     with st.expander(" **About the Analysis Methods**", expanded=False):
         st.markdown("""
+<<<<<<< HEAD
         ###  Data & Methods Overview
+=======
+        ### Data & Methods Overview
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         
         This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
         ---
         
+<<<<<<< HEAD
         ####  **BayesPrism** - Cell Type Deconvolution
+=======
+        #### **BayesPrism** - Cell Type Deconvolution
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
         
          **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
         
         ---
         
+<<<<<<< HEAD
         ####  **STABL** - Feature Selection
         Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
@@ -1634,6 +1643,16 @@ def main():
         ---
         
         ####  **Bayesian Hierarchical Model** - Effect Size Estimation
+=======
+        ####**STABL** - Feature Selection
+        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
+        
+        **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+        
+        ---
+        
+        #### **Bayesian Hierarchical Model** - Effect Size Estimation
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         A three-group hierarchical model comparing:
         - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** ( 30)
         
@@ -1645,7 +1664,11 @@ def main():
         
         ---
         
+<<<<<<< HEAD
         ####  **Diagnostic Metrics**
+=======
+        #### **Diagnostic Metrics**
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
         - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
         - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
@@ -1653,7 +1676,11 @@ def main():
         
         ---
         
+<<<<<<< HEAD
         ####  **Dataset**
+=======
+        #### **Dataset**
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
         - **Samples:** 140 tumor samples with clinical annotations
         - **Cell Types:** Deconvolved into immune and non-immune cell populations
@@ -1661,6 +1688,7 @@ def main():
         
         ---
         
+<<<<<<< HEAD
         ####  **Analysis Workflow**
         1. **Deconvolution:** BayesPrism  Cell type proportions/Cell-specific expression matrix
         2. **Expression:** TPM values  Gene expression matrix
@@ -1673,6 +1701,20 @@ def main():
     
     # Sidebar
     st.sidebar.title(" Data Selection")
+=======
+        #### **Analysis Workflow**
+        1. **Deconvolution:** BayesPrism â†’ Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values â†’ Gene expression matrix
+        3. **Signatures:** Aggregate genes â†’ Signature scores (Z-scores)
+        4. **Selection:** STABL â†’ Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical â†’ Effect sizes with uncertainty
+        6. **Validation:** MCMC diagnostics â†’ Convergence checks
+        7. **Survival:** Cox regression â†’ Clinical relevance
+        """)
+    
+    # Sidebar
+    st.sidebar.title( "Data Selection")
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -1693,7 +1735,11 @@ def main():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
+<<<<<<< HEAD
         st.error(" No cell types found")
+=======
+        st.error("No cell types found")
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         return
     
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -1764,20 +1810,36 @@ def main():
         
         # Tabs
         tabs = st.tabs([
+<<<<<<< HEAD
             " STABL & Bayesian",
             " Ridge Plot",
             " Diagnostics",
             " Gene BMI",
             " Gene Survival"
+=======
+            "STABL & Bayesian",
+            "Ridge Plot",
+            "Diaagnostics",
+            "Gene BMI",
+            "Gene Survival"
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
         ])
         
-        # Tab 1: STABL & Bayesian
+        # Tab 1: Stabl & Bayesian
         with tabs[0]:
+<<<<<<< HEAD
             st.markdown("###  STABL Feature Selection")
             
             st.markdown("""
             <div class="method-box">
             <b> What is STABL?</b><br>
+=======
+            st.markdown("### Stabl Feature Selection")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>What is Stabl?</b><br>
+>>>>>>> aee65ac003d81ad99ccdb5c8f140fc19cb4d7583
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
