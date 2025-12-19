@@ -41,65 +41,192 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS with Modern Aesthetic Design
 st.markdown("""
 <style>
+    /* ==================== GLOBAL STYLES ==================== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    .main {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+    }
+    
+    /* ==================== HEADERS ==================== */
     .main-header {
         font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-align: center;
-        padding: 1rem 0;
+        padding: 1.5rem 0;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
     }
+    
     .sub-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-top: 2.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 3px solid #e2e8f0;
+        position: relative;
     }
+    
+    .sub-header::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        width: 80px;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* ==================== CARDS & BOXES ==================== */
     .info-box {
-        background-color: #e8f4f8;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 5px solid #1f77b4;
-        margin: 1rem 0;
-    }
-    .method-box {
-        background-color: #f0f8ff;
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        backdrop-filter: blur(10px);
         padding: 1.5rem;
-        border-radius: 0.8rem;
-        border-left: 6px solid #4CAF50;
+        border-radius: 12px;
+        border: 1px solid rgba(102, 126, 234, 0.2);
         margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
+    
+    .info-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .info-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .method-box {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        margin: 2rem 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .method-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #48bb78 0%, #38a169 100%);
+        border-radius: 12px 0 0 12px;
+    }
+    
+    .method-box:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-color: #cbd5e0;
+    }
+    
     .warning-box {
-        background-color: #fff3cd;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 5px solid #ffc107;
-        margin: 1rem 0;
+        background: linear-gradient(135deg, #fef5e7 0%, #fef0d9 100%);
+        padding: 1.25rem;
+        border-radius: 10px;
+        border: 1px solid #f6e05e;
+        margin: 1.5rem 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
     }
+    
+    /* ==================== BUTTONS ==================== */
     .stButton>button {
         width: 100%;
-        background-color: #1f77b4;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        font-weight: bold;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
     }
-    /* Better signature name display */
-    .stSelectbox label {
-        font-weight: 600 !important;
-        color: #2c3e50 !important;
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.35);
     }
-    /* Better metric display */
+    
+    /* ==================== TABS ==================== */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.5rem;
+        background: #f7fafc;
+        padding: 0.5rem;
+        border-radius: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+    }
+    
+    /* ==================== METRICS ==================== */
     .stMetric {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        background: white;
+        padding: 1.25rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
     }
-    /* Improve text contrast */
-    .stMarkdown p, .stMarkdown li {
-        color: #2c3e50 !important;
+    
+    .stMetric:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    }
+    
+    /* ==================== MODE INDICATOR ==================== */
+    .mode-indicator {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin: 0.5rem 0;
+    }
+    
+    .mode-explorer {
+        background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+        color: #2c5282;
+        border: 1px solid #4299e1;
+    }
+    
+    .mode-analysis {
+        background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+        color: #22543d;
+        border: 1px solid #48bb78;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1293,11 +1420,11 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
 
 def render_signature_explorer():
     """Render the signature database explorer interface"""
-    st.markdown('<div class="sub-header">🔍 Signature Database Explorer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header"> Signature Database Explorer</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>📚 Browse the Complete Signature Database</b><br>
+    <b> Browse the Complete Signature Database</b><br>
     Explore all metabolic and functional signatures across different cell types and compartments.
     Select a compartment and cell type to view available signatures and their gene lists.
     </div>
@@ -1307,11 +1434,11 @@ def render_signature_explorer():
     signatures = load_signatures()
     
     if not signatures:
-        st.error("❌ Failed to load signature database")
+        st.error(" Failed to load signature database")
         return
     
     # Create sidebar for selection
-    st.sidebar.markdown("### 🔍 Signature Selection")
+    st.sidebar.markdown("###  Signature Selection")
     st.sidebar.markdown("Select compartment and cell type to explore signatures:")
     st.sidebar.markdown("")
     
@@ -1327,7 +1454,7 @@ def render_signature_explorer():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.warning(f"⚠️ No cell types found for {compartment}")
+        st.warning(f"️ No cell types found for {compartment}")
         st.info("This may indicate missing z-score data files. The signature database may still contain entries for this compartment.")
         
         # Show all unique cell types from signature database
@@ -1355,24 +1482,24 @@ def render_signature_explorer():
     st.markdown("---")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("📦 Compartment", compartment)
+        st.metric(" Compartment", compartment)
     with col2:
-        st.metric("🔬 Cell Type", selected_cell_display)
+        st.metric(" Cell Type", selected_cell_display)
     with col3:
-        st.metric("📊 Signatures Found", len(cell_signatures))
+        st.metric(" Signatures Found", len(cell_signatures))
     
     st.markdown("---")
     
     if not cell_signatures:
-        st.warning(f"⚠️ No signatures found for {selected_cell}")
+        st.warning(f"️ No signatures found for {selected_cell}")
         st.info("This cell type exists in the z-score data but may not have associated signatures in the database.")
         return
     
     # Display signatures in an organized way
-    st.markdown(f"### 📋 Signatures for {selected_cell_display}")
+    st.markdown(f"###  Signatures for {selected_cell_display}")
     
     # Create tabs for different views
-    sig_tabs = st.tabs(["📊 Summary Table", "🔎 Detailed View", "📈 Statistics"])
+    sig_tabs = st.tabs([" Summary Table", " Detailed View", " Statistics"])
     
     # Tab 1: Summary Table
     with sig_tabs[0]:
@@ -1400,7 +1527,7 @@ def render_signature_explorer():
         # Download button
         csv = summary_df.to_csv(index=False)
         st.download_button(
-            label="📥 Download Summary as CSV",
+            label=" Download Summary as CSV",
             data=csv,
             file_name=f"{selected_cell}_signatures_summary.csv",
             mime="text/csv"
@@ -1422,7 +1549,7 @@ def render_signature_explorer():
         selected_sig = cell_signatures[selected_sig_idx]
         
         # Display detailed info
-        st.markdown(f"#### 📊 {selected_sig['signature']}")
+        st.markdown(f"####  {selected_sig['signature']}")
         
         col1, col2 = st.columns([1, 2])
         
@@ -1450,14 +1577,14 @@ def render_signature_explorer():
             # Download genes
             genes_csv = '\n'.join(selected_sig['genes'])
             st.download_button(
-                label="📥 Download Gene List",
+                label=" Download Gene List",
                 data=genes_csv,
                 file_name=f"{selected_sig['signature']}_genes.txt",
                 mime="text/plain"
             )
         
         # Show gene list as table
-        st.markdown("#### 📋 Gene List (Table View)")
+        st.markdown("####  Gene List (Table View)")
         genes_df = pd.DataFrame({'Gene Symbol': selected_sig['genes']})
         genes_df['Index'] = range(1, len(genes_df) + 1)
         genes_df = genes_df[['Index', 'Gene Symbol']]
@@ -1470,10 +1597,10 @@ def render_signature_explorer():
     
     # Tab 3: Statistics
     with sig_tabs[2]:
-        st.markdown("#### 📈 Database Statistics")
+        st.markdown("####  Database Statistics")
         
         # Overall statistics
-        st.markdown("##### 🌐 Overall Database Stats")
+        st.markdown("#####  Overall Database Stats")
         
         total_signatures = len(signatures)
         total_cell_types = len(set([s['cell_type'] for s in signatures]))
@@ -1492,7 +1619,7 @@ def render_signature_explorer():
         st.markdown("---")
         
         # Signature size distribution for current cell type
-        st.markdown(f"##### 📊 Signature Sizes for {selected_cell_display}")
+        st.markdown(f"#####  Signature Sizes for {selected_cell_display}")
         
         if cell_signatures:
             sig_sizes = [len(s['genes']) for s in cell_signatures]
@@ -1529,7 +1656,7 @@ def render_signature_explorer():
         st.markdown("---")
         
         # All cell types signature counts
-        st.markdown("##### 🔬 Signatures per Cell Type (All Compartments)")
+        st.markdown("#####  Signatures per Cell Type (All Compartments)")
         
         cell_sig_counts = {}
         for sig in signatures:
@@ -1575,7 +1702,7 @@ def render_signature_explorer():
 
 def main():
     # Sidebar Mode Selection with Toggle Button
-    st.sidebar.title("⚙️ Application Mode")
+    st.sidebar.title("️ Application Mode")
     
     analysis_mode = st.sidebar.toggle(
         "Statistical Analysis Mode",
@@ -1585,19 +1712,19 @@ def main():
     
     # Show current mode with colored indicator
     if analysis_mode:
-        st.sidebar.success("📊 **Current Mode:** Statistical Analysis")
+        st.sidebar.success(" **Current Mode:** Statistical Analysis")
     else:
-        st.sidebar.info("🔍 **Current Mode:** Signature Explorer")
+        st.sidebar.info(" **Current Mode:** Signature Explorer")
     
     st.sidebar.markdown("---")
     
     # Main Header
-    st.markdown('<div class="main-header">🔬 Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
+    st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>📊 Interactive Analysis Platform</b><br>
+    <b> Interactive Analysis Platform</b><br>
     Exploring the relationship between BMI, tumor microenvironment cell types, and metabolic signatures in pancreatic adenocarcinoma (PAAD).
     All visualizations powered by Plotly: Hover for details • Zoom with box select • Pan with click-drag • Reset with double-click
     </div>
