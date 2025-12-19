@@ -1311,8 +1311,9 @@ def render_signature_explorer():
         return
     
     # Create sidebar for selection
-    st.sidebar.title("🔍 Signature Explorer")
-    st.sidebar.markdown("### Select Compartment & Cell Type")
+    st.sidebar.markdown("### 🔍 Signature Selection")
+    st.sidebar.markdown("Select compartment and cell type to explore signatures:")
+    st.sidebar.markdown("")
     
     # Step 1: Compartment selection
     compartment = st.sidebar.selectbox(
@@ -1573,34 +1574,41 @@ def render_signature_explorer():
 # ==================================================================================
 
 def main():
-    # Main Header
-    st.markdown('<div class="main-header">ðŸ”¬ Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
-                unsafe_allow_html=True)
+    # Sidebar Mode Selection with Toggle Button
+    st.sidebar.title("⚙️ Application Mode")
     
-    # Main Navigation
-    st.markdown("---")
-    main_tab = st.radio(
-        "**Choose Analysis Mode:**",
-        options=["🔍 Signature Explorer", "📊 Statistical Analysis"],
-        horizontal=True,
-        label_visibility="visible"
+    analysis_mode = st.sidebar.toggle(
+        "Statistical Analysis Mode",
+        value=False,
+        help="Toggle ON for Statistical Analysis, OFF for Signature Explorer"
     )
-    st.markdown("---")
     
-    # Route to appropriate section
-    if main_tab == "🔍 Signature Explorer":
-        render_signature_explorer()
-        return
+    # Show current mode with colored indicator
+    if analysis_mode:
+        st.sidebar.success("📊 **Current Mode:** Statistical Analysis")
+    else:
+        st.sidebar.info("🔍 **Current Mode:** Signature Explorer")
     
-    # Continue with Statistical Analysis
+    st.sidebar.markdown("---")
+    
+    # Main Header
+    st.markdown('<div class="main-header">🔬 Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
+                unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>ðŸ“Š Interactive Analysis Platform</b><br>
+    <b>📊 Interactive Analysis Platform</b><br>
     Exploring the relationship between BMI, tumor microenvironment cell types, and metabolic signatures in pancreatic adenocarcinoma (PAAD).
-    All visualizations powered by Plotly: Hover for details â€¢ Zoom with box select â€¢ Pan with click-drag â€¢ Reset with double-click
+    All visualizations powered by Plotly: Hover for details • Zoom with box select • Pan with click-drag • Reset with double-click
     </div>
     """, unsafe_allow_html=True)
+    
+    # Route to appropriate section
+    if not analysis_mode:  # Signature Explorer mode (toggle OFF)
+        render_signature_explorer()
+        return
+    
+    # Continue with Statistical Analysis mode (toggle ON)
     
     # Methodology Section (Collapsible)
     with st.expander("ðŸ“– **About the Analysis Methods**", expanded=False):
