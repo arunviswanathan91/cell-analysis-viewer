@@ -1456,17 +1456,7 @@ def render_signature_explorer():
                 mime="text/plain"
             )
         
-        # Show gene list as table
-        st.markdown("####  Gene List (Table View)")
-        genes_df = pd.DataFrame({'Gene Symbol': selected_sig['genes']})
-        genes_df['Index'] = range(1, len(genes_df) + 1)
-        genes_df = genes_df[['Index', 'Gene Symbol']]
-        
-        st.dataframe(
-            genes_df,
-            use_container_width=True,
-            height=min(400, len(genes_df) * 35 + 38)
-        )
+
     
     # Tab 3: Statistics
     with sig_tabs[2]:
