@@ -2478,57 +2478,63 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         
-        # Tab 3: Bayesian Diagnostics
+# Tab 3: Bayesian Diagnostics
         with tabs[2]:
-            st.markdown("### ðŸ” Bayesian MCMC Diagnostics")
+            st.markdown("### 🔬 Bayesian MCMC Diagnostics")
             
-            st.markdown("""
-            <div class="method-box">
-            <b>ðŸ“- Understanding MCMC Diagnostics</b><br><br>
+            # Collapsible guide at the top
+            with st.expander("📖 Understanding MCMC Diagnostics - Click to Learn More", expanded=False):
+                st.markdown("""
+                <div class="method-box">
+                <b>🔍 What is MCMC?</b><br>
+                Bayesian inference uses <b>Markov Chain Monte Carlo (MCMC)</b> to sample from the posterior distribution. 
+                These diagnostics help us verify that the sampling worked correctly.
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("""
+                    **✅ Good Convergence Indicators:**
+                    - **R-hat < 1.01:** Multiple chains agree (excellent)
+                    - **ESS > 400:** Enough independent samples
+                    - **Energy transitions:** Smooth mixing
+                    - **"Hairy caterpillar" traces:** Efficient exploration
+                    """)
+                with col2:
+                    st.markdown("""
+                    **⚠️ Warning Signs:**
+                    - **R-hat > 1.05:** Chains haven't converged
+                    - **ESS < 100:** High autocorrelation
+                    - **Divergent transitions:** Sampling problems
+                    - **Trending traces:** Not at equilibrium
+                    """)
             
-            Bayesian inference uses <b>Markov Chain Monte Carlo (MCMC)</b> to sample from the posterior distribution. 
-            These diagnostics help us verify that the sampling worked correctly:<br><br>
-            
-            <b>âœ… Good Convergence Indicators:</b>
-            <ul>
-            <li><b>R-hat < 1.01:</b> Multiple chains agree (excellent convergence)</li>
-            <li><b>ESS > 400:</b> Enough independent samples for reliable inference</li>
-            <li><b>Energy transitions:</b> Smooth mixing without getting stuck</li>
-            <li><b>"Hairy caterpillar" traces:</b> Chains explore the space efficiently</li>
-            </ul>
-            
-            <b>âš ï¸ Warning Signs:</b>
-            <ul>
-            <li><b>R-hat > 1.05:</b> Chains haven't converged (need more samples)</li>
-            <li><b>ESS < 100:</b> High autocorrelation (samples aren't independent)</li>
-            <li><b>Divergent transitions:</b> Sampling geometry problems</li>
-            <li><b>Trending traces:</b> Chain hasn't reached equilibrium</li>
-            </ul>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown("---")
             
             # ESS and R-hat
-            st.markdown("#### ðŸ“Š ESS & R-hat Statistics")
+            st.markdown("#### 📊 ESS & R-hat Statistics")
             
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("""
-                **Effective Sample Size (ESS)**
-                - Measures number of *independent* samples
-                - Accounts for autocorrelation
-                - **Target:** ESS > 400 per parameter
-                - **Good:** Green bars (high ESS)
-                - **Poor:** Red bars (low ESS, need longer chains)
-                """)
-            with col2:
-                st.markdown("""
-                **R-hat (Gelman-Rubin)**
-                - Compares within-chain vs between-chain variance
-                - Tests if multiple chains converged to same distribution
-                - **Excellent:** R-hat < 1.01 (chains agree perfectly)
-                - **Acceptable:** R-hat < 1.05
-                - **Problem:** R-hat > 1.05 (chains disagree, not converged)
-                """)
+            with st.expander("ℹ️ What do ESS and R-hat mean?", expanded=False):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("""
+                    **Effective Sample Size (ESS)**
+                    - Measures number of *independent* samples
+                    - Accounts for autocorrelation
+                    - **Target:** ESS > 400 per parameter
+                    - **Good:** Green bars (high ESS)
+                    - **Poor:** Red bars (low ESS, need longer chains)
+                    """)
+                with col2:
+                    st.markdown("""
+                    **R-hat (Gelman-Rubin)**
+                    - Compares within-chain vs between-chain variance
+                    - Tests if multiple chains converged to same distribution
+                    - **Excellent:** R-hat < 1.01 (chains agree perfectly)
+                    - **Acceptable:** R-hat < 1.05
+                    - **Problem:** R-hat > 1.05 (chains disagree, not converged)
+                    """)
             
             with st.spinner("Generating ESS/R-hat plot..."):
                 fig = plot_ess_rhat(comp_data)
@@ -2536,6 +2542,78 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
             
             st.markdown("---")
+            
+            # Energy plot
+            st.markdown("#### ⚡ Energy Diagnostic")
+            
+            with st.expander("ℹ️ What is the Energy diagnostic?", expanded=False):
+                st.markdown("""
+                **Hamiltonian Monte Carlo Energy**
+                - Monitors the "energy" of the sampling process (from physics analogy)
+                - **Good:** Energy transitions are smooth and explore well
+                - **Problem:** Divergent transitions indicate sampling difficulties
+                - **Interpretation:** Chains should transition smoothly between energy states
+                """)
+            
+            with st.spinner("Generating energy plot..."):
+                fig = plot_energy_diagnostic(comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Trace plots
+            st.markdown("#### 📈 Trace Plots (First 6 Cell Types)")
+            
+            with st.expander("ℹ️ How to read trace plots?", expanded=False):
+                st.markdown("""
+                **What to Look For:**
+                - **"Hairy caterpillar":** ✅ Good mixing (chains bouncing around randomly)
+                - **Flat mixing:** ✅ All chains overlap (converged to same distribution)
+                - **⚠️ Trends:** Bad (chain drifting, not converged)
+                - **⚠️ Stuck chains:** Bad (chain not exploring)
+                """)
+            
+            with st.spinner("Generating trace plots..."):
+                fig = plot_trace_diagnostic(comp_data, n_celltypes=6)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Rank plots
+            st.markdown("#### 📊 Rank Plots (First 6 Cell Types)")
+            
+            with st.expander("ℹ️ What are rank plots?", expanded=False):
+                st.markdown("""
+                **Rank histograms:** 
+                - All chains should have uniform distributions (good mixing)
+                - Non-uniform = chains exploring different regions (bad convergence)
+                """)
+            
+            with st.spinner("Generating rank plots..."):
+                fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            st.markdown("---")
+            
+            # Autocorrelation
+            st.markdown("#### 📉 Autocorrelation Plots (First 6 Cell Types)")
+            
+            with st.expander("ℹ️ What is autocorrelation?", expanded=False):
+                st.markdown("""
+                **Autocorrelation:** 
+                - Measures how correlated successive samples are
+                - Should decay quickly to zero (independent samples)
+                - High autocorrelation = low ESS (need to thin or run longer)
+                - Dashed lines show significance threshold
+                """)
+            
+            with st.spinner("Generating autocorrelation plots..."):
+                fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
             
             # Energy plot
             st.markdown("#### âš¡ Energy Diagnostic")
