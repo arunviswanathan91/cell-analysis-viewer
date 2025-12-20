@@ -20,6 +20,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 from scipy import stats
 from scipy.stats import gaussian_kde
+from scipy.ndimage import gaussian_filter1d
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -751,6 +752,29 @@ COLOR_OBO = "#33a02c"
 # Plotly template
 PLOTLY_TEMPLATE = "plotly_white"
 
+# Survival plot colors
+COLOR_POSITIVE_HR = '#E53935'  # Red for increased risk (HR > 1)
+COLOR_NEGATIVE_HR = '#1E88E5'  # Blue for protective (HR < 1)
+
+# BMI Categories (WHO)
+BMI_CATEGORIES = {
+    'Underweight': (0, 18.5),
+    'Normal': (18.5, 25),
+    'Overweight': (25, 30),
+    'Obese': (30, 50)
+}
+
+BMI_COLORS_SURVIVAL = {
+    'Underweight': '#4CAF50',
+    'Normal': '#2196F3',
+    'Overweight': '#FF9800',
+    'Obese': '#F44336'
+}
+
+# Confidence threshold for solid vs dashed lines
+CONFIDENCE_THRESHOLD = 10
+
+
 # ==================================================================================
 # ============================= DATA LOADING =======================================
 # ==================================================================================
@@ -920,6 +944,108 @@ def load_compartment_data(compartment):
     
     return data
 
+@st.cache_data
+def load_significant_features():
+    """Load significant survival features"""
+    try:
+        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
+        sig_df = pd.read_csv(sig_file)
+        
+        # Filter for significant features (p < 0.05)
+        if 'hr_p' in sig_df.columns:
+            sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
+        
+        return sig_df
+    except Exception as e:
+        return None
+
+def extract_base_sample_id(sample_id):
+    """Extract base patient ID from sample identifiers"""
+    if pd.isna(sample_id):
+        return None
+    
+    sample_str = str(sample_id).strip()
+    
+    # Remove common suffixes
+    suffixes = ['-T', '-N', '-tumor', '-normal', '_T', '_N']
+    for suffix in suffixes:
+        if sample_str.endswith(suffix):
+            sample_str = sample_str[:-len(suffix)]
+    
+    return sample_str
+
+@st.cache_data
+def load_zscore_data_survival():
+    """Load z-score data for survival analysis"""
+    all_data = []
+    
+    comp_map = {
+        'Immune Fine': 'immune_fine',
+        'Immune Coarse': 'immune_coarse',
+        'Non-Immune': 'non_immune'
+    }
+    
+    for compartment_name, comp_key in comp_map.items():
+        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        
+        if not os.path.exists(zfile):
+            continue
+        
+        try:
+            df = pd.read_csv(zfile, low_memory=False)
+            
+            # Get sample column (first column)
+            sample_col = df.columns[0]
+            
+            # Get feature columns (contain "||")
+            feature_cols = [c for c in df.columns if "||" in str(c)]
+            
+            if not feature_cols:
+                continue
+            
+            # Melt to long format
+            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
+                             var_name="feature", value_name="Z")
+            
+            # Extract base sample ID
+            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
+            
+            # Add compartment info
+            df_long['compartment'] = compartment_name
+            
+            all_data.append(df_long)
+        except Exception as e:
+            continue
+    
+    if not all_data:
+        return None
+    
+    return pd.concat(all_data, ignore_index=True)
+
+def assign_bmi_category(bmi):
+    """Assign BMI category using WHO standards"""
+    if pd.isna(bmi):
+        return None
+    for cat, (low, high) in BMI_CATEGORIES.items():
+        if low <= bmi < high:
+            return cat
+    return 'Obese'
+
+def clean_label_text(text):
+    """Clean signature/feature names for display"""
+    if pd.isna(text):
+        return "Unknown"
+    
+    text = str(text).strip()
+    text = text.replace('_Signature', '').replace('_signature', '')
+    text = text.replace('_Score', '').replace('_score', '')
+    text = text.replace('_', ' ')
+    
+    if len(text) > 60:
+        text = text[:57] + '...'
+    
+    return text.title()
+
 def get_available_cells(compartment):
     """Get cell types from Z-score data"""
     comp_data = load_compartment_data(compartment)
@@ -939,11 +1065,11 @@ def get_available_cells(compartment):
         
         if len(cells) == 0:
             # Debug: show what columns are available
-            st.sidebar.warning(f"âš ï¸ No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+            st.sidebar.warning(f"Ã¢Å¡Â Ã¯Â¸Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
         
         return cells
     else:
-        st.sidebar.error(f"âŒ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        st.sidebar.error(f"Ã¢ÂÅ’ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
     return []
 
 def get_cell_signatures(cell_type):
@@ -972,14 +1098,14 @@ def format_signature_name(sig_name, max_length=40):
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     """Generate interactive STABL Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("âš ï¸ STABL data not available")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â STABL data not available")
         return None
     
     zscores = comp_data['zscores']
     zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
     
     if len(zscores) == 0:
-        st.warning(f"âš ï¸ No Z-scores found for {cell_type}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No Z-scores found for {cell_type}")
         return None
     
     zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
@@ -1000,7 +1126,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     for sig in heatmap_data.index:
         feature_name = f"{cell_type}||{sig}"
         if feature_name in stabl_features:
-            signatures.append(f"{sig} â­")
+            signatures.append(f"{sig} Ã¢Â­Â")
         else:
             signatures.append(sig)
     
@@ -1026,7 +1152,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='BMI Category',
-        yaxis_title='Signatures (â­ = STABL-selected)',
+        yaxis_title='Signatures (Ã¢Â­Â = STABL-selected)',
         height=max(600, len(heatmap_data) * 25),
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
@@ -1037,7 +1163,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
 def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     """Generate interactive Bayesian effect size heatmap"""
     if comp_data['bayesian'] is None:
-        st.warning("âš ï¸ Bayesian data not available")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â Bayesian data not available")
         return None
     
     bayes = comp_data['bayesian'].copy()
@@ -1053,7 +1179,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
     
     if len(cell_bayes) == 0:
-        st.warning(f"âš ï¸ No Bayesian results for {cell_type}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No Bayesian results for {cell_type}")
         return None
     
     cell_bayes['signature'] = cell_bayes['feature'].apply(
@@ -1069,7 +1195,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
                 break
     
     if len(effect_data) == 0:
-        st.warning("âš ï¸ No effect size columns found")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â No effect size columns found")
         return None
     
     heatmap_data = pd.concat(effect_data, axis=1).T
@@ -1111,7 +1237,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
 def plot_overlapped_ridges_interactive(cell_type, comp_data):
     """Generate interactive overlapped ridge plot"""
     if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
-        st.info("â„¹ï¸ Posterior data not available - ridge plot skipped")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available - ridge plot skipped")
         return None
     
     try:
@@ -1289,13 +1415,13 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         return fig
         
     except Exception as e:
-        st.warning(f"âš ï¸ Error creating ridge plot: {e}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â Error creating ridge plot: {e}")
         return None
 
 def plot_gene_bmi_interactive(genes, clinical, tpm):
     """Generate interactive gene-level BMI analysis plots"""
     if tpm is None:
-        st.warning("âš ï¸ TPM data not available")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â TPM data not available")
         return None, None
     
     tpm_t = tpm.T
@@ -1326,7 +1452,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
             continue
     
     if not results:
-        st.warning("âš ï¸ No genes analyzed")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â No genes analyzed")
         return None, None
     
     results_df = pd.DataFrame(results).sort_values('p_value')
@@ -1361,14 +1487,14 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
         marker=dict(color=colors, line=dict(color='black', width=1)),
         text=[f"{s:.4f} {m}" for s, m in zip(plot_df['slope'], sig_markers)],
         textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>RÂ²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
+        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>RÃ‚Â²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
         customdata=np.column_stack((plot_df['r_squared'], plot_df['p_value']))
     ))
     
     fig1.add_vline(x=0, line_dash="solid", line_color="black", line_width=2)
     
     fig1.update_layout(
-        title='Gene-Level BMI Association<br>Î” Expression per Î” BMI',
+        title='Gene-Level BMI Association<br>ÃŽâ€ Expression per ÃŽâ€ BMI',
         xaxis_title='Expression Change per 1 Unit BMI Increase',
         yaxis_title='Genes',
         height=max(500, len(plot_df) * 25),
@@ -1386,7 +1512,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
     
     fig2 = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, RÂ²={row['r_squared']:.3f})" 
+        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, RÃ‚Â²={row['r_squared']:.3f})" 
                        for _, row in top_genes.iterrows()],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
@@ -1450,7 +1576,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
 def plot_energy_diagnostic(comp_data):
     """Generate interactive energy diagnostic plot"""
     if comp_data['energy'] is None:
-        st.info("â„¹ï¸ Energy data not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Energy data not available")
         return None
     
     energy = comp_data['energy']
@@ -1485,7 +1611,7 @@ def plot_energy_diagnostic(comp_data):
 def plot_trace_diagnostic(comp_data, n_celltypes=6):
     """Generate trace plots for first N cell types"""
     if comp_data['posterior_overweight'] is None:
-        st.info("â„¹ï¸ Posterior data not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
         return None
     
     # Get posterior data
@@ -1550,7 +1676,7 @@ def plot_trace_diagnostic(comp_data, n_celltypes=6):
 def plot_rank_diagnostic(comp_data, n_celltypes=6):
     """Generate rank plots for convergence diagnostic"""
     if comp_data['posterior_overweight'] is None:
-        st.info("â„¹ï¸ Posterior data not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
         return None
     
     df_over = comp_data['posterior_overweight']
@@ -1617,7 +1743,7 @@ def plot_rank_diagnostic(comp_data, n_celltypes=6):
 def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
     """Generate autocorrelation plots"""
     if comp_data['posterior_overweight'] is None:
-        st.info("â„¹ï¸ Posterior data not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
         return None
     
     df_over = comp_data['posterior_overweight']
@@ -1693,7 +1819,7 @@ def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
 def plot_ess_rhat(comp_data):
     """Generate ESS and R-hat diagnostic plots"""
     if comp_data['diagnostics'] is None:
-        st.info("â„¹ï¸ Diagnostic summary not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Diagnostic summary not available")
         return None
     
     diag = comp_data['diagnostics']
@@ -1706,7 +1832,7 @@ def plot_ess_rhat(comp_data):
     
     # Filter for cell type effects
     if isinstance(diag.index, pd.RangeIndex):
-        st.warning("âš ï¸ Diagnostic data doesn't have parameter names")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â Diagnostic data doesn't have parameter names")
         return None
     
     # Convert index to string if needed
@@ -1716,7 +1842,7 @@ def plot_ess_rhat(comp_data):
     diag = diag[diag.index.str.contains('celltype_effect', na=False, case=False)]
     
     if len(diag) == 0:
-        st.warning("âš ï¸ No cell type diagnostics found in data")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â No cell type diagnostics found in data")
         return None
     
     # Create figure with two subplots
@@ -1734,7 +1860,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if ess_col is None:
-        st.warning("âš ï¸ ESS column not found in diagnostics")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â ESS column not found in diagnostics")
         return None
     
     ess_bulk = diag[ess_col].values
@@ -1767,7 +1893,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if rhat_col is None:
-        st.warning("âš ï¸ R-hat column not found in diagnostics")
+        st.warning("Ã¢Å¡Â Ã¯Â¸Â R-hat column not found in diagnostics")
         # Continue with ESS plot only
         fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
         fig.update_layout(
@@ -1813,10 +1939,790 @@ def plot_ess_rhat(comp_data):
     
     return fig
 
-def plot_gene_survival_interactive(genes, clinical, tpm):
+# ==================================================================================
+# ================== SIGNATURE SURVIVAL PLOTTING (PLOTLY) ==========================
+# ==================================================================================
+
+def plot_survival_bmi_vs_time(patient_data, signature_name):
+    """Plot 1: BMI vs Follow-up Time (Interactive Scatter)"""
+    if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
+        return None
+    
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    
+    if len(patient_data_bmi) < 10:
+        return None
+    
+    deceased = patient_data_bmi[patient_data_bmi['vital_status_binary'] == 1]
+    alive = patient_data_bmi[patient_data_bmi['vital_status_binary'] == 0]
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=alive['BMI'],
+        y=alive['follow_up_months'],
+        mode='markers',
+        name=f'Alive (n={len(alive)})',
+        marker=dict(color='#1E88E5', size=8, opacity=0.6, line=dict(color='white', width=1)),
+        hovertemplate='<b>Alive</b><br>BMI: %{x:.1f}<br>Follow-up: %{y:.1f} months<extra></extra>'
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=deceased['BMI'],
+        y=deceased['follow_up_months'],
+        mode='markers',
+        name=f'Deceased (n={len(deceased)})',
+        marker=dict(color='#E53935', size=8, opacity=0.6, line=dict(color='white', width=1)),
+        hovertemplate='<b>Deceased</b><br>BMI: %{x:.1f}<br>Follow-up: %{y:.1f} months<extra></extra>'
+    ))
+    
+    try:
+        from scipy.stats import binned_statistic
+        from scipy.ndimage import gaussian_filter1d
+        bmi_bins = np.linspace(patient_data_bmi['BMI'].min(), patient_data_bmi['BMI'].max(), 15)
+        means, edges, _ = binned_statistic(patient_data_bmi['BMI'], patient_data_bmi['follow_up_months'],
+                                           statistic='mean', bins=bmi_bins)
+        bin_centers = (edges[:-1] + edges[1:]) / 2
+        valid_idx = ~np.isnan(means)
+        
+        if valid_idx.sum() >= 3:
+            means_smooth = gaussian_filter1d(means[valid_idx], sigma=1)
+            fig.add_trace(go.Scatter(
+                x=bin_centers[valid_idx],
+                y=means_smooth,
+                mode='lines',
+                name='Mean Trend',
+                line=dict(color='black', width=3, dash='dash'),
+                hovertemplate='BMI: %{x:.1f}<br>Mean survival: %{y:.1f} months<extra></extra>'
+            ))
+    except:
+        pass
+    
+    fig.add_vline(x=25, line_dash="dot", line_color="orange", opacity=0.5,
+                 annotation_text="Overweight (25)", annotation_position="top left")
+    fig.add_vline(x=30, line_dash="dot", line_color="red", opacity=0.5,
+                 annotation_text="Obese (30)", annotation_position="top right")
+    
+    fig.update_layout(
+        title=dict(text=f'{signature_name}<br>BMI vs Follow-up Time', font=dict(size=14)),
+        xaxis_title='BMI',
+        yaxis_title='Follow-up Time (months)',
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        height=500,
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    return fig
+
+
+def plot_survival_bmi_vs_hr(patient_data, signature_name):
+    """Plot 2: BMI vs Hazard Ratio (Smoothed Curve)"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min = patient_data_bmi['BMI'].min()
+    bmi_max = patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    
+    hrs, ci_lowers, ci_uppers, valid_bmis = [], [], [], []
+    
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            
+            hr = np.exp(cph.params_['Z'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['Z', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['Z', '95% upper-bound'])
+            
+            hrs.append(np.clip(hr, 0.1, 10))
+            ci_lowers.append(np.clip(ci_lower, 0.1, 10))
+            ci_uppers.append(np.clip(ci_upper, 0.1, 10))
+            valid_bmis.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    from scipy.ndimage import gaussian_filter1d
+    valid_bmis = np.array(valid_bmis)
+    hrs = np.array(hrs)
+    ci_lowers = np.array(ci_lowers)
+    ci_uppers = np.array(ci_uppers)
+    
+    hrs_smooth = gaussian_filter1d(hrs, sigma=1.5)
+    ci_lowers_smooth = gaussian_filter1d(ci_lowers, sigma=1.5)
+    ci_uppers_smooth = gaussian_filter1d(ci_uppers, sigma=1.5)
+    
+    median_hr = np.median(hrs_smooth)
+    color = COLOR_POSITIVE_HR if median_hr > 1 else COLOR_NEGATIVE_HR
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([valid_bmis, valid_bmis[::-1]]),
+        y=np.concatenate([ci_uppers_smooth, ci_lowers_smooth[::-1]]),
+        fill='toself',
+        fillcolor=f'rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.2)',
+        line=dict(color='rgba(255,255,255,0)'),
+        name='95% CI',
+        showlegend=True,
+        hoverinfo='skip'
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=valid_bmis,
+        y=hrs_smooth,
+        mode='lines',
+        name='Hazard Ratio',
+        line=dict(color=color, width=3),
+        hovertemplate='BMI: %{x:.1f}<br>HR: %{y:.3f}<extra></extra>'
+    ))
+    
+    fig.add_hline(y=1, line_dash="dash", line_color="gray",
+                 annotation_text="HR=1 (No Effect)", annotation_position="right")
+    
+    fig.add_vline(x=25, line_dash="dot", line_color="orange", opacity=0.3)
+    fig.add_vline(x=30, line_dash="dot", line_color="red", opacity=0.3)
+    
+    fig.update_layout(
+        title=dict(text=f'{signature_name}<br>BMI vs Hazard Ratio', font=dict(size=14)),
+        xaxis_title='BMI',
+        yaxis_title='Hazard Ratio',
+        yaxis_type='log',
+        template=PLOTLY_TEMPLATE,
+        hovermode='x unified',
+        height=500,
+        showlegend=True
+    )
+    
+    return fig
+
+
+def plot_survival_bmi_dual_axis(patient_data, signature_name):
+    """Plot 3: BMI vs Time & HR (Dual-Axis)"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min = patient_data_bmi['BMI'].min()
+    bmi_max = patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    
+    hrs, valid_bmis_hr = [], []
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            hr = np.exp(cph.params_['Z'])
+            hrs.append(np.clip(hr, 0.1, 10))
+            valid_bmis_hr.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    from scipy.ndimage import gaussian_filter1d
+    hrs_smooth = gaussian_filter1d(np.array(hrs), sigma=1.5)
+    
+    time_means, time_bmis = [], []
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ]
+        if len(window_patients) >= 5:
+            time_means.append(window_patients['follow_up_months'].mean())
+            time_bmis.append(bmi_mid)
+    
+    time_smooth = gaussian_filter1d(np.array(time_means), sigma=1.5)
+    
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    fig.add_trace(
+        go.Scatter(
+            x=time_bmis,
+            y=time_smooth,
+            mode='lines+markers',
+            name='Follow-up Time',
+            line=dict(color='#1E88E5', width=3),
+            marker=dict(size=5),
+            hovertemplate='BMI: %{x:.1f}<br>Mean follow-up: %{y:.1f} months<extra></extra>'
+        ),
+        secondary_y=False
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=valid_bmis_hr,
+            y=hrs_smooth,
+            mode='lines+markers',
+            name='Hazard Ratio',
+            line=dict(color='#E53935', width=3),
+            marker=dict(size=5, symbol='square'),
+            hovertemplate='BMI: %{x:.1f}<br>HR: %{y:.3f}<extra></extra>'
+        ),
+        secondary_y=True
+    )
+    
+    fig.add_hline(y=1, line_dash="dash", line_color="gray", opacity=0.7, secondary_y=True)
+    
+    fig.add_vline(x=25, line_dash="dot", line_color="orange", opacity=0.3)
+    fig.add_vline(x=30, line_dash="dot", line_color="red", opacity=0.3)
+    
+    fig.update_xaxes(title_text="BMI")
+    fig.update_yaxes(title_text="Mean Follow-up Time (months)", 
+                     title_font=dict(color='#1E88E5'),
+                     tickfont=dict(color='#1E88E5'),
+                     secondary_y=False)
+    fig.update_yaxes(title_text="Hazard Ratio", 
+                     title_font=dict(color='#E53935'),
+                     tickfont=dict(color='#E53935'),
+                     type='log',
+                     secondary_y=True)
+    
+    fig.update_layout(
+        title=dict(text=f'{signature_name}<br>BMI vs Follow-up Time & Hazard Ratio', font=dict(size=14)),
+        template=PLOTLY_TEMPLATE,
+        hovermode='x unified',
+        height=500
+    )
+    
+    return fig
+
+
+def plot_survival_forest_bmi(patient_data, signature_name):
+    """Plot 4: Forest Plot by BMI Category"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()]
+    
+    if len(patient_data) < 30:
+        return None
+    
+    results = []
+    category_order = ['Underweight', 'Normal', 'Overweight', 'Obese']
+    
+    for cat in category_order:
+        cat_data = patient_data[patient_data['bmi_category'] == cat].copy()
+        
+        if len(cat_data) < 15 or cat_data['vital_status_binary'].sum() < 3:
+            continue
+        
+        try:
+            cox_data = cat_data[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            
+            hr = np.exp(cph.params_['Z'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['Z', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['Z', '95% upper-bound'])
+            p_value = cph.summary.loc['Z', 'p']
+            
+            results.append({
+                'category': cat,
+                'hr': hr,
+                'ci_lower': ci_lower,
+                'ci_upper': ci_upper,
+                'p_value': p_value,
+                'n': len(cat_data),
+                'events': int(cat_data['vital_status_binary'].sum())
+            })
+        except:
+            continue
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    
+    fig = go.Figure()
+    
+    for _, row in results_df.iterrows():
+        color = BMI_COLORS_SURVIVAL.get(row['category'], 'gray')
+        sig_marker = '*' if row['p_value'] < 0.05 else ''
+        
+        fig.add_trace(go.Scatter(
+            x=[row['hr']],
+            y=[row['category']],
+            mode='markers',
+            name=row['category'],
+            marker=dict(color=color, size=15, line=dict(color='black', width=2)),
+            error_x=dict(
+                type='data',
+                symmetric=False,
+                array=[row['ci_upper'] - row['hr']],
+                arrayminus=[row['hr'] - row['ci_lower']],
+                color=color,
+                thickness=3,
+                width=10
+            ),
+            hovertemplate=f"<b>{row['category']}</b><br>" +
+                         f"HR: {row['hr']:.3f}<br>" +
+                         f"95% CI: [{row['ci_lower']:.3f}, {row['ci_upper']:.3f}]<br>" +
+                         f"p-value: {row['p_value']:.3e}<br>" +
+                         f"n={row['n']}, events={row['events']}<br>" +
+                         f"{sig_marker}<extra></extra>",
+            showlegend=False
+        ))
+    
+    fig.add_vline(x=1, line_dash="dash", line_color="gray",
+                 annotation_text="HR=1 (No Effect)", annotation_position="top")
+    
+    fig.update_layout(
+        title=dict(text=f'{signature_name}<br>Hazard Ratio by BMI Category', font=dict(size=14)),
+        xaxis_title='Hazard Ratio (95% CI)',
+        xaxis_type='log',
+        yaxis_title='',
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        height=500,
+        showlegend=False
+    )
+    
+    return fig
+
+
+def plot_survival_interaction_tertile(patient_data, signature_name):
+    """Plot 5: BMI × Signature Interaction (Tertiles)"""
+    if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
+        return None
+    
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()].copy()
+    
+    if len(patient_data) < 30:
+        return None
+    
+    patient_data['z_group'] = pd.qcut(patient_data['Z'], q=3, labels=['Low', 'Medium', 'High'], duplicates='drop')
+    
+    category_order = ['Underweight', 'Normal', 'Overweight', 'Obese']
+    z_order = ['Low', 'Medium', 'High']
+    z_colors = {'Low': '#2196F3', 'Medium': '#FF9800', 'High': '#4CAF50'}
+    
+    results = []
+    for cat in category_order:
+        for z_grp in z_order:
+            subset = patient_data[
+                (patient_data['bmi_category'] == cat) &
+                (patient_data['z_group'] == z_grp)
+            ].copy()
+            
+            if len(subset) < 3:
+                continue
+            
+            results.append({
+                'bmi_category': cat,
+                'z_group': z_grp,
+                'median_survival': subset['follow_up_months'].median(),
+                'event_rate': subset['vital_status_binary'].mean() * 100,
+                'n': len(subset),
+                'is_confident': len(subset) >= CONFIDENCE_THRESHOLD
+            })
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('Median Survival by BMI × Signature', 'Event Rate by BMI × Signature'),
+        horizontal_spacing=0.12
+    )
+    
+    for z_grp in z_order:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index()
+        subset = subset.dropna(subset=['median_survival'])
+        
+        if len(subset) == 0:
+            continue
+        
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        
+        line_style = 'solid'
+        for i in range(len(subset)):
+            if not subset.iloc[i]['is_confident']:
+                line_style = 'dash'
+                break
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_pos,
+                y=subset['median_survival'],
+                mode='lines+markers',
+                name=f'{z_grp} (n={subset["n"].sum()})',
+                line=dict(color=z_colors[z_grp], width=2.5, dash=line_style),
+                marker=dict(size=8, line=dict(color='white', width=1)),
+                hovertemplate='<b>%{fullData.name}</b><br>Category: %{text}<br>Median survival: %{y:.1f} months<extra></extra>',
+                text=subset['bmi_category'],
+                showlegend=True,
+                legendgroup=z_grp
+            ),
+            row=1, col=1
+        )
+    
+    for z_grp in z_order:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index()
+        subset = subset.dropna(subset=['event_rate'])
+        
+        if len(subset) == 0:
+            continue
+        
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        
+        line_style = 'solid'
+        for i in range(len(subset)):
+            if not subset.iloc[i]['is_confident']:
+                line_style = 'dash'
+                break
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_pos,
+                y=subset['event_rate'],
+                mode='lines+markers',
+                name=f'{z_grp}',
+                line=dict(color=z_colors[z_grp], width=2.5, dash=line_style),
+                marker=dict(size=8, symbol='square', line=dict(color='white', width=1)),
+                hovertemplate='<b>%{fullData.name}</b><br>Category: %{text}<br>Event rate: %{y:.1f}%<extra></extra>',
+                text=subset['bmi_category'],
+                showlegend=False,
+                legendgroup=z_grp
+            ),
+            row=1, col=2
+        )
+    
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(len(category_order))),
+                    title_text='BMI Category', row=1, col=1)
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(len(category_order))),
+                    title_text='BMI Category', row=1, col=2)
+    fig.update_yaxes(title_text='Median Survival (months)', row=1, col=1)
+    fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
+    
+    fig.update_layout(
+        title_text=f'{signature_name}<br>BMI × Signature Interaction (Tertiles)',
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        height=500,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    return fig
+
+
+def plot_survival_interaction_median(patient_data, signature_name):
+    """Plot 6: BMI × Signature Interaction (Median Split)"""
+    if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
+        return None
+    
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()].copy()
+    
+    if len(patient_data) < 30:
+        return None
+    
+    patient_data['z_group'] = pd.qcut(patient_data['Z'], q=2, labels=['Low', 'High'], duplicates='drop')
+    
+    category_order = ['Underweight', 'Normal', 'Overweight', 'Obese']
+    z_order = ['Low', 'High']
+    z_colors = {'Low': '#2196F3', 'High': '#E53935'}
+    
+    results = []
+    for cat in category_order:
+        for z_grp in z_order:
+            subset = patient_data[
+                (patient_data['bmi_category'] == cat) &
+                (patient_data['z_group'] == z_grp)
+            ].copy()
+            
+            if len(subset) < 3:
+                continue
+            
+            results.append({
+                'bmi_category': cat,
+                'z_group': z_grp,
+                'median_survival': subset['follow_up_months'].median(),
+                'event_rate': subset['vital_status_binary'].mean() * 100,
+                'n': len(subset),
+                'is_confident': len(subset) >= CONFIDENCE_THRESHOLD
+            })
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=('Median Survival by BMI × Signature', 'Event Rate by BMI × Signature'),
+        horizontal_spacing=0.12
+    )
+    
+    for z_grp in z_order:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index()
+        subset = subset.dropna(subset=['median_survival'])
+        
+        if len(subset) == 0:
+            continue
+        
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        
+        line_style = 'solid'
+        for i in range(len(subset)):
+            if not subset.iloc[i]['is_confident']:
+                line_style = 'dash'
+                break
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_pos,
+                y=subset['median_survival'],
+                mode='lines+markers',
+                name=f'{z_grp} Sig (n={subset["n"].sum()})',
+                line=dict(color=z_colors[z_grp], width=3, dash=line_style),
+                marker=dict(size=10, line=dict(color='white', width=1.5)),
+                hovertemplate='<b>%{fullData.name}</b><br>Category: %{text}<br>Median survival: %{y:.1f} months<extra></extra>',
+                text=subset['bmi_category'],
+                showlegend=True,
+                legendgroup=z_grp
+            ),
+            row=1, col=1
+        )
+    
+    for z_grp in z_order:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index()
+        subset = subset.dropna(subset=['event_rate'])
+        
+        if len(subset) == 0:
+            continue
+        
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        
+        line_style = 'solid'
+        for i in range(len(subset)):
+            if not subset.iloc[i]['is_confident']:
+                line_style = 'dash'
+                break
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_pos,
+                y=subset['event_rate'],
+                mode='lines+markers',
+                name=f'{z_grp} Sig',
+                line=dict(color=z_colors[z_grp], width=3, dash=line_style),
+                marker=dict(size=10, symbol='square', line=dict(color='white', width=1.5)),
+                hovertemplate='<b>%{fullData.name}</b><br>Category: %{text}<br>Event rate: %{y:.1f}%<extra></extra>',
+                text=subset['bmi_category'],
+                showlegend=False,
+                legendgroup=z_grp
+            ),
+            row=1, col=2
+        )
+    
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(len(category_order))),
+                    title_text='BMI Category', row=1, col=1)
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(len(category_order))),
+                    title_text='BMI Category', row=1, col=2)
+    fig.update_yaxes(title_text='Median Survival (months)', row=1, col=1)
+    fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
+    
+    fig.update_layout(
+        title_text=f'{signature_name}<br>BMI × Signature Interaction (Median Split: High vs Low)',
+        template=PLOTLY_TEMPLATE,
+        hovermode='closest',
+        height=500,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    
+    return fig
+
+
+def plot_survival_hr_with_distribution(patient_data, signature_name):
+    """Plot 7: HR + Patient BMI Distribution (Dual-axis)"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min = patient_data_bmi['BMI'].min()
+    bmi_max = patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    
+    hrs, ci_lowers, ci_uppers, valid_bmis = [], [], [], []
+    
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            
+            hr = np.exp(cph.params_['Z'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['Z', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['Z', '95% upper-bound'])
+            
+            hrs.append(np.clip(hr, 0.1, 10))
+            ci_lowers.append(np.clip(ci_lower, 0.1, 10))
+            ci_uppers.append(np.clip(ci_upper, 0.1, 10))
+            valid_bmis.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    from scipy.ndimage import gaussian_filter1d
+    valid_bmis = np.array(valid_bmis)
+    hrs = np.array(hrs)
+    ci_lowers = np.array(ci_lowers)
+    ci_uppers = np.array(ci_uppers)
+    
+    hrs_smooth = gaussian_filter1d(hrs, sigma=1.5)
+    ci_lowers_smooth = gaussian_filter1d(ci_lowers, sigma=1.5)
+    ci_uppers_smooth = gaussian_filter1d(ci_uppers, sigma=1.5)
+    
+    median_hr = np.median(hrs_smooth)
+    color_hr = COLOR_POSITIVE_HR if median_hr > 1 else COLOR_NEGATIVE_HR
+    
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    
+    fig.add_trace(
+        go.Scatter(
+            x=np.concatenate([valid_bmis, valid_bmis[::-1]]),
+            y=np.concatenate([ci_uppers_smooth, ci_lowers_smooth[::-1]]),
+            fill='toself',
+            fillcolor=f'rgba({int(color_hr[1:3], 16)}, {int(color_hr[3:5], 16)}, {int(color_hr[5:7], 16)}, 0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            name='95% CI',
+            showlegend=True,
+            hoverinfo='skip'
+        ),
+        secondary_y=False
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=valid_bmis,
+            y=hrs_smooth,
+            mode='lines+markers',
+            name='Hazard Ratio',
+            line=dict(color=color_hr, width=3.5),
+            marker=dict(size=5),
+            hovertemplate='BMI: %{x:.1f}<br>HR: %{y:.3f}<extra></extra>'
+        ),
+        secondary_y=False
+    )
+    
+    fig.add_trace(
+        go.Histogram(
+            x=patient_data_bmi['BMI'],
+            nbinsx=20,
+            name='Patient Count',
+            marker=dict(color='gray', opacity=0.3, line=dict(color='black', width=0.5)),
+            hovertemplate='BMI: %{x:.1f}<br>Count: %{y}<extra></extra>'
+        ),
+        secondary_y=True
+    )
+    
+    fig.add_hline(y=1, line_dash="dash", line_color="gray", opacity=0.7, secondary_y=False)
+    
+    fig.add_vline(x=25, line_dash="dot", line_color="orange", opacity=0.3)
+    fig.add_vline(x=30, line_dash="dot", line_color="red", opacity=0.3)
+    
+    fig.update_xaxes(title_text="BMI")
+    fig.update_yaxes(title_text="Hazard Ratio", 
+                     title_font=dict(color=color_hr),
+                     tickfont=dict(color=color_hr),
+                     type='log',
+                     secondary_y=False)
+    fig.update_yaxes(title_text="Number of Patients", 
+                     title_font=dict(color='gray'),
+                     tickfont=dict(color='gray'),
+                     secondary_y=True)
+    
+    fig.update_layout(
+        title=dict(text=f'{signature_name}<br>Hazard Ratio & Patient Distribution by BMI', font=dict(size=14)),
+        template=PLOTLY_TEMPLATE,
+        hovermode='x unified',
+        height=500,
+        barmode='overlay'
+    )
+    
+    return fig
+
+
+def def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
     if not LIFELINES_AVAILABLE or tpm is None:
-        st.info("â„¹ï¸ Survival analysis not available")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Survival analysis not available")
         return None
     
     tpm_t = tpm.T
@@ -1867,7 +2773,7 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
             continue
     
     if not results:
-        st.info("â„¹ï¸ No genes passed survival criteria")
+        st.info("Ã¢â€žÂ¹Ã¯Â¸Â No genes passed survival criteria")
         return None
     
     results_df = pd.DataFrame(results).sort_values('hr', ascending=False).head(20)
@@ -1940,7 +2846,7 @@ def render_signature_explorer():
     signatures = load_signatures()
     
     if not signatures:
-        st.error("❌ Failed to load signature database")
+        st.error("âŒ Failed to load signature database")
         return
     
     # Create sidebar for selection
@@ -1960,7 +2866,7 @@ def render_signature_explorer():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.warning(f"⚠️ No cell types found for {compartment}")
+        st.warning(f"âš ï¸ No cell types found for {compartment}")
         st.info("This may indicate missing z-score data files. The signature database may still contain entries for this compartment.")
         
         # Show all unique cell types from signature database
@@ -1997,7 +2903,7 @@ def render_signature_explorer():
     st.markdown("---")
     
     if not cell_signatures:
-        st.warning(f"⚠️ No signatures found for {selected_cell}")
+        st.warning(f"âš ï¸ No signatures found for {selected_cell}")
         st.info("This cell type exists in the z-score data but may not have associated signatures in the database.")
         return
     
@@ -2208,7 +3114,7 @@ def render_signature_explorer():
 
 def main():
     # Sidebar Mode Selection with Toggle Button
-    st.sidebar.title("⚙️ Application Mode")
+    st.sidebar.title("âš™ï¸ Application Mode")
     
     analysis_mode = st.sidebar.toggle(
         "Statistical Analysis Mode",
@@ -2268,7 +3174,7 @@ def main():
         
         #### **Bayesian Hierarchical Model** - Effect Size Estimation
         A three-group hierarchical model comparing:
-        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
+        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (Ã¢â€°Â¥ 30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
@@ -2295,17 +3201,17 @@ def main():
         ---
         
         #### **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism â’ Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values â’ Gene expression matrix
-        3. **Signatures:** Aggregate genes â’ Signature scores (Z-scores)
-        4. **Selection:** STABL â’ Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical â’ Effect sizes with uncertainty
-        6. **Validation:** MCMC diagnostics â’ Convergence checks
-        7. **Survival:** Cox regression â’ Clinical relevance
+        1. **Deconvolution:** BayesPrism Ã¢â€™ Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values Ã¢â€™ Gene expression matrix
+        3. **Signatures:** Aggregate genes Ã¢â€™ Signature scores (Z-scores)
+        4. **Selection:** STABL Ã¢â€™ Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical Ã¢â€™ Effect sizes with uncertainty
+        6. **Validation:** MCMC diagnostics Ã¢â€™ Convergence checks
+        7. **Survival:** Cox regression Ã¢â€™ Clinical relevance
         """)
     
     # Sidebar
-    st.sidebar.title("ðŸ“Š Data Selection")
+    st.sidebar.title("Ã°Å¸â€œÅ  Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -2326,7 +3232,7 @@ def main():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.error("âŒ No cell types found")
+        st.error("Ã¢ÂÅ’ No cell types found")
         return
     
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -2342,7 +3248,7 @@ def main():
     signatures = get_cell_signatures(selected_cell)
     
     if not signatures:
-        st.warning(f"âš ï¸ No signatures found for {selected_cell}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No signatures found for {selected_cell}")
         return
     
     # Create formatted options for display
@@ -2364,7 +3270,7 @@ def main():
     
     # Generate button
     st.sidebar.markdown("---")
-    generate = st.sidebar.button("ðŸš€ Generate Analysis", type="primary")
+    generate = st.sidebar.button("Ã°Å¸Å¡â‚¬ Generate Analysis", type="primary")
     
     # Current selection with full signature name
     st.sidebar.markdown("---")
@@ -2401,7 +3307,8 @@ def main():
             "Ridge Plot",
             "Diagnostics",
             "Gene BMI",
-            "Gene Survival"
+            "Gene Survival",
+            "Signature Survival"
         ])
         
         # Tab 1: STABL & Bayesian
@@ -2410,14 +3317,14 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ”¬ What is STABL?</b><br>
+            <b>Ã°Å¸â€Â¬ What is STABL?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
             <li>Counting how often each feature is selected</li>
             <li>Keeping only features selected consistently (stable features)</li>
             </ol>
-            <b>â­ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            <b>Ã¢Â­Â Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
             </div>
             """, unsafe_allow_html=True)
             
@@ -2430,11 +3337,11 @@ def main():
             
             st.markdown("---")
             
-            st.markdown("### ðŸ“Š Bayesian Effect Size Estimation")
+            st.markdown("### Ã°Å¸â€œÅ  Bayesian Effect Size Estimation")
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ§® Bayesian Hierarchical Model</b><br>
+            <b>Ã°Å¸Â§Â® Bayesian Hierarchical Model</b><br>
             Estimates how much each cell type's signature changes with increasing BMI:
             <ul>
             <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -2446,7 +3353,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ðŸ“Š Effect Sizes with Credible Intervals")
+            st.markdown("#### Ã°Å¸â€œÅ  Effect Sizes with Credible Intervals")
             st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
@@ -2455,7 +3362,7 @@ def main():
         
         # Tab 2: Ridge Plot
         with tabs[1]:
-            st.markdown("### ðŸŒŠ Posterior Distribution Visualization")
+            st.markdown("### Ã°Å¸Å’Å  Posterior Distribution Visualization")
             
             st.markdown("""
             <div class="method-box">
@@ -2471,7 +3378,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ðŸŒŠ Overlapped Posterior Distributions")
+            st.markdown("#### Ã°Å¸Å’Å  Overlapped Posterior Distributions")
             st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
@@ -2480,13 +3387,13 @@ def main():
         
 # Tab 3: Bayesian Diagnostics
         with tabs[2]:
-            st.markdown("### 🔬 Bayesian MCMC Diagnostics")
+            st.markdown("### ðŸ”¬ Bayesian MCMC Diagnostics")
             
             # Collapsible guide at the top
-            with st.expander("📖 Understanding MCMC Diagnostics — Click to Learn More", expanded=False):
+            with st.expander("ðŸ“– Understanding MCMC Diagnostics â€” Click to Learn More", expanded=False):
                 st.markdown("""
                 <div class="method-box">
-                <b>🔍 What is MCMC?</b><br><br>
+                <b>ðŸ” What is MCMC?</b><br><br>
             
                 Our analysis uses <b>Bayesian modeling</b> to estimate how biological signatures change with BMI.
                 Rather than giving a single fixed value, the model learns a <b>range of plausible values</b>,
@@ -2494,7 +3401,7 @@ def main():
             
                 To achieve this, we use a method called <b>Markov Chain Monte Carlo (MCMC)</b>.
             
-                🗺️ <b>Analogy:</b><br>
+                ðŸ—ºï¸ <b>Analogy:</b><br>
                 Imagine exploring a foggy mountain range to find the highest peaks.
                 You can only take small steps, guided by the terrain around you.
                 Over time, you spend more time near the highest regions.
@@ -2506,12 +3413,12 @@ def main():
                     <li>And builds a map of what values best explain the data.</li>
                 </ul>
             
-                This map is called the <b>posterior distribution</b> — it represents our updated belief
+                This map is called the <b>posterior distribution</b> â€” it represents our updated belief
                 about the true effects after seeing the data.
             
                 <hr>
             
-                📊 <b>Why do we show diagnostics?</b><br><br>
+                ðŸ“Š <b>Why do we show diagnostics?</b><br><br>
             
                 Because MCMC is a stochastic (random) process, we must verify that it explored the space properly.
                 The diagnostic plots help answer:
@@ -2525,7 +3432,7 @@ def main():
             
                 If these checks look good, we can trust both the estimated effects <i>and</i> their uncertainty.
             
-                ✔️ <b>In short:</b><br>
+                âœ”ï¸ <b>In short:</b><br>
                 <b>MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.</b>
                 </div>
                 """, unsafe_allow_html=True)
@@ -2534,16 +3441,16 @@ def main():
             
                 with col1:
                     st.markdown("""
-                    **✅ Good Convergence Indicators**
+                    **âœ… Good Convergence Indicators**
                     - **R-hat < 1.01:** Chains agree very well  
                     - **ESS > 400:** Enough independent samples  
                     - **Smooth energy transitions:** Good mixing  
-                    - **“Hairy caterpillar” traces:** Stable, well-mixed chains  
+                    - **â€œHairy caterpillarâ€ traces:** Stable, well-mixed chains  
                     """)
             
                 with col2:
                     st.markdown("""
-                    **⚠️ Warning Signs**
+                    **âš ï¸ Warning Signs**
                     - **R-hat > 1.05:** Chains disagree (no convergence)  
                     - **ESS < 100:** Strong autocorrelation  
                     - **Divergent transitions:** Geometry or tuning issues  
@@ -2554,9 +3461,9 @@ def main():
 
             
             # ESS and R-hat
-            st.markdown("#### 📊 ESS & R-hat Statistics")
+            st.markdown("#### ðŸ“Š ESS & R-hat Statistics")
             
-            with st.expander("ℹ️ What do ESS and R-hat mean?", expanded=False):
+            with st.expander("â„¹ï¸ What do ESS and R-hat mean?", expanded=False):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("""
@@ -2585,9 +3492,9 @@ def main():
             st.markdown("---")
             
             # Energy plot
-            st.markdown("#### ⚡ Energy Diagnostic")
+            st.markdown("#### âš¡ Energy Diagnostic")
             
-            with st.expander("ℹ️ What is the Energy diagnostic?", expanded=False):
+            with st.expander("â„¹ï¸ What is the Energy diagnostic?", expanded=False):
                 st.markdown("""
                 **Hamiltonian Monte Carlo Energy**
                 - Monitors the "energy" of the sampling process (from physics analogy)
@@ -2604,15 +3511,15 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### 📈 Trace Plots (First 6 Cell Types)")
+            st.markdown("#### ðŸ“ˆ Trace Plots (First 6 Cell Types)")
             
-            with st.expander("ℹ️ How to read trace plots?", expanded=False):
+            with st.expander("â„¹ï¸ How to read trace plots?", expanded=False):
                 st.markdown("""
                 **What to Look For:**
-                - **"Hairy caterpillar":** ✅ Good mixing (chains bouncing around randomly)
-                - **Flat mixing:** ✅ All chains overlap (converged to same distribution)
-                - **⚠️ Trends:** Bad (chain drifting, not converged)
-                - **⚠️ Stuck chains:** Bad (chain not exploring)
+                - **"Hairy caterpillar":** âœ… Good mixing (chains bouncing around randomly)
+                - **Flat mixing:** âœ… All chains overlap (converged to same distribution)
+                - **âš ï¸ Trends:** Bad (chain drifting, not converged)
+                - **âš ï¸ Stuck chains:** Bad (chain not exploring)
                 """)
             
             with st.spinner("Generating trace plots..."):
@@ -2623,9 +3530,9 @@ def main():
             st.markdown("---")
             
             # Rank plots
-            st.markdown("#### 📊 Rank Plots (First 6 Cell Types)")
+            st.markdown("#### ðŸ“Š Rank Plots (First 6 Cell Types)")
             
-            with st.expander("ℹ️ What are rank plots?", expanded=False):
+            with st.expander("â„¹ï¸ What are rank plots?", expanded=False):
                 st.markdown("""
                 **Rank histograms:** 
                 - All chains should have uniform distributions (good mixing)
@@ -2640,9 +3547,9 @@ def main():
             st.markdown("---")
             
             # Autocorrelation
-            st.markdown("#### 📉 Autocorrelation Plots (First 6 Cell Types)")
+            st.markdown("#### ðŸ“‰ Autocorrelation Plots (First 6 Cell Types)")
             
-            with st.expander("ℹ️ What is autocorrelation?", expanded=False):
+            with st.expander("â„¹ï¸ What is autocorrelation?", expanded=False):
                 st.markdown("""
                 **Autocorrelation:** 
                 - Measures how correlated successive samples are
@@ -2658,8 +3565,8 @@ def main():
                     
         # Tab 4: Gene BMI
         with tabs[3]:
-            st.markdown("### ðŸ“ˆ Gene-Level BMI Associations")
-            st.info("ðŸ’¡ Hover for statistics â€¢ Click-drag to zoom â€¢ Double-click to reset")
+            st.markdown("### Ã°Å¸â€œË† Gene-Level BMI Associations")
+            st.info("Ã°Å¸â€™Â¡ Hover for statistics Ã¢â‚¬Â¢ Click-drag to zoom Ã¢â‚¬Â¢ Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
@@ -2669,13 +3576,130 @@ def main():
         
         # Tab 5: Gene Survival
         with tabs[4]:
-            st.markdown("### ðŸ’Š Gene-Level Survival Analysis")
-            st.info("ðŸ’¡ Forest plot with confidence intervals â€¢ Hover for full statistics")
+            st.markdown("### Ã°Å¸â€™Å  Gene-Level Survival Analysis")
+            st.info("Ã°Å¸â€™Â¡ Forest plot with confidence intervals Ã¢â‚¬Â¢ Hover for full statistics")
             with st.spinner("Running survival analysis..."):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
     
+        
+        # Tab 6: Signature Survival
+        with tabs[5]:
+            st.markdown("### 🎯 Signature-Level Survival Analysis")
+            
+            st.markdown("""
+            <div class="method-box">
+            <b>📊 BMI-Stratified Survival Analysis</b><br>
+            7 interactive Plotly plots examining signature-survival relationships across BMI categories.
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Load survival data
+            sig_features = load_significant_features()
+            zscore_data = load_zscore_data_survival()
+            
+            if sig_features is None or zscore_data is None:
+                st.warning("⚠️ Survival data not available")
+            else:
+                filtered_sigs = sig_features[sig_features['compartment'] == compartment].copy()
+                
+                if 'feature' in filtered_sigs.columns:
+                    filtered_sigs['cell_from_feature'] = filtered_sigs['feature'].apply(
+                        lambda x: x.split('||')[0] if '||' in str(x) else None
+                    )
+                    
+                    def normalize_cell(name):
+                        return str(name).upper().replace('_', ' ').strip()
+                    
+                    filtered_sigs = filtered_sigs[
+                        filtered_sigs['cell_from_feature'].apply(normalize_cell) == normalize_cell(selected_cell)
+                    ].copy()
+                
+                if len(filtered_sigs) == 0:
+                    st.info(f"ℹ️ No significant survival data for {compartment} / {selected_cell_display}")
+                else:
+                    st.markdown("#### 🔍 Select Significant Signature")
+                    
+                    current_feature = f"{selected_cell}||{sig_name}"
+                    sidebar_sig_is_significant = current_feature in filtered_sigs['feature'].values
+                    default_idx = filtered_sigs['feature'].tolist().index(current_feature) if sidebar_sig_is_significant else 0
+                    
+                    selected_survival_feature = st.selectbox(
+                        f"Significant signatures:",
+                        options=filtered_sigs['feature'].tolist(),
+                        format_func=lambda x: clean_label_text(x.split('||')[1] if '||' in x else x),
+                        index=default_idx,
+                        key='survival_sig_dropdown'
+                    )
+                    
+                    feature_data = zscore_data[zscore_data['feature'] == selected_survival_feature].copy()
+                    
+                    if len(feature_data) > 0:
+                        patient_data = clinical.merge(
+                            feature_data[['base_sample_id', 'Z']],
+                            left_on='sample_id',
+                            right_on='base_sample_id',
+                            how='inner'
+                        )
+                        
+                        patient_data = patient_data[
+                            (patient_data['follow_up_months'] > 0) &
+                            (patient_data['follow_up_months'].notna()) &
+                            (patient_data['vital_status_binary'].notna())
+                        ].copy()
+                        
+                        if len(patient_data) >= 30:
+                            n_total = len(patient_data)
+                            n_events = int(patient_data['vital_status_binary'].sum())
+                            
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Patients", n_total)
+                            with col2:
+                                st.metric("Events", n_events)
+                            with col3:
+                                st.metric("Event Rate", f"{100*n_events/n_total:.1f}%")
+                            
+                            st.markdown("---")
+                            st.markdown("#### 📊 Interactive Survival Plots")
+                            
+                            sig_display_name = clean_label_text(
+                                selected_survival_feature.split('||')[1] if '||' in selected_survival_feature 
+                                else selected_survival_feature
+                            )
+                            
+                            plot_functions = [
+                                ("BMI vs Time", plot_survival_bmi_vs_time),
+                                ("BMI vs HR", plot_survival_bmi_vs_hr),
+                                ("Dual-Axis", plot_survival_bmi_dual_axis),
+                                ("Forest Plot", plot_survival_forest_bmi),
+                                ("Tertile Interaction", plot_survival_interaction_tertile),
+                                ("Median Split", plot_survival_interaction_median),
+                                ("HR + Distribution", plot_survival_hr_with_distribution)
+                            ]
+                            
+                            plot_count = 0
+                            for row_idx in range(3):
+                                if row_idx < 2:
+                                    cols = st.columns(3)
+                                    for col_idx in range(3):
+                                        if plot_count < len(plot_functions):
+                                            with cols[col_idx]:
+                                                plot_name, plot_func = plot_functions[plot_count]
+                                                fig = plot_func(patient_data, sig_display_name)
+                                                if fig:
+                                                    st.plotly_chart(fig, use_container_width=True)
+                                                plot_count += 1
+                                else:
+                                    if plot_count < len(plot_functions):
+                                        col1, col2, col3 = st.columns([1, 2, 1])
+                                        with col2:
+                                            plot_name, plot_func = plot_functions[plot_count]
+                                            fig = plot_func(patient_data, sig_display_name)
+                            if fig:
+                                                    st.plotly_chart(fig, use_container_width=True)
+                                            plot_count += 1
     # Footer
     st.markdown("---")
     st.markdown("""
