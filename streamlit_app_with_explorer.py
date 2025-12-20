@@ -41,65 +41,486 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS - Material Design System
 st.markdown("""
 <style>
+    /* ========== MATERIAL DESIGN FOUNDATIONS ========== */
+    
+    /* Material Typography Scale */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+    
+    :root {
+        /* Material Color Palette - Primary (Blue) */
+        --md-primary-50: #E3F2FD;
+        --md-primary-100: #BBDEFB;
+        --md-primary-200: #90CAF9;
+        --md-primary-300: #64B5F6;
+        --md-primary-400: #42A5F5;
+        --md-primary-500: #2196F3;
+        --md-primary-600: #1E88E5;
+        --md-primary-700: #1976D2;
+        --md-primary-800: #1565C0;
+        --md-primary-900: #0D47A1;
+        
+        /* Material Color Palette - Success (Green) */
+        --md-success-50: #E8F5E9;
+        --md-success-500: #4CAF50;
+        --md-success-700: #388E3C;
+        
+        /* Material Color Palette - Warning (Amber) */
+        --md-warning-50: #FFF8E1;
+        --md-warning-500: #FFC107;
+        --md-warning-700: #FFA000;
+        
+        /* Material Color Palette - Error (Red) */
+        --md-error-50: #FFEBEE;
+        --md-error-500: #F44336;
+        
+        /* Material Neutral Palette */
+        --md-grey-50: #FAFAFA;
+        --md-grey-100: #F5F5F5;
+        --md-grey-200: #EEEEEE;
+        --md-grey-300: #E0E0E0;
+        --md-grey-400: #BDBDBD;
+        --md-grey-500: #9E9E9E;
+        --md-grey-600: #757575;
+        --md-grey-700: #616161;
+        --md-grey-800: #424242;
+        --md-grey-900: #212121;
+        
+        /* Material Elevation Shadows */
+        --md-shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        --md-shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+        --md-shadow-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+        --md-shadow-4: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+        --md-shadow-5: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+        
+        /* Material Motion */
+        --md-transition-fast: 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        --md-transition-standard: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --md-transition-enter: 0.225s cubic-bezier(0.0, 0, 0.2, 1);
+        --md-transition-exit: 0.195s cubic-bezier(0.4, 0, 1, 1);
+    }
+    
+    * {
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    
+    /* ========== MAIN LAYOUT ========== */
+    
+    .main {
+        background-color: var(--md-grey-50);
+    }
+    
+    /* ========== HEADERS ========== */
+    
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        font-size: 2.75rem;
+        font-weight: 500;
+        color: var(--md-primary-700);
         text-align: center;
-        padding: 1rem 0;
+        padding: 2rem 0 1rem 0;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
     }
+    
     .sub-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
+        font-size: 1.75rem;
+        font-weight: 500;
+        color: var(--md-grey-900);
+        margin-top: 3rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--md-grey-200);
+        letter-spacing: -0.01em;
     }
+    
+    /* ========== MATERIAL CARDS ========== */
+    
     .info-box {
-        background-color: #e8f4f8;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 5px solid #1f77b4;
-        margin: 1rem 0;
-    }
-    .method-box {
-        background-color: #f0f8ff;
+        background-color: #FFFFFF;
         padding: 1.5rem;
-        border-radius: 0.8rem;
-        border-left: 6px solid #4CAF50;
+        border-radius: 4px;
         margin: 1.5rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: var(--md-shadow-2);
+        border-left: 4px solid var(--md-primary-500);
+        transition: box-shadow var(--md-transition-standard);
     }
+    
+    .info-box:hover {
+        box-shadow: var(--md-shadow-3);
+    }
+    
+    .method-box {
+        background-color: #FFFFFF;
+        padding: 2rem;
+        border-radius: 4px;
+        margin: 2rem 0;
+        box-shadow: var(--md-shadow-2);
+        border-left: 4px solid var(--md-success-500);
+        transition: box-shadow var(--md-transition-standard);
+    }
+    
+    .method-box:hover {
+        box-shadow: var(--md-shadow-3);
+    }
+    
     .warning-box {
-        background-color: #fff3cd;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 5px solid #ffc107;
-        margin: 1rem 0;
+        background-color: var(--md-warning-50);
+        padding: 1.25rem;
+        border-radius: 4px;
+        margin: 1.5rem 0;
+        box-shadow: var(--md-shadow-1);
+        border-left: 4px solid var(--md-warning-500);
     }
+    
+    /* ========== BUTTONS - Material Design ========== */
+    
     .stButton>button {
         width: 100%;
-        background-color: #1f77b4;
+        background-color: var(--md-primary-600);
         color: white;
-        font-weight: bold;
+        font-weight: 500;
+        font-size: 0.875rem;
+        letter-spacing: 0.0892857143em;
+        text-transform: uppercase;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        box-shadow: var(--md-shadow-2);
+        transition: all var(--md-transition-standard);
     }
-    /* Better signature name display */
-    .stSelectbox label {
-        font-weight: 600 !important;
-        color: #2c3e50 !important;
+    
+    .stButton>button:hover {
+        background-color: var(--md-primary-700);
+        box-shadow: var(--md-shadow-3);
+        transform: translateY(-1px);
     }
-    /* Better metric display */
+    
+    .stButton>button:active {
+        box-shadow: var(--md-shadow-1);
+        transform: translateY(0);
+    }
+    
+    /* ========== INPUTS & SELECTS ========== */
+    
+    .stSelectbox label, .stTextInput label, .stTextArea label {
+        font-weight: 500 !important;
+        color: var(--md-grey-700) !important;
+        font-size: 0.875rem !important;
+        letter-spacing: 0.01em !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .stSelectbox > div > div,
+    .stTextInput > div > div,
+    .stTextArea > div > div {
+        border-radius: 4px !important;
+        border: 1px solid var(--md-grey-300) !important;
+        background-color: #FFFFFF !important;
+        transition: all var(--md-transition-fast) !important;
+        box-shadow: none !important;
+    }
+    
+    .stSelectbox > div > div:hover,
+    .stTextInput > div > div:hover,
+    .stTextArea > div > div:hover {
+        border-color: var(--md-grey-400) !important;
+    }
+    
+    .stSelectbox > div > div:focus-within,
+    .stTextInput > div > div:focus-within,
+    .stTextArea > div > div:focus-within {
+        border-color: var(--md-primary-600) !important;
+        border-width: 2px !important;
+        box-shadow: none !important;
+    }
+    
+    /* ========== METRICS - Material Cards ========== */
+    
     .stMetric {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        background-color: #FFFFFF;
+        padding: 1.25rem;
+        border-radius: 4px;
+        box-shadow: var(--md-shadow-1);
+        transition: box-shadow var(--md-transition-standard);
+        border: 1px solid var(--md-grey-200);
     }
-    /* Improve text contrast */
+    
+    .stMetric:hover {
+        box-shadow: var(--md-shadow-2);
+    }
+    
+    .stMetric label {
+        font-weight: 500 !important;
+        color: var(--md-grey-600) !important;
+        font-size: 0.75rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    
+    .stMetric [data-testid="stMetricValue"] {
+        color: var(--md-grey-900) !important;
+        font-size: 2rem !important;
+        font-weight: 400 !important;
+    }
+    
+    /* ========== TABS - Material Design ========== */
+    
+    .stTabs {
+        background-color: transparent;
+        margin-top: 2rem;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid var(--md-grey-300);
+        box-shadow: var(--md-shadow-1);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: 48px;
+        padding: 0 24px;
+        background-color: transparent;
+        border-radius: 0;
+        color: var(--md-grey-700);
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.0892857143em;
+        border: none;
+        border-bottom: 2px solid transparent;
+        transition: all var(--md-transition-fast);
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: var(--md-grey-100);
+        color: var(--md-grey-900);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: transparent !important;
+        color: var(--md-primary-600) !important;
+        border-bottom: 2px solid var(--md-primary-600) !important;
+    }
+    
+    /* ========== DATAFRAMES - Material Table ========== */
+    
+    .stDataFrame {
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: var(--md-shadow-2);
+        border: 1px solid var(--md-grey-300);
+    }
+    
+    .stDataFrame thead tr th {
+        background-color: var(--md-grey-100) !important;
+        color: var(--md-grey-900) !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        padding: 1rem !important;
+        border-bottom: 2px solid var(--md-grey-300) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .stDataFrame tbody tr {
+        transition: background-color var(--md-transition-fast);
+    }
+    
+    .stDataFrame tbody tr:hover {
+        background-color: var(--md-grey-50) !important;
+    }
+    
+    .stDataFrame tbody td {
+        border-bottom: 1px solid var(--md-grey-200) !important;
+    }
+    
+    /* ========== SIDEBAR - Material ========== */
+    
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid var(--md-grey-300);
+        box-shadow: var(--md-shadow-1);
+    }
+    
+    [data-testid="stSidebar"] .sidebar-content {
+        padding: 1.5rem;
+    }
+    
+    /* ========== EXPANDER - Material Accordion ========== */
+    
+    .streamlit-expanderHeader {
+        background-color: #FFFFFF;
+        border: 1px solid var(--md-grey-300);
+        border-radius: 4px;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        color: var(--md-grey-900);
+        transition: all var(--md-transition-standard);
+        box-shadow: var(--md-shadow-1);
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background-color: var(--md-grey-50);
+        box-shadow: var(--md-shadow-2);
+    }
+    
+    .streamlit-expanderContent {
+        border: 1px solid var(--md-grey-300);
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        padding: 1.5rem;
+        background-color: #FFFFFF;
+        box-shadow: var(--md-shadow-1);
+    }
+    
+    /* ========== ALERTS - Material Snackbar Style ========== */
+    
+    .stAlert {
+        border-radius: 4px;
+        padding: 1rem 1.5rem;
+        box-shadow: var(--md-shadow-2);
+        border: none;
+    }
+    
+    .stSuccess {
+        background-color: var(--md-success-50);
+        color: var(--md-success-700);
+        border-left: 4px solid var(--md-success-500);
+    }
+    
+    .stInfo {
+        background-color: var(--md-primary-50);
+        color: var(--md-primary-800);
+        border-left: 4px solid var(--md-primary-500);
+    }
+    
+    .stWarning {
+        background-color: var(--md-warning-50);
+        color: var(--md-warning-700);
+        border-left: 4px solid var(--md-warning-500);
+    }
+    
+    .stError {
+        background-color: var(--md-error-50);
+        color: var(--md-error-500);
+        border-left: 4px solid var(--md-error-500);
+    }
+    
+    /* ========== DOWNLOAD BUTTON ========== */
+    
+    .stDownloadButton button {
+        background-color: var(--md-success-500);
+        color: white;
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.0892857143em;
+        border: none;
+        border-radius: 4px;
+        padding: 0.75rem 1.5rem;
+        box-shadow: var(--md-shadow-2);
+        transition: all var(--md-transition-standard);
+    }
+    
+    .stDownloadButton button:hover {
+        background-color: var(--md-success-700);
+        box-shadow: var(--md-shadow-3);
+        transform: translateY(-1px);
+    }
+    
+    .stDownloadButton button:active {
+        box-shadow: var(--md-shadow-1);
+        transform: translateY(0);
+    }
+    
+    /* ========== PLOTLY CHARTS - Material Card ========== */
+    
+    .js-plotly-plot {
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #FFFFFF;
+        box-shadow: var(--md-shadow-2);
+        border: 1px solid var(--md-grey-200);
+        transition: box-shadow var(--md-transition-standard);
+    }
+    
+    .js-plotly-plot:hover {
+        box-shadow: var(--md-shadow-3);
+    }
+    
+    /* ========== DIVIDER ========== */
+    
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 1px;
+        background-color: var(--md-grey-300);
+    }
+    
+    /* ========== TEXT STYLES ========== */
+    
     .stMarkdown p, .stMarkdown li {
-        color: #2c3e50 !important;
+        color: var(--md-grey-800) !important;
+        line-height: 1.6;
+    }
+    
+    .stMarkdown strong {
+        color: var(--md-grey-900) !important;
+        font-weight: 500;
+    }
+    
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
+        color: var(--md-grey-900) !important;
+        font-weight: 500 !important;
+        letter-spacing: -0.01em;
+    }
+    
+    .stMarkdown code {
+        background-color: var(--md-grey-100);
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        color: var(--md-primary-700);
+        font-size: 0.9em;
+        font-family: 'Roboto Mono', monospace;
+        border: 1px solid var(--md-grey-300);
+    }
+    
+    /* ========== SCROLLBAR - Material ========== */
+    
+    ::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background-color: var(--md-grey-100);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background-color: var(--md-grey-400);
+        border-radius: 6px;
+        border: 2px solid var(--md-grey-100);
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--md-grey-500);
+    }
+    
+    /* ========== TOGGLE/CHECKBOX - Material ========== */
+    
+    .stCheckbox, .stRadio {
+        padding: 0.5rem;
+    }
+    
+    /* ========== SPINNER - Material ========== */
+    
+    .stSpinner > div {
+        border-color: var(--md-primary-500) transparent transparent transparent !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -339,7 +760,7 @@ def format_signature_name(sig_name, max_length=40):
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     """Generate interactive STABL Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("STABL data not available")
+        st.warning("âš ï¸ STABL data not available")
         return None
     
     zscores = comp_data['zscores']
@@ -1372,7 +1793,7 @@ def render_signature_explorer():
     st.markdown(f"###  Signatures for {selected_cell_display}")
     
     # Create tabs for different views
-    sig_tabs = st.tabs([" Summary Table", " Detailed View", " Total Signature Statistics"])
+    sig_tabs = st.tabs([" Summary Table", " Detailed View", " Statistics"])
     
     # Tab 1: Summary Table
     with sig_tabs[0]:
@@ -1444,7 +1865,7 @@ def render_signature_explorer():
                 "Genes in this signature:",
                 genes_text,
                 height=200,
-                key=f'gene_list_{selected_sig_idx}'
+                key='gene_list_display'
             )
             
             # Download genes
@@ -1456,7 +1877,17 @@ def render_signature_explorer():
                 mime="text/plain"
             )
         
-
+        # Show gene list as table
+        st.markdown("####  Gene List (Table View)")
+        genes_df = pd.DataFrame({'Gene Symbol': selected_sig['genes']})
+        genes_df['Index'] = range(1, len(genes_df) + 1)
+        genes_df = genes_df[['Index', 'Gene Symbol']]
+        
+        st.dataframe(
+            genes_df,
+            use_container_width=True,
+            height=min(400, len(genes_df) * 35 + 38)
+        )
     
     # Tab 3: Statistics
     with sig_tabs[2]:
@@ -1601,119 +2032,68 @@ def main():
     # Continue with Statistical Analysis mode (toggle ON)
     
     # Methodology Section (Collapsible)
-    with st.expander("📖 About the Analysis Methods", expanded=False):
+    with st.expander("ðŸ“- **About the Analysis Methods**", expanded=False):
         st.markdown("""
-        ### 🔬 Data & Methods Overview
+        ### ðŸ§¬ Data & Methods Overview
         
-        This analysis integrates deconvolution, signature-based profiling, sparse machine learning, 
-        and Bayesian hierarchical modeling to quantify how obesity reshapes the tumor microenvironment 
-        in pancreatic ductal adenocarcinoma (PDAC).
+        This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
         ---
         
-        #### 🧬 **BayesPrism** — Cell-Type Deconvolution
-        A fully Bayesian framework that deconvolves bulk RNA-seq data using single-cell references to infer:
-        - Cell-type proportions per tumor sample  
-        - Cell-type–specific gene expression profiles  
+        #### ðŸ”¹ **BayesPrism** - Cell Type Deconvolution
+        A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
         
-        BayesPrism models technical noise and biological variability, enabling robust recovery of immune 
-        and stromal programs from bulk CPTAC transcriptomes.
-        
-        **Reference:** Danko Lab, BayesPrism  
-        https://github.com/Danko-Lab/BayesPrism
+        ðŸ“š **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
         
         ---
         
-        #### 🧠 **Signature Scoring** — Functional Program Quantification
-        Curated gene sets representing metabolic, immune, and stress-response programs are aggregated into 
-        per-sample, per-cell-type signature scores.
+        #### ðŸ”¹ **STABL** - Feature Selection
+        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
-        - Input: TPM-normalized expression from BayesPrism cell-specific profiles  
-        - Method: Mean expression per gene set, followed by global Z-score standardization  
-        - Output: Comparable functional activity scores across BMI groups and cell types  
-        
-        This enables pathway-level interpretation beyond single-gene effects.
+        ðŸ“š **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
-        #### 🎯 **STABL** — Sparse and Reliable Feature Selection
-        STABL (Stability-Driven Adaptive Lasso) is a general machine learning framework designed to identify 
-        a **small, reliable set of biomarkers** from high-dimensional data.
+        #### ðŸ”¹ **Bayesian Hierarchical Model** - Effect Size Estimation
+        A three-group hierarchical model comparing:
+        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
         
-        Key characteristics:
-        - Integrates **noise injection** to probe feature robustness  
-        - Uses a **data-driven signal-to-noise threshold** to control false discoveries  
-        - Performs **multivariable sparse modeling**, selecting features that remain stable across perturbations  
-        - Produces a compact, interpretable biomarker set while maintaining predictive performance  
+        The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
-        In this study, STABL is applied to Z-scored signature matrices to identify the most stable 
-        BMI-associated functional programs across immune and non-immune compartments.
-        
-        **Reference:** Bellan et al., STABL  
-        https://github.com/gregbellan/Stabl
+        ðŸ“š **References:**
+        - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
+        - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
         
         ---
         
-        #### 📊 **Bayesian Hierarchical Modeling** — Effect Size Estimation
-        To quantify BMI-associated changes while accounting for biological variability, we fit a 
-        three-group Bayesian hierarchical model comparing:
-        
-        - **Normal BMI** (< 25)  
-        - **Overweight** (25–30)  
-        - **Obese** (> 30)  
-        
-        The model:
-        - Estimates group-wise effect sizes for each selected signature  
-        - Shares information across cell types and signatures (partial pooling)  
-        - Uses **Markov Chain Monte Carlo (MCMC)** to sample posterior distributions  
-        - Provides full uncertainty quantification (credible intervals, posterior probabilities)  
-        
-        This yields interpretable, probabilistic estimates of obesity-driven transcriptional shifts.
-        
-        **References:**  
-        Bayesian hierarchical models — https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling  
-        MCMC — https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo
+        #### ðŸ”¹ **Diagnostic Metrics**
+        - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
+        - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
+        - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
+        - **Credible Intervals:** Bayesian equivalent of confidence intervals (95% HDI)
         
         ---
         
-        #### 🩺 **Model Diagnostics**
-        Posterior sampling quality is assessed using:
-        
-        - **R-hat:** Convergence metric (target < 1.01)  
-        - **ESS:** Effective sample size (target > 400)  
-        - **Energy / BFMI:** Hamiltonian Monte Carlo efficiency  
-        - **Trace & rank plots:** Visual convergence checks  
-        - **95% HDI:** Highest density credible intervals for effect sizes  
-        
-        Only well-converged models are retained for interpretation.
+        #### ðŸ“Š **Dataset**
+        - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
+        - **Samples:** 140 tumor samples with clinical annotations
+        - **Cell Types:** Deconvolved into immune and non-immune cell populations
+        - **Signatures:** 30+ metabolic and functional gene signatures per cell type
         
         ---
         
-        #### 🗂️ **Dataset**
-        - **Cohort:** CPTAC Pancreatic Adenocarcinoma (PAAD)  
-        - **Samples:** ~140 primary tumors with clinical annotations  
-        - **Data:** Bulk RNA-seq, deconvolved into immune and non-immune cell types  
-        - **Signatures:** 30+ curated metabolic and functional programs per cell type  
-        
-        ---
-        
-        #### 🔄 **Analysis Workflow**
-        1. **Bulk RNA-seq** → CPTAC PAAD transcriptomes  
-        2. **Deconvolution** → BayesPrism cell fractions & cell-specific expression  
-        3. **Normalization** → TPM → global Z-scoring  
-        4. **Signature Scoring** → Pathway activity matrices  
-        5. **Feature Selection** → STABL identifies stable BMI-associated signatures  
-        6. **Modeling** → Bayesian hierarchical estimation of group effects  
-        7. **Diagnostics** → MCMC convergence & quality control  
-        8. **Clinical Link** → Survival analysis (Cox regression)  
-        
-        Together, this framework enables robust, interpretable dissection of how obesity reshapes 
-        metabolic and immune programs in the PDAC tumor microenvironment.
+        #### ðŸŽ¯ **Analysis Workflow**
+        1. **Deconvolution:** BayesPrism â’ Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values â’ Gene expression matrix
+        3. **Signatures:** Aggregate genes â’ Signature scores (Z-scores)
+        4. **Selection:** STABL â’ Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical â’ Effect sizes with uncertainty
+        6. **Validation:** MCMC diagnostics â’ Convergence checks
+        7. **Survival:** Cox regression â’ Clinical relevance
         """)
-
     
     # Sidebar
-    st.sidebar.title(" Data Selection")
+    st.sidebar.title("ðŸ“Š Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -1790,7 +2170,7 @@ def main():
     
     # Main content
     if generate:
-        st.markdown(f'<div class="sub-header">Interactive Analysis Results</div>', 
+        st.markdown(f'<div class="sub-header">ðŸ“ˆ Interactive Analysis Results</div>', 
                    unsafe_allow_html=True)
         
         col1, col2, col3, col4 = st.columns(4)
@@ -1805,31 +2185,31 @@ def main():
         
         # Tabs
         tabs = st.tabs([
-            " STABL & Bayesian",
+            "ðŸŽ¯ STABL & Bayesian",
             "ðŸŒŠ Ridge Plot",
             "ðŸ” Diagnostics",
-            " Gene BMI",
-            "Gene Survival"
+            "ðŸ§¬ Gene BMI",
+            "ðŸ’Š Gene Survival"
         ])
         
         # Tab 1: STABL & Bayesian
         with tabs[0]:
-            st.markdown("###  STABL Feature Selection")
+            st.markdown("### ðŸ“Š STABL Feature Selection")
             
             st.markdown("""
             <div class="method-box">
-            <b> What is STABL?</b><br>
+            <b>ðŸ”¬ What is STABL?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
             <li>Counting how often each feature is selected</li>
             <li>Keeping only features selected consistently (stable features)</li>
             </ol>
-            <b>­ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            <b>â­ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### Z-score Heatmap")
+            st.markdown("#### ðŸ“ˆ Z-score Heatmap")
             st.caption("Z-scores represent standardized signature expression across BMI categories")
             with st.spinner("Generating interactive STABL heatmap..."):
                 fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
@@ -1838,11 +2218,11 @@ def main():
             
             st.markdown("---")
             
-            st.markdown("###  Bayesian Effect Size Estimation")
+            st.markdown("### ðŸ“Š Bayesian Effect Size Estimation")
             
             st.markdown("""
             <div class="method-box">
-            <b> Bayesian Hierarchical Model</b><br>
+            <b>ðŸ§® Bayesian Hierarchical Model</b><br>
             Estimates how much each cell type's signature changes with increasing BMI:
             <ul>
             <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -1854,8 +2234,8 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("####  Effect Sizes with Credible Intervals")
-            st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
+            st.markdown("#### ðŸ“Š Effect Sizes with Credible Intervals")
+            st.caption("Hover for exact effect sizes â€¢ Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
@@ -1867,7 +2247,7 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b> Ridge Plots Explained</b><br>
+            <b>ðŸ“Š Ridge Plots Explained</b><br>
             Each "ridge" shows the full distribution of MCMC samples for one cell type:
             <ul>
             <li><b>Width:</b> Uncertainty in effect size estimate</li>
@@ -1880,7 +2260,7 @@ def main():
             """, unsafe_allow_html=True)
             
             st.markdown("#### ðŸŒŠ Overlapped Posterior Distributions")
-            st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
+            st.caption("Interactive ridge plot â€¢ Hover for details â€¢ Scroll to zoom â€¢ Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
@@ -1916,7 +2296,7 @@ def main():
             """, unsafe_allow_html=True)
             
             # ESS and R-hat
-            st.markdown("####  ESS & R-hat Statistics")
+            st.markdown("#### ðŸ“Š ESS & R-hat Statistics")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -1962,7 +2342,7 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### Trace Plots (First 6 Cell Types)")
+            st.markdown("#### ðŸ“ˆ Trace Plots (First 6 Cell Types)")
             st.markdown("""
             **What to Look For:**
             - **"Hairy caterpillar":** Good mixing (chains bouncing around randomly)
@@ -1978,7 +2358,7 @@ def main():
             st.markdown("---")
             
             # Rank plots
-            st.markdown("####  Rank Plots (First 6 Cell Types)")
+            st.markdown("#### ðŸ“Š Rank Plots (First 6 Cell Types)")
             st.markdown("**Rank histograms:** All chains should have uniform distributions (good mixing)")
             with st.spinner("Generating rank plots..."):
                 fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
@@ -1997,8 +2377,8 @@ def main():
         
         # Tab 4: Gene BMI
         with tabs[3]:
-            st.markdown("### Gene-Level BMI Associations")
-            st.info("Hover for statistics | Click-drag to zoom | Double-click to reset")
+            st.markdown("### ðŸ“ˆ Gene-Level BMI Associations")
+            st.info("ðŸ’¡ Hover for statistics â€¢ Click-drag to zoom â€¢ Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
@@ -2008,8 +2388,8 @@ def main():
         
         # Tab 5: Gene Survival
         with tabs[4]:
-            st.markdown("### Gene-Level Survival Analysis")
-            st.info("Forest plot with confidence intervals | Hover for full statistics")
+            st.markdown("### ðŸ’Š Gene-Level Survival Analysis")
+            st.info("ðŸ’¡ Forest plot with confidence intervals â€¢ Hover for full statistics")
             with st.spinner("Running survival analysis..."):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
@@ -2021,7 +2401,7 @@ def main():
     <div style='text-align: center; color: #666; padding: 2rem;'>
     <b>Interactive Cell Analysis Viewer</b><br>
     Real-time interactive visualizations with Plotly<br>
-    <i>Zoom | Pan | Hover | Explore</i>
+    <i>Zoom â€¢ Pan â€¢ Hover â€¢ Explore</i>
     </div>
     """, unsafe_allow_html=True)
 
