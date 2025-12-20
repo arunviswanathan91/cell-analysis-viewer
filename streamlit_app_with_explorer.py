@@ -21,6 +21,7 @@ from plotly.subplots import make_subplots
 from scipy import stats
 from scipy.stats import gaussian_kde
 from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -752,6 +753,24 @@ COLOR_OBO = "#33a02c"
 # Plotly template
 PLOTLY_TEMPLATE = "plotly_white"
 
+# Survival analysis configuration
+COLOR_POSITIVE_HR = '#E53935'
+COLOR_NEGATIVE_HR = '#1E88E5'
+BMI_CATEGORIES = {
+    'Underweight': (0, 18.5),
+    'Normal': (18.5, 25),
+    'Overweight': (25, 30),
+    'Obese': (30, 50)
+}
+BMI_COLORS_SURVIVAL = {
+    'Underweight': '#4CAF50',
+    'Normal': '#2196F3',
+    'Overweight': '#FF9800',
+    'Obese': '#F44336'
+}
+CONFIDENCE_THRESHOLD = 10
+
+
 # Survival plot colors
 COLOR_POSITIVE_HR = '#E53935'  # Red for increased risk (HR > 1)
 COLOR_NEGATIVE_HR = '#1E88E5'  # Blue for protective (HR < 1)
@@ -1045,6 +1064,78 @@ def clean_label_text(text):
         text = text[:57] + '...'
     
     return text.title()
+
+@st.cache_data
+def load_significant_features():
+    """Load significant survival features (p < 0.05)"""
+    try:
+        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
+        sig_df = pd.read_csv(sig_file)
+        if 'hr_p' in sig_df.columns:
+            sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
+        return sig_df
+    except:
+        return None
+
+def extract_base_sample_id(sample_id):
+    """Extract base patient ID from sample identifiers"""
+    if pd.isna(sample_id):
+        return None
+    sample_str = str(sample_id).strip()
+    for suffix in ['-T', '-N', '-tumor', '-normal', '_T', '_N']:
+        if sample_str.endswith(suffix):
+            sample_str = sample_str[:-len(suffix)]
+    return sample_str
+
+@st.cache_data
+def load_zscore_data_survival():
+    """Load z-score data for survival analysis from all compartments"""
+    all_data = []
+    comp_map = {
+        'Immune Fine': 'immune_fine',
+        'Immune Coarse': 'immune_coarse',
+        'Non-Immune': 'non_immune'
+    }
+    for compartment_name, comp_key in comp_map.items():
+        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        if not os.path.exists(zfile):
+            continue
+        try:
+            df = pd.read_csv(zfile, low_memory=False)
+            sample_col = df.columns[0]
+            feature_cols = [c for c in df.columns if "||" in str(c)]
+            if not feature_cols:
+                continue
+            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
+                             var_name="feature", value_name="Z")
+            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
+            df_long['compartment'] = compartment_name
+            all_data.append(df_long)
+        except:
+            continue
+    return pd.concat(all_data, ignore_index=True) if all_data else None
+
+def assign_bmi_category(bmi):
+    """Assign BMI category using WHO standards"""
+    if pd.isna(bmi):
+        return None
+    for cat, (low, high) in BMI_CATEGORIES.items():
+        if low <= bmi < high:
+            return cat
+    return 'Obese'
+
+def clean_label_text(text):
+    """Clean signature/feature names for display"""
+    if pd.isna(text):
+        return "Unknown"
+    text = str(text).strip()
+    text = text.replace('_Signature', '').replace('_signature', '')
+    text = text.replace('_Score', '').replace('_score', '')
+    text = text.replace('_', ' ')
+    if len(text) > 60:
+        text = text[:57] + '...'
+    return text.title()
+
 
 def get_available_cells(compartment):
     """Get cell types from Z-score data"""
@@ -2718,6 +2809,359 @@ def plot_survival_hr_with_distribution(patient_data, signature_name):
     
     return fig
 
+# ==================================================================================  
+# =================== SURVIVAL PLOTTING FUNCTIONS ==================================
+# ==================================================================================
+
+def plot_survival_bmi_vs_time(patient_data, signature_name):
+    """Plot 1: BMI vs Follow-up Time"""
+    if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
+        return None
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    if len(patient_data_bmi) < 10:
+        return None
+    
+    deceased = patient_data_bmi[patient_data_bmi['vital_status_binary'] == 1]
+    alive = patient_data_bmi[patient_data_bmi['vital_status_binary'] == 0]
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=alive['BMI'], y=alive['follow_up_months'], mode='markers',
+                             name=f'Alive (n={len(alive)})', marker=dict(color='#1E88E5', size=8, opacity=0.6)))
+    fig.add_trace(go.Scatter(x=deceased['BMI'], y=deceased['follow_up_months'], mode='markers',
+                             name=f'Deceased (n={len(deceased)})', marker=dict(color='#E53935', size=8, opacity=0.6)))
+    
+    try:
+        from scipy.stats import binned_statistic
+        bmi_bins = np.linspace(patient_data_bmi['BMI'].min(), patient_data_bmi['BMI'].max(), 15)
+        means, edges, _ = binned_statistic(patient_data_bmi['BMI'], patient_data_bmi['follow_up_months'], 
+                                           statistic='mean', bins=bmi_bins)
+        bin_centers = (edges[:-1] + edges[1:]) / 2
+        valid_idx = ~np.isnan(means)
+        if valid_idx.sum() >= 3:
+            means_smooth = gaussian_filter1d(means[valid_idx], sigma=1)
+            fig.add_trace(go.Scatter(x=bin_centers[valid_idx], y=means_smooth, mode='lines',
+                                    name='Mean Trend', line=dict(color='black', width=3, dash='dash')))
+    except:
+        pass
+    
+    fig.add_vline(x=25, line_dash="dot", line_color="orange", opacity=0.5)
+    fig.add_vline(x=30, line_dash="dot", line_color="red", opacity=0.5)
+    fig.update_layout(title=f'{signature_name}<br>BMI vs Follow-up Time', xaxis_title='BMI',
+                     yaxis_title='Follow-up Time (months)', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_bmi_vs_hr(patient_data, signature_name):
+    """Plot 2: BMI vs Hazard Ratio"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min, bmi_max = patient_data_bmi['BMI'].min(), patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    hrs, ci_lowers, ci_uppers, valid_bmis = [], [], [], []
+    
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            hr = np.exp(cph.params_['Z'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['Z', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['Z', '95% upper-bound'])
+            hrs.append(np.clip(hr, 0.1, 10))
+            ci_lowers.append(np.clip(ci_lower, 0.1, 10))
+            ci_uppers.append(np.clip(ci_upper, 0.1, 10))
+            valid_bmis.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    valid_bmis = np.array(valid_bmis)
+    hrs_smooth = gaussian_filter1d(np.array(hrs), sigma=1.5)
+    ci_lowers_smooth = gaussian_filter1d(np.array(ci_lowers), sigma=1.5)
+    ci_uppers_smooth = gaussian_filter1d(np.array(ci_uppers), sigma=1.5)
+    
+    color = COLOR_POSITIVE_HR if np.median(hrs_smooth) > 1 else COLOR_NEGATIVE_HR
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=np.concatenate([valid_bmis, valid_bmis[::-1]]),
+        y=np.concatenate([ci_uppers_smooth, ci_lowers_smooth[::-1]]),
+        fill='toself', fillcolor=f'rgba({int(color[1:3], 16)}, {int(color[3:5], 16)}, {int(color[5:7], 16)}, 0.2)',
+        line=dict(color='rgba(255,255,255,0)'), name='95% CI', showlegend=True, hoverinfo='skip'
+    ))
+    fig.add_trace(go.Scatter(x=valid_bmis, y=hrs_smooth, mode='lines', name='Hazard Ratio',
+                            line=dict(color=color, width=3)))
+    fig.add_hline(y=1, line_dash="dash", line_color="gray")
+    fig.update_layout(title=f'{signature_name}<br>BMI vs Hazard Ratio', xaxis_title='BMI',
+                     yaxis_title='Hazard Ratio', yaxis_type='log', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_bmi_dual_axis(patient_data, signature_name):
+    """Plot 3: Dual-axis (Time & HR)"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min, bmi_max = patient_data_bmi['BMI'].min(), patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    
+    # Calculate HRs
+    hrs, valid_bmis_hr = [], []
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            hrs.append(np.clip(np.exp(cph.params_['Z']), 0.1, 10))
+            valid_bmis_hr.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    hrs_smooth = gaussian_filter1d(np.array(hrs), sigma=1.5)
+    
+    # Calculate follow-up times
+    time_means, time_bmis = [], []
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ]
+        if len(window_patients) >= 5:
+            time_means.append(window_patients['follow_up_months'].mean())
+            time_bmis.append(bmi_mid)
+    
+    time_smooth = gaussian_filter1d(np.array(time_means), sigma=1.5)
+    
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=time_bmis, y=time_smooth, mode='lines+markers', name='Follow-up Time',
+                            line=dict(color='#1E88E5', width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=valid_bmis_hr, y=hrs_smooth, mode='lines+markers', name='Hazard Ratio',
+                            line=dict(color='#E53935', width=3)), secondary_y=True)
+    
+    fig.update_xaxes(title_text="BMI")
+    fig.update_yaxes(title_text="Follow-up Time (months)", secondary_y=False)
+    fig.update_yaxes(title_text="Hazard Ratio", type='log', secondary_y=True)
+    fig.update_layout(title=f'{signature_name}<br>Dual-Axis: Time & HR', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_forest_bmi(patient_data, signature_name):
+    """Plot 4: Forest plot by BMI category"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()]
+    if len(patient_data) < 30:
+        return None
+    
+    results = []
+    for cat in ['Underweight', 'Normal', 'Overweight', 'Obese']:
+        cat_data = patient_data[patient_data['bmi_category'] == cat].copy()
+        if len(cat_data) < 15 or cat_data['vital_status_binary'].sum() < 3:
+            continue
+        try:
+            cox_data = cat_data[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            hr = np.exp(cph.params_['Z'])
+            ci_lower = np.exp(cph.confidence_intervals_.loc['Z', '95% lower-bound'])
+            ci_upper = np.exp(cph.confidence_intervals_.loc['Z', '95% upper-bound'])
+            p_value = cph.summary.loc['Z', 'p']
+            results.append({'category': cat, 'hr': hr, 'ci_lower': ci_lower, 'ci_upper': ci_upper,
+                          'p_value': p_value, 'n': len(cat_data), 'events': int(cat_data['vital_status_binary'].sum())})
+        except:
+            continue
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    fig = go.Figure()
+    for _, row in results_df.iterrows():
+        color = BMI_COLORS_SURVIVAL.get(row['category'], 'gray')
+        fig.add_trace(go.Scatter(
+            x=[row['hr']], y=[row['category']], mode='markers', name=row['category'],
+            marker=dict(color=color, size=15),
+            error_x=dict(type='data', symmetric=False, array=[row['ci_upper']-row['hr']],
+                        arrayminus=[row['hr']-row['ci_lower']], color=color, thickness=3),
+            showlegend=False
+        ))
+    
+    fig.add_vline(x=1, line_dash="dash", line_color="gray")
+    fig.update_layout(title=f'{signature_name}<br>Forest Plot by BMI', xaxis_title='Hazard Ratio',
+                     xaxis_type='log', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_interaction_tertile(patient_data, signature_name):
+    """Plot 5: BMI × Signature (Tertiles)"""
+    if 'BMI' not in patient_data.columns:
+        return None
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()].copy()
+    if len(patient_data) < 30:
+        return None
+    
+    patient_data['z_group'] = pd.qcut(patient_data['Z'], q=3, labels=['Low', 'Medium', 'High'], duplicates='drop')
+    
+    results = []
+    for cat in ['Underweight', 'Normal', 'Overweight', 'Obese']:
+        for z_grp in ['Low', 'Medium', 'High']:
+            subset = patient_data[(patient_data['bmi_category']==cat) & (patient_data['z_group']==z_grp)].copy()
+            if len(subset) >= 3:
+                results.append({'bmi_category': cat, 'z_group': z_grp,
+                              'median_survival': subset['follow_up_months'].median(),
+                              'event_rate': subset['vital_status_binary'].mean() * 100,
+                              'n': len(subset)})
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    fig = make_subplots(rows=1, cols=2, subplot_titles=('Median Survival', 'Event Rate'))
+    
+    z_colors = {'Low': '#2196F3', 'Medium': '#FF9800', 'High': '#4CAF50'}
+    category_order = ['Underweight', 'Normal', 'Overweight', 'Obese']
+    
+    for z_grp in ['Low', 'Medium', 'High']:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index().dropna(subset=['median_survival'])
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        fig.add_trace(go.Scatter(x=x_pos, y=subset['median_survival'], mode='lines+markers', name=z_grp,
+                                line=dict(color=z_colors[z_grp], width=2.5)), row=1, col=1)
+        subset2 = results_df[results_df['z_group'] == z_grp].set_index('bmi_category').reindex(category_order).reset_index().dropna(subset=['event_rate'])
+        x_pos2 = [category_order.index(cat) for cat in subset2['bmi_category']]
+        fig.add_trace(go.Scatter(x=x_pos2, y=subset2['event_rate'], mode='lines+markers', name=z_grp,
+                                line=dict(color=z_colors[z_grp], width=2.5), showlegend=False), row=1, col=2)
+    
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(4)), row=1, col=1)
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(4)), row=1, col=2)
+    fig.update_layout(title=f'{signature_name}<br>Tertile Interaction', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_interaction_median(patient_data, signature_name):
+    """Plot 6: BMI × Signature (Median Split)"""
+    if 'BMI' not in patient_data.columns:
+        return None
+    patient_data = patient_data.copy()
+    patient_data['bmi_category'] = patient_data['BMI'].apply(assign_bmi_category)
+    patient_data = patient_data[patient_data['bmi_category'].notna()].copy()
+    if len(patient_data) < 30:
+        return None
+    
+    patient_data['z_group'] = pd.qcut(patient_data['Z'], q=2, labels=['Low', 'High'], duplicates='drop')
+    
+    results = []
+    for cat in ['Underweight', 'Normal', 'Overweight', 'Obese']:
+        for z_grp in ['Low', 'High']:
+            subset = patient_data[(patient_data['bmi_category']==cat) & (patient_data['z_group']==z_grp)].copy()
+            if len(subset) >= 3:
+                results.append({'bmi_category': cat, 'z_group': z_grp,
+                              'median_survival': subset['follow_up_months'].median(),
+                              'event_rate': subset['vital_status_binary'].mean() * 100,
+                              'n': len(subset)})
+    
+    if len(results) == 0:
+        return None
+    
+    results_df = pd.DataFrame(results)
+    fig = make_subplots(rows=1, cols=2, subplot_titles=('Median Survival', 'Event Rate'))
+    
+    z_colors = {'Low': '#2196F3', 'High': '#E53935'}
+    category_order = ['Underweight', 'Normal', 'Overweight', 'Obese']
+    
+    for z_grp in ['Low', 'High']:
+        subset = results_df[results_df['z_group'] == z_grp]
+        if len(subset) == 0:
+            continue
+        subset = subset.set_index('bmi_category').reindex(category_order).reset_index().dropna(subset=['median_survival'])
+        x_pos = [category_order.index(cat) for cat in subset['bmi_category']]
+        fig.add_trace(go.Scatter(x=x_pos, y=subset['median_survival'], mode='lines+markers', name=f'{z_grp} Sig',
+                                line=dict(color=z_colors[z_grp], width=3)), row=1, col=1)
+        subset2 = results_df[results_df['z_group'] == z_grp].set_index('bmi_category').reindex(category_order).reset_index().dropna(subset=['event_rate'])
+        x_pos2 = [category_order.index(cat) for cat in subset2['bmi_category']]
+        fig.add_trace(go.Scatter(x=x_pos2, y=subset2['event_rate'], mode='lines+markers', name=f'{z_grp} Sig',
+                                line=dict(color=z_colors[z_grp], width=3), showlegend=False), row=1, col=2)
+    
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(4)), row=1, col=1)
+    fig.update_xaxes(ticktext=category_order, tickvals=list(range(4)), row=1, col=2)
+    fig.update_layout(title=f'{signature_name}<br>Median Split', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
+def plot_survival_hr_with_distribution(patient_data, signature_name):
+    """Plot 7: HR + Patient Distribution"""
+    if not LIFELINES_AVAILABLE or 'BMI' not in patient_data.columns:
+        return None
+    patient_data_bmi = patient_data[patient_data['BMI'].notna()].copy()
+    if len(patient_data_bmi) < 30:
+        return None
+    
+    bmi_min, bmi_max = patient_data_bmi['BMI'].min(), patient_data_bmi['BMI'].max()
+    bmi_points = np.linspace(bmi_min, bmi_max, 30)
+    hrs, valid_bmis = [], []
+    
+    for bmi_mid in bmi_points:
+        window_size = (bmi_max - bmi_min) / 5.0
+        window_patients = patient_data_bmi[
+            (patient_data_bmi['BMI'] >= bmi_mid - window_size/2) &
+            (patient_data_bmi['BMI'] < bmi_mid + window_size/2)
+        ].copy()
+        if len(window_patients) < 10 or window_patients['vital_status_binary'].sum() < 3:
+            continue
+        try:
+            cox_data = window_patients[['follow_up_months', 'vital_status_binary', 'Z']].dropna()
+            cph = CoxPHFitter(penalizer=0.1)
+            cph.fit(cox_data, duration_col='follow_up_months', event_col='vital_status_binary')
+            hrs.append(np.clip(np.exp(cph.params_['Z']), 0.1, 10))
+            valid_bmis.append(bmi_mid)
+        except:
+            continue
+    
+    if len(hrs) < 3:
+        return None
+    
+    hrs_smooth = gaussian_filter1d(np.array(hrs), sigma=1.5)
+    color = COLOR_POSITIVE_HR if np.median(hrs_smooth) > 1 else COLOR_NEGATIVE_HR
+    
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=valid_bmis, y=hrs_smooth, mode='lines+markers', name='Hazard Ratio',
+                            line=dict(color=color, width=3.5)), secondary_y=False)
+    fig.add_trace(go.Histogram(x=patient_data_bmi['BMI'], nbinsx=20, name='Patient Count',
+                              marker=dict(color='gray', opacity=0.3)), secondary_y=True)
+    fig.add_hline(y=1, line_dash="dash", line_color="gray", secondary_y=False)
+    fig.update_xaxes(title_text="BMI")
+    fig.update_yaxes(title_text="Hazard Ratio", type='log', secondary_y=False)
+    fig.update_yaxes(title_text="Patient Count", secondary_y=True)
+    fig.update_layout(title=f'{signature_name}<br>HR + Distribution', template=PLOTLY_TEMPLATE, height=500)
+    return fig
+
 
 def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
@@ -3111,24 +3555,216 @@ def render_signature_explorer():
 # ==================================================================================
 # ============================= MAIN APP ===========================================
 # ==================================================================================
+# ==================================================================================
+# ===================== MODE 3: SIGNATURE SURVIVAL =================================
+# ==================================================================================
 
-def main():
-    # Sidebar Mode Selection with Toggle Button
-    st.sidebar.title("âš™ï¸ Application Mode")
+def render_signature_survival():
+    """Mode 3: Dedicated Signature Survival Analysis"""
+    st.markdown('<div class="sub-header">🎯 Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
     
-    analysis_mode = st.sidebar.toggle(
-        "Statistical Analysis Mode",
-        value=False,
-        help="Toggle ON for Statistical Analysis, OFF for Signature Explorer"
+    st.markdown("""
+    <div class="info-box">
+    <b>📊 BMI-Stratified Survival Analysis</b><br>
+    Explore how signature expression affects patient outcomes across BMI categories using Cox proportional hazards modeling.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Load data
+    clinical = load_clinical_data()
+    sig_features = load_significant_features()
+    zscore_data = load_zscore_data_survival()
+    
+    if sig_features is None or zscore_data is None:
+        st.error("❌ Survival data not available")
+        st.info("**Required:** data/survival/significant_features.csv")
+        return
+    
+    # SIDEBAR: Compartment
+    st.sidebar.title("🔍 Data Selection")
+    st.sidebar.markdown("### Step 1: Compartment")
+    compartment = st.sidebar.selectbox(
+        "Choose compartment:",
+        options=['Immune Fine', 'Immune Coarse', 'Non-Immune'],
+        index=0
     )
     
-    # Show current mode with colored indicator
-    if analysis_mode:
-        st.sidebar.success(" **Current Mode:** Statistical Analysis")
+    # Filter by compartment
+    filtered_sigs = sig_features[sig_features['compartment'] == compartment].copy()
+    if len(filtered_sigs) == 0:
+        st.warning(f"⚠️ No survival signatures for {compartment}")
+        return
+    
+    # Extract cell types
+    filtered_sigs['cell_type'] = filtered_sigs['feature'].apply(
+        lambda x: x.split('||')[0] if '||' in str(x) else None
+    )
+    available_cells = sorted(filtered_sigs['cell_type'].dropna().unique().tolist())
+    
+    if len(available_cells) == 0:
+        st.warning(f"⚠️ No cell types for {compartment}")
+        return
+    
+    # SIDEBAR: Cell Type
+    st.sidebar.markdown("### Step 2: Cell Type")
+    cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
+    selected_cell_display = st.sidebar.selectbox(
+        f"Choose cell type ({len(available_cells)} available):",
+        options=list(cell_display.keys()),
+        index=0
+    )
+    selected_cell = cell_display[selected_cell_display]
+    
+    # Filter by cell
+    cell_filtered = filtered_sigs[filtered_sigs['cell_type'] == selected_cell].copy()
+    if len(cell_filtered) == 0:
+        st.warning(f"⚠️ No signatures for {selected_cell_display}")
+        return
+    
+    # SIDEBAR: Signature DROPDOWN (KEY FEATURE!)
+    st.sidebar.markdown("### Step 3: Signature")
+    sig_display_map = {}
+    for _, row in cell_filtered.iterrows():
+        feat = row['feature']
+        sig_part = feat.split('||')[1] if '||' in str(feat) else feat
+        clean_name = clean_label_text(sig_part)
+        sig_display_map[clean_name] = feat
+    
+    selected_sig_display = st.sidebar.selectbox(
+        f"Choose signature ({len(sig_display_map)} significant):",
+        options=list(sig_display_map.keys()),
+        index=0
+    )
+    selected_feature = sig_display_map[selected_sig_display]
+    
+    # Generate button
+    st.sidebar.markdown("---")
+    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
+    
+    # Current selection
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Current Selection")
+    sig_row = cell_filtered[cell_filtered['feature'] == selected_feature].iloc[0]
+    st.sidebar.info(f"""
+    **Compartment:** {compartment}  
+    **Cell Type:** {selected_cell_display}  
+    **Signature:** {selected_sig_display}  
+    **HR:** {sig_row['hr']:.3f}  
+    **p-value:** {sig_row['hr_p']:.3e}
+    """)
+    
+    # MAIN ANALYSIS
+    if generate:
+        st.markdown(f'<div class="sub-header">📊 Results: {selected_sig_display}</div>', 
+                   unsafe_allow_html=True)
+        
+        # Get z-scores
+        feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
+        if len(feature_data) == 0:
+            st.error(f"❌ No z-score data for {selected_feature}")
+            return
+        
+        # Merge with clinical
+        patient_data = clinical.merge(
+            feature_data[['base_sample_id', 'Z']],
+            left_on='sample_id',
+            right_on='base_sample_id',
+            how='inner'
+        )
+        
+        # Filter for survival
+        patient_data = patient_data[
+            (patient_data['follow_up_months'] > 0) &
+            (patient_data['follow_up_months'].notna()) &
+            (patient_data['vital_status_binary'].notna())
+        ].copy()
+        
+        if len(patient_data) < 30:
+            st.warning(f"⚠️ Insufficient data (n={len(patient_data)}, need ≥30)")
+            return
+        
+        # Metrics
+        n_total = len(patient_data)
+        n_events = int(patient_data['vital_status_binary'].sum())
+        median_followup = patient_data['follow_up_months'].median()
+        event_rate = 100 * n_events / n_total
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Patients", n_total)
+        with col2:
+            st.metric("Events", n_events)
+        with col3:
+            st.metric("Median Follow-up", f"{median_followup:.1f} mo")
+        with col4:
+            st.metric("Event Rate", f"{event_rate:.1f}%")
+        
+        st.markdown("---")
+        st.markdown("### 📊 Interactive Survival Plots")
+        
+        # 7 PLOTS IN 3x3 GRID
+        plot_configs = [
+            ("BMI vs Time", plot_survival_bmi_vs_time),
+            ("BMI vs HR", plot_survival_bmi_vs_hr),
+            ("Dual-Axis", plot_survival_bmi_dual_axis),
+            ("Forest Plot", plot_survival_forest_bmi),
+            ("Tertile", plot_survival_interaction_tertile),
+            ("Median Split", plot_survival_interaction_median),
+            ("HR + Distribution", plot_survival_hr_with_distribution)
+        ]
+        
+        plot_count = 0
+        for row_idx in range(3):
+            if row_idx < 2:
+                cols = st.columns(3)
+                for col_idx in range(3):
+                    if plot_count < len(plot_configs):
+                        with cols[col_idx]:
+                            plot_name, plot_func = plot_configs[plot_count]
+                            with st.spinner(f"{plot_name}..."):
+                                fig = plot_func(patient_data, selected_sig_display)
+                                if fig:
+                                    st.plotly_chart(fig, use_container_width=True)
+                                else:
+                                    st.info("ℹ️ Insufficient data")
+                            plot_count += 1
+            else:
+                if plot_count < len(plot_configs):
+                    col1, col2, col3 = st.columns([1, 2, 1])
+                    with col2:
+                        plot_name, plot_func = plot_configs[plot_count]
+                        with st.spinner(f"{plot_name}..."):
+                            fig = plot_func(patient_data, selected_sig_display)
+                            if fig:
+                                st.plotly_chart(fig, use_container_width=True)
+                            else:
+                                st.info("ℹ️ Insufficient data")
+                        plot_count += 1
+
+
+def main():
+    # 3-Mode Selector
+    st.sidebar.title("⚙️ Application Mode")
+    
+    mode = st.sidebar.radio(
+        "Select Analysis Mode:",
+        options=[
+            "📚 Signature Explorer",
+            "📊 Statistical Analysis",
+            "🎯 Signature Survival"
+        ],
+        index=0
+    )
+    
+    if mode == "📚 Signature Explorer":
+        st.sidebar.info("Browse the signature database")
+    elif mode == "📊 Statistical Analysis":
+        st.sidebar.success("STABL, Bayesian, Diagnostics & Genes")
     else:
-        st.sidebar.info(" **Current Mode:** Signature Explorer")
+        st.sidebar.warning("Survival analysis stratified by BMI")
     
     st.sidebar.markdown("---")
+    
     
     # Main Header
     st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
@@ -3142,12 +3778,16 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Route to appropriate section
-    if not analysis_mode:  # Signature Explorer mode (toggle OFF)
+    # Route to appropriate mode
+    if mode == "📚 Signature Explorer":
         render_signature_explorer()
         return
     
-    # Continue with Statistical Analysis mode (toggle ON)
+    elif mode == "🎯 Signature Survival":
+        render_signature_survival()
+        return
+    
+    # Continue with Statistical Analysis mode
     
     # Methodology Section (Collapsible)
     with st.expander("**About the Analysis Methods**", expanded=False):
@@ -3585,121 +4225,6 @@ def main():
     
         
         # Tab 6: Signature Survival
-        with tabs[5]:
-            st.markdown("### 🎯 Signature-Level Survival Analysis")
-            
-            st.markdown("""
-            <div class="method-box">
-            <b>📊 BMI-Stratified Survival Analysis</b><br>
-            7 interactive Plotly plots examining signature-survival relationships across BMI categories.
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Load survival data
-            sig_features = load_significant_features()
-            zscore_data = load_zscore_data_survival()
-            
-            if sig_features is None or zscore_data is None:
-                st.warning("⚠️ Survival data not available")
-            else:
-                filtered_sigs = sig_features[sig_features['compartment'] == compartment].copy()
-                
-                if 'feature' in filtered_sigs.columns:
-                    filtered_sigs['cell_from_feature'] = filtered_sigs['feature'].apply(
-                        lambda x: x.split('||')[0] if '||' in str(x) else None
-                    )
-                    
-                    def normalize_cell(name):
-                        return str(name).upper().replace('_', ' ').strip()
-                    
-                    filtered_sigs = filtered_sigs[
-                        filtered_sigs['cell_from_feature'].apply(normalize_cell) == normalize_cell(selected_cell)
-                    ].copy()
-                
-                if len(filtered_sigs) == 0:
-                    st.info(f"ℹ️ No significant survival data for {compartment} / {selected_cell_display}")
-                else:
-                    st.markdown("#### 🔍 Select Significant Signature")
-                    
-                    current_feature = f"{selected_cell}||{sig_name}"
-                    sidebar_sig_is_significant = current_feature in filtered_sigs['feature'].values
-                    default_idx = filtered_sigs['feature'].tolist().index(current_feature) if sidebar_sig_is_significant else 0
-                    
-                    selected_survival_feature = st.selectbox(
-                        f"Significant signatures:",
-                        options=filtered_sigs['feature'].tolist(),
-                        format_func=lambda x: clean_label_text(x.split('||')[1] if '||' in x else x),
-                        index=default_idx,
-                        key='survival_sig_dropdown'
-                    )
-                    
-                    feature_data = zscore_data[zscore_data['feature'] == selected_survival_feature].copy()
-                    
-                    if len(feature_data) > 0:
-                        patient_data = clinical.merge(
-                            feature_data[['base_sample_id', 'Z']],
-                            left_on='sample_id',
-                            right_on='base_sample_id',
-                            how='inner'
-                        )
-                        
-                        patient_data = patient_data[
-                            (patient_data['follow_up_months'] > 0) &
-                            (patient_data['follow_up_months'].notna()) &
-                            (patient_data['vital_status_binary'].notna())
-                        ].copy()
-                        
-                        if len(patient_data) >= 30:
-                            n_total = len(patient_data)
-                            n_events = int(patient_data['vital_status_binary'].sum())
-                            
-                            col1, col2, col3 = st.columns(3)
-                            with col1:
-                                st.metric("Patients", n_total)
-                            with col2:
-                                st.metric("Events", n_events)
-                            with col3:
-                                st.metric("Event Rate", f"{100*n_events/n_total:.1f}%")
-                            
-                            st.markdown("---")
-                            st.markdown("#### 📊 Interactive Survival Plots")
-                            
-                            sig_display_name = clean_label_text(
-                                selected_survival_feature.split('||')[1] if '||' in selected_survival_feature 
-                                else selected_survival_feature
-                            )
-                            
-                            plot_functions = [
-                                ("BMI vs Time", plot_survival_bmi_vs_time),
-                                ("BMI vs HR", plot_survival_bmi_vs_hr),
-                                ("Dual-Axis", plot_survival_bmi_dual_axis),
-                                ("Forest Plot", plot_survival_forest_bmi),
-                                ("Tertile Interaction", plot_survival_interaction_tertile),
-                                ("Median Split", plot_survival_interaction_median),
-                                ("HR + Distribution", plot_survival_hr_with_distribution)
-                            ]
-                            
-                            plot_count = 0
-                            for row_idx in range(3):
-                                if row_idx < 2:
-                                    cols = st.columns(3)
-                                    for col_idx in range(3):
-                                        if plot_count < len(plot_functions):
-                                            with cols[col_idx]:
-                                                plot_name, plot_func = plot_functions[plot_count]
-                                                fig = plot_func(patient_data, sig_display_name)
-                                                if fig:
-                                                    st.plotly_chart(fig, use_container_width=True)
-                                                plot_count += 1
-                                else:
-                                    if plot_count < len(plot_functions):
-                                        col1, col2, col3 = st.columns([1, 2, 1])
-                                        with col2:
-                                            plot_name, plot_func = plot_functions[plot_count]
-                                            fig = plot_func(patient_data, sig_display_name)
-                                            if fig:
-                                                    st.plotly_chart(fig, use_container_width=True)
-                                            plot_count += 1
     # Footer
     st.markdown("---")
     st.markdown("""
