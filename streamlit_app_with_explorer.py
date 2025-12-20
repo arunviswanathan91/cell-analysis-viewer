@@ -2483,68 +2483,75 @@ def main():
             st.markdown("### 🔬 Bayesian MCMC Diagnostics")
             
             # Collapsible guide at the top
-            with st.expander("📖 Understanding MCMC Diagnostics - Click to Learn More", expanded=False):
+            with st.expander("📖 Understanding MCMC Diagnostics — Click to Learn More", expanded=False):
                 st.markdown("""
                 <div class="method-box">
-                <b>🔍 What is MCMC?</b><br>
-                    🔁 Bayesian Inference & MCMC — What’s happening here?
-                    
-                    Our analysis uses **Bayesian modeling** to estimate how biological signatures change with BMI.
-                    Instead of producing a single fixed value, the model estimates a **range of plausible values**
-                    that reflect uncertainty in the data.
-                    
-                    To do this, we use a method called **Markov Chain Monte Carlo (MCMC)**.
-                    
-                    🗺️ **Analogy:**  
-                    Imagine exploring a foggy mountain range to find the highest peaks.  
-                    You take small steps, guided by the terrain, and keep walking for a long time.  
-                    The places you visit most often are likely near the true peaks.
-                    
-                    MCMC works the same way:
-                    - It takes many small steps through parameter space,
-                    - Visits more likely values more often,
-                    - And builds a map of what values are most plausible.
-                    
-                    This map is called the **posterior distribution**.
-                    
-                    ---
-                    
-                    📊 Why show diagnostics?
-                    
-                    Because MCMC is a random walk, we must check whether it worked properly.
-                    The diagnostic plots help answer:
-                    
-                    - Did the sampler **converge** to a stable solution?
-                    - Did different chains agree?
-                    - Do we have enough effective samples?
-                    - Does the model reproduce the observed data?
-                    
-                    If these checks look good, we can trust the estimated effects and uncertainties.
-                    
-                    ✔️ In short:  
-                    **MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.**
+                <b>🔍 What is MCMC?</b><br><br>
+            
+                Our analysis uses <b>Bayesian modeling</b> to estimate how biological signatures change with BMI.
+                Rather than giving a single fixed value, the model learns a <b>range of plausible values</b>,
+                explicitly capturing uncertainty in the data.
+            
+                To achieve this, we use a method called <b>Markov Chain Monte Carlo (MCMC)</b>.
+            
+                🗺️ <b>Analogy:</b><br>
+                Imagine exploring a foggy mountain range to find the highest peaks.
+                You can only take small steps, guided by the terrain around you.
+                Over time, you spend more time near the highest regions.
+            
+                MCMC works in the same way:
+                <ul>
+                    <li>It takes many small steps through possible parameter values,</li>
+                    <li>Visits more likely values more often,</li>
+                    <li>And builds a map of what values best explain the data.</li>
+                </ul>
+            
+                This map is called the <b>posterior distribution</b> — it represents our updated belief
+                about the true effects after seeing the data.
+            
+                <hr>
+            
+                📊 <b>Why do we show diagnostics?</b><br><br>
+            
+                Because MCMC is a stochastic (random) process, we must verify that it explored the space properly.
+                The diagnostic plots help answer:
+            
+                <ul>
+                    <li>Did the sampler <b>converge</b> to a stable solution?</li>
+                    <li>Do different chains agree with each other?</li>
+                    <li>Do we have enough effective samples?</li>
+                    <li>Does the model reproduce patterns seen in the data?</li>
+                </ul>
+            
+                If these checks look good, we can trust both the estimated effects <i>and</i> their uncertainty.
+            
+                ✔️ <b>In short:</b><br>
+                <b>MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.</b>
                 </div>
                 """, unsafe_allow_html=True)
-                
+            
                 col1, col2 = st.columns(2)
+            
                 with col1:
                     st.markdown("""
-                    **✅ Good Convergence Indicators:**
-                    - **R-hat < 1.01:** Multiple chains agree (excellent)
-                    - **ESS > 400:** Enough independent samples
-                    - **Energy transitions:** Smooth mixing
-                    - **"Hairy caterpillar" traces:** Efficient exploration
-                    """)
-                with col2:
-                    st.markdown("""
-                    **⚠️ Warning Signs:**
-                    - **R-hat > 1.05:** Chains haven't converged
-                    - **ESS < 100:** High autocorrelation
-                    - **Divergent transitions:** Sampling problems
-                    - **Trending traces:** Not at equilibrium
+                    **✅ Good Convergence Indicators**
+                    - **R-hat < 1.01:** Chains agree very well  
+                    - **ESS > 400:** Enough independent samples  
+                    - **Smooth energy transitions:** Good mixing  
+                    - **“Hairy caterpillar” traces:** Stable, well-mixed chains  
                     """)
             
+                with col2:
+                    st.markdown("""
+                    **⚠️ Warning Signs**
+                    - **R-hat > 1.05:** Chains disagree (no convergence)  
+                    - **ESS < 100:** Strong autocorrelation  
+                    - **Divergent transitions:** Geometry or tuning issues  
+                    - **Trending traces:** Sampler not at equilibrium  
+                    """)
+                    
             st.markdown("---")
+
             
             # ESS and R-hat
             st.markdown("#### 📊 ESS & R-hat Statistics")
