@@ -1372,7 +1372,7 @@ def render_signature_explorer():
     st.markdown(f"###  Signatures for {selected_cell_display}")
     
     # Create tabs for different views
-    sig_tabs = st.tabs([" Summary Table", " Detailed View", " Statistics"])
+    sig_tabs = st.tabs([" Summary Table", " Detailed View", " Total Signature Statistics"])
     
     # Tab 1: Summary Table
     with sig_tabs[0]:
