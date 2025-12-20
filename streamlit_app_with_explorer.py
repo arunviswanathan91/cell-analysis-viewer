@@ -3743,22 +3743,28 @@ def render_signature_survival():
 
 
 def main():
-    # Sidebar Mode Selection with Toggle Button
-    st.sidebar.title("âš™ï¸ Application Mode")
+    # 3-Mode Selector
+    st.sidebar.title("⚙️ Application Mode")
     
-    analysis_mode = st.sidebar.toggle(
-        "Statistical Analysis Mode",
-        value=False,
-        help="Toggle ON for Statistical Analysis, OFF for Signature Explorer"
+    mode = st.sidebar.radio(
+        "Select Analysis Mode:",
+        options=[
+            "📚 Signature Explorer",
+            "📊 Statistical Analysis",
+            "🎯 Signature Survival"
+        ],
+        index=0
     )
     
-    # Show current mode with colored indicator
-    if analysis_mode:
-        st.sidebar.success(" **Current Mode:** Statistical Analysis")
+    if mode == "📚 Signature Explorer":
+        st.sidebar.info("Browse the signature database")
+    elif mode == "📊 Statistical Analysis":
+        st.sidebar.success("STABL, Bayesian, Diagnostics & Genes")
     else:
-        st.sidebar.info(" **Current Mode:** Signature Explorer")
+        st.sidebar.warning("Survival analysis stratified by BMI")
     
     st.sidebar.markdown("---")
+    
     
     # Main Header
     st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
