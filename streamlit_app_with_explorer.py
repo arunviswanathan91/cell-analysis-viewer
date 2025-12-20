@@ -2487,8 +2487,42 @@ def main():
                 st.markdown("""
                 <div class="method-box">
                 <b>🔍 What is MCMC?</b><br>
-                Bayesian inference uses <b>Markov Chain Monte Carlo (MCMC)</b> to sample from the posterior distribution. 
-                These diagnostics help us verify that the sampling worked correctly.
+                    ### 🔁 Bayesian Inference & MCMC — What’s happening here?
+                    
+                    Our analysis uses **Bayesian modeling** to estimate how biological signatures change with BMI.
+                    Instead of producing a single fixed value, the model estimates a **range of plausible values**
+                    that reflect uncertainty in the data.
+                    
+                    To do this, we use a method called **Markov Chain Monte Carlo (MCMC)**.
+                    
+                    🗺️ **Analogy:**  
+                    Imagine exploring a foggy mountain range to find the highest peaks.  
+                    You take small steps, guided by the terrain, and keep walking for a long time.  
+                    The places you visit most often are likely near the true peaks.
+                    
+                    MCMC works the same way:
+                    - It takes many small steps through parameter space,
+                    - Visits more likely values more often,
+                    - And builds a map of what values are most plausible.
+                    
+                    This map is called the **posterior distribution**.
+                    
+                    ---
+                    
+                    ### 📊 Why show diagnostics?
+                    
+                    Because MCMC is a random walk, we must check whether it worked properly.
+                    The diagnostic plots help answer:
+                    
+                    - Did the sampler **converge** to a stable solution?
+                    - Did different chains agree?
+                    - Do we have enough effective samples?
+                    - Does the model reproduce the observed data?
+                    
+                    If these checks look good, we can trust the estimated effects and uncertainties.
+                    
+                    ✔️ In short:  
+                    **MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.**
                 </div>
                 """, unsafe_allow_html=True)
                 
