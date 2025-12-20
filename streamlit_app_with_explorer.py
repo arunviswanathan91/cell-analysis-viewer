@@ -41,16 +41,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS - Material Design System
+# Custom CSS - Advanced Material Design 3 + Creative Modern UI
 st.markdown("""
 <style>
-    /* ========== MATERIAL DESIGN FOUNDATIONS ========== */
+    /* ========== ADVANCED DESIGN SYSTEM ========== */
     
-    /* Material Typography Scale */
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+    /* Google Fonts - Material + Display */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap');
     
     :root {
-        /* Material Color Palette - Primary (Blue) */
+        /* Material Design 3 - Dynamic Color Palette */
         --md-primary-50: #E3F2FD;
         --md-primary-100: #BBDEFB;
         --md-primary-200: #90CAF9;
@@ -60,23 +60,23 @@ st.markdown("""
         --md-primary-600: #1E88E5;
         --md-primary-700: #1976D2;
         --md-primary-800: #1565C0;
-        --md-primary-900: #0D47A1;
         
-        /* Material Color Palette - Success (Green) */
+        /* Accent Colors */
+        --md-accent-teal: #00BCD4;
+        --md-accent-purple: #9C27B0;
+        --md-accent-orange: #FF9800;
+        
+        /* Success, Warning, Error */
         --md-success-50: #E8F5E9;
         --md-success-500: #4CAF50;
         --md-success-700: #388E3C;
-        
-        /* Material Color Palette - Warning (Amber) */
         --md-warning-50: #FFF8E1;
         --md-warning-500: #FFC107;
-        --md-warning-700: #FFA000;
-        
-        /* Material Color Palette - Error (Red) */
         --md-error-50: #FFEBEE;
         --md-error-500: #F44336;
         
-        /* Material Neutral Palette */
+        /* Sophisticated Neutral Palette */
+        --md-grey-0: #FFFFFF;
         --md-grey-50: #FAFAFA;
         --md-grey-100: #F5F5F5;
         --md-grey-200: #EEEEEE;
@@ -88,439 +88,651 @@ st.markdown("""
         --md-grey-800: #424242;
         --md-grey-900: #212121;
         
-        /* Material Elevation Shadows */
-        --md-shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-        --md-shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-        --md-shadow-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
-        --md-shadow-4: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-        --md-shadow-5: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+        /* Glassmorphism */
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.18);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
         
-        /* Material Motion */
-        --md-transition-fast: 0.1s cubic-bezier(0.4, 0, 0.2, 1);
-        --md-transition-standard: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        --md-transition-enter: 0.225s cubic-bezier(0.0, 0, 0.2, 1);
-        --md-transition-exit: 0.195s cubic-bezier(0.4, 0, 1, 1);
+        /* Modern Gradients */
+        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        --gradient-info: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+        --gradient-cosmic: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        --gradient-ocean: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        
+        /* Premium Shadows - Multi-layered */
+        --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        --shadow-glow: 0 0 20px rgba(33, 150, 243, 0.3);
+        --shadow-glow-hover: 0 0 30px rgba(33, 150, 243, 0.5);
+        
+        /* Smooth Animations */
+        --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        --ease-in-out-back: cubic-bezier(0.68, -0.6, 0.32, 1.6);
     }
     
     * {
-        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     
-    /* ========== MAIN LAYOUT ========== */
+    /* ========== MAIN LAYOUT - Subtle Texture ========== */
     
     .main {
-        background-color: var(--md-grey-50);
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background-attachment: fixed;
+        position: relative;
     }
     
-    /* ========== HEADERS ========== */
+    .main::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* ========== HEADERS - Gradient Text with Depth ========== */
     
     .main-header {
-        font-size: 2.75rem;
-        font-weight: 500;
-        color: var(--md-primary-700);
+        font-size: 3rem;
+        font-weight: 800;
+        background: var(--gradient-cosmic);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-align: center;
-        padding: 2rem 0 1rem 0;
-        margin-bottom: 1.5rem;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
+        padding: 2.5rem 0 1.5rem 0;
+        margin-bottom: 2rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
+        position: relative;
+        animation: fadeInDown 0.8s var(--ease-smooth);
+        text-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
     
     .sub-header {
-        font-size: 1.75rem;
-        font-weight: 500;
+        font-size: 1.875rem;
+        font-weight: 700;
         color: var(--md-grey-900);
-        margin-top: 3rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid var(--md-grey-200);
-        letter-spacing: -0.01em;
+        margin-top: 3.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        position: relative;
+        letter-spacing: -0.02em;
     }
     
-    /* ========== MATERIAL CARDS ========== */
+    .sub-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 4px;
+        background: var(--gradient-primary);
+        border-radius: 2px;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* ========== GLASSMORPHISM CARDS - Premium Look ========== */
     
     .info-box {
-        background-color: #FFFFFF;
-        padding: 1.5rem;
-        border-radius: 4px;
-        margin: 1.5rem 0;
-        box-shadow: var(--md-shadow-2);
-        border-left: 4px solid var(--md-primary-500);
-        transition: box-shadow var(--md-transition-standard);
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        padding: 2rem;
+        border-radius: 16px;
+        margin: 2rem 0;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-lg), var(--glass-shadow);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s var(--ease-smooth);
+    }
+    
+    .info-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: var(--gradient-info);
+    }
+    
+    .info-box::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(33, 150, 243, 0.08) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.4s var(--ease-smooth);
     }
     
     .info-box:hover {
-        box-shadow: var(--md-shadow-3);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl), var(--shadow-glow);
+        border-color: rgba(33, 150, 243, 0.3);
+    }
+    
+    .info-box:hover::after {
+        opacity: 1;
     }
     
     .method-box {
-        background-color: #FFFFFF;
-        padding: 2rem;
-        border-radius: 4px;
-        margin: 2rem 0;
-        box-shadow: var(--md-shadow-2);
-        border-left: 4px solid var(--md-success-500);
-        transition: box-shadow var(--md-transition-standard);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        padding: 2.5rem;
+        border-radius: 20px;
+        margin: 2.5rem 0;
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        box-shadow: var(--shadow-lg), 0 8px 32px rgba(76, 175, 80, 0.15);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s var(--ease-smooth);
+    }
+    
+    .method-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: var(--gradient-success);
     }
     
     .method-box:hover {
-        box-shadow: var(--md-shadow-3);
+        transform: translateY(-6px) scale(1.01);
+        box-shadow: var(--shadow-2xl), 0 12px 40px rgba(76, 175, 80, 0.25);
     }
     
     .warning-box {
-        background-color: var(--md-warning-50);
-        padding: 1.25rem;
-        border-radius: 4px;
+        background: linear-gradient(135deg, rgba(255, 248, 225, 0.95) 0%, rgba(255, 248, 225, 0.85) 100%);
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        border-radius: 12px;
         margin: 1.5rem 0;
-        box-shadow: var(--md-shadow-1);
         border-left: 4px solid var(--md-warning-500);
+        box-shadow: var(--shadow-md);
     }
     
-    /* ========== BUTTONS - Material Design ========== */
+    /* ========== MODERN BUTTONS - Gradient with Shine Effect ========== */
     
     .stButton>button {
         width: 100%;
-        background-color: var(--md-primary-600);
+        background: var(--gradient-primary);
         color: white;
-        font-weight: 500;
-        font-size: 0.875rem;
-        letter-spacing: 0.0892857143em;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        padding: 0.75rem 1.5rem;
+        padding: 1rem 2rem;
         border: none;
-        border-radius: 4px;
-        box-shadow: var(--md-shadow-2);
-        transition: all var(--md-transition-standard);
+        border-radius: 12px;
+        box-shadow: var(--shadow-lg), var(--shadow-glow);
+        transition: all 0.3s var(--ease-smooth);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stButton>button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s var(--ease-smooth);
     }
     
     .stButton>button:hover {
-        background-color: var(--md-primary-700);
-        box-shadow: var(--md-shadow-3);
-        transform: translateY(-1px);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-xl), var(--shadow-glow-hover);
+    }
+    
+    .stButton>button:hover::before {
+        left: 100%;
     }
     
     .stButton>button:active {
-        box-shadow: var(--md-shadow-1);
-        transform: translateY(0);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
     }
     
-    /* ========== INPUTS & SELECTS ========== */
+    /* ========== PREMIUM INPUTS - Floating Labels Effect ========== */
     
     .stSelectbox label, .stTextInput label, .stTextArea label {
-        font-weight: 500 !important;
+        font-weight: 600 !important;
         color: var(--md-grey-700) !important;
         font-size: 0.875rem !important;
-        letter-spacing: 0.01em !important;
+        letter-spacing: 0.02em !important;
         margin-bottom: 0.5rem !important;
+        text-transform: uppercase;
     }
     
     .stSelectbox > div > div,
     .stTextInput > div > div,
     .stTextArea > div > div {
-        border-radius: 4px !important;
-        border: 1px solid var(--md-grey-300) !important;
-        background-color: #FFFFFF !important;
-        transition: all var(--md-transition-fast) !important;
-        box-shadow: none !important;
+        border-radius: 12px !important;
+        border: 2px solid var(--md-grey-200) !important;
+        background: white !important;
+        transition: all 0.3s var(--ease-smooth) !important;
+        box-shadow: var(--shadow-sm) !important;
     }
     
     .stSelectbox > div > div:hover,
     .stTextInput > div > div:hover,
     .stTextArea > div > div:hover {
-        border-color: var(--md-grey-400) !important;
+        border-color: var(--md-primary-300) !important;
+        box-shadow: var(--shadow-md), 0 0 0 4px rgba(33, 150, 243, 0.1) !important;
     }
     
     .stSelectbox > div > div:focus-within,
     .stTextInput > div > div:focus-within,
     .stTextArea > div > div:focus-within {
         border-color: var(--md-primary-600) !important;
-        border-width: 2px !important;
-        box-shadow: none !important;
+        box-shadow: var(--shadow-md), 0 0 0 4px rgba(33, 150, 243, 0.15) !important;
+        transform: translateY(-2px);
     }
     
-    /* ========== METRICS - Material Cards ========== */
+    /* ========== ELEVATED METRICS - Card with Depth ========== */
     
     .stMetric {
-        background-color: #FFFFFF;
-        padding: 1.25rem;
-        border-radius: 4px;
-        box-shadow: var(--md-shadow-1);
-        transition: box-shadow var(--md-transition-standard);
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 1.75rem;
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s var(--ease-smooth);
         border: 1px solid var(--md-grey-200);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stMetric::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--gradient-primary);
     }
     
     .stMetric:hover {
-        box-shadow: var(--md-shadow-2);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--md-primary-200);
     }
     
     .stMetric label {
-        font-weight: 500 !important;
+        font-weight: 700 !important;
         color: var(--md-grey-600) !important;
         font-size: 0.75rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+    
+    .stMetric [data-testid="stMetricValue"] {
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.25rem !important;
+        font-weight: 800 !important;
+    }
+    
+    /* ========== MODERN TABS - Pill Style with Glow ========== */
+    
+    .stTabs {
+        background-color: transparent;
+        margin-top: 2.5rem;
+    }
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.75rem;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        padding: 0.75rem;
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        height: auto;
+        padding: 0.875rem 1.75rem;
+        background: transparent;
+        border-radius: 12px;
+        color: var(--md-grey-700);
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 2px solid transparent;
+        transition: all 0.3s var(--ease-smooth);
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background: rgba(33, 150, 243, 0.08);
+        color: var(--md-primary-700);
+        transform: translateY(-2px);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: var(--gradient-primary) !important;
+        color: white !important;
+        box-shadow: var(--shadow-md), var(--shadow-glow);
+        border-color: transparent !important;
+    }
+    
+    /* ========== PREMIUM DATAFRAMES ========== */
+    
+    .stDataFrame {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--md-grey-200);
+        background: white;
+    }
+    
+    .stDataFrame thead tr th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 0.8125rem !important;
+        padding: 1.25rem !important;
+        border: none !important;
         text-transform: uppercase;
         letter-spacing: 0.08em;
     }
     
-    .stMetric [data-testid="stMetricValue"] {
-        color: var(--md-grey-900) !important;
-        font-size: 2rem !important;
-        font-weight: 400 !important;
-    }
-    
-    /* ========== TABS - Material Design ========== */
-    
-    .stTabs {
-        background-color: transparent;
-        margin-top: 2rem;
-    }
-    
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid var(--md-grey-300);
-        box-shadow: var(--md-shadow-1);
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        height: 48px;
-        padding: 0 24px;
-        background-color: transparent;
-        border-radius: 0;
-        color: var(--md-grey-700);
-        font-weight: 500;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.0892857143em;
-        border: none;
-        border-bottom: 2px solid transparent;
-        transition: all var(--md-transition-fast);
-    }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background-color: var(--md-grey-100);
-        color: var(--md-grey-900);
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background-color: transparent !important;
-        color: var(--md-primary-600) !important;
-        border-bottom: 2px solid var(--md-primary-600) !important;
-    }
-    
-    /* ========== DATAFRAMES - Material Table ========== */
-    
-    .stDataFrame {
-        border-radius: 4px;
-        overflow: hidden;
-        box-shadow: var(--md-shadow-2);
-        border: 1px solid var(--md-grey-300);
-    }
-    
-    .stDataFrame thead tr th {
-        background-color: var(--md-grey-100) !important;
-        color: var(--md-grey-900) !important;
-        font-weight: 500 !important;
-        font-size: 0.875rem !important;
-        padding: 1rem !important;
-        border-bottom: 2px solid var(--md-grey-300) !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
     .stDataFrame tbody tr {
-        transition: background-color var(--md-transition-fast);
+        transition: all 0.2s var(--ease-smooth);
+        border-bottom: 1px solid var(--md-grey-100);
     }
     
     .stDataFrame tbody tr:hover {
-        background-color: var(--md-grey-50) !important;
+        background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.02) 100%) !important;
+        transform: translateX(4px);
     }
     
-    .stDataFrame tbody td {
-        border-bottom: 1px solid var(--md-grey-200) !important;
+    .stDataFrame tbody tr:last-child {
+        border-bottom: none;
     }
     
-    /* ========== SIDEBAR - Material ========== */
+    /* ========== GLASSMORPHISM SIDEBAR ========== */
     
     [data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid var(--md-grey-300);
-        box-shadow: var(--md-shadow-1);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-right: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-xl);
     }
     
-    [data-testid="stSidebar"] .sidebar-content {
-        padding: 1.5rem;
-    }
-    
-    /* ========== EXPANDER - Material Accordion ========== */
+    /* ========== MODERN EXPANDER ========== */
     
     .streamlit-expanderHeader {
-        background-color: #FFFFFF;
-        border: 1px solid var(--md-grey-300);
-        border-radius: 4px;
-        padding: 1rem 1.5rem;
-        font-weight: 500;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: 1px solid var(--md-grey-200);
+        border-radius: 12px;
+        padding: 1.25rem 1.75rem;
+        font-weight: 600;
         color: var(--md-grey-900);
-        transition: all var(--md-transition-standard);
-        box-shadow: var(--md-shadow-1);
+        transition: all 0.3s var(--ease-smooth);
+        box-shadow: var(--shadow-sm);
     }
     
     .streamlit-expanderHeader:hover {
-        background-color: var(--md-grey-50);
-        box-shadow: var(--md-shadow-2);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+        border-color: var(--md-primary-300);
     }
     
     .streamlit-expanderContent {
-        border: 1px solid var(--md-grey-300);
+        border: 1px solid var(--md-grey-200);
         border-top: none;
-        border-radius: 0 0 4px 4px;
-        padding: 1.5rem;
-        background-color: #FFFFFF;
-        box-shadow: var(--md-shadow-1);
+        border-radius: 0 0 12px 12px;
+        padding: 2rem;
+        background: white;
+        box-shadow: var(--shadow-sm);
     }
     
-    /* ========== ALERTS - Material Snackbar Style ========== */
+    /* ========== STYLED ALERTS ========== */
     
     .stAlert {
-        border-radius: 4px;
-        padding: 1rem 1.5rem;
-        box-shadow: var(--md-shadow-2);
+        border-radius: 12px;
+        padding: 1.25rem 1.75rem;
+        box-shadow: var(--shadow-md);
         border: none;
+        backdrop-filter: blur(10px);
     }
     
     .stSuccess {
-        background-color: var(--md-success-50);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(56, 142, 60, 0.1) 100%);
         color: var(--md-success-700);
         border-left: 4px solid var(--md-success-500);
     }
     
     .stInfo {
-        background-color: var(--md-primary-50);
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(25, 118, 210, 0.1) 100%);
         color: var(--md-primary-800);
         border-left: 4px solid var(--md-primary-500);
     }
     
     .stWarning {
-        background-color: var(--md-warning-50);
-        color: var(--md-warning-700);
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 160, 0, 0.1) 100%);
+        color: #f57c00;
         border-left: 4px solid var(--md-warning-500);
     }
     
     .stError {
-        background-color: var(--md-error-50);
-        color: var(--md-error-500);
+        background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%);
+        color: #c62828;
         border-left: 4px solid var(--md-error-500);
     }
     
-    /* ========== DOWNLOAD BUTTON ========== */
+    /* ========== PREMIUM DOWNLOAD BUTTON ========== */
     
     .stDownloadButton button {
-        background-color: var(--md-success-500);
+        background: var(--gradient-success);
         color: white;
-        font-weight: 500;
-        font-size: 0.875rem;
+        font-weight: 600;
+        font-size: 0.9375rem;
         text-transform: uppercase;
-        letter-spacing: 0.0892857143em;
+        letter-spacing: 0.05em;
         border: none;
-        border-radius: 4px;
-        padding: 0.75rem 1.5rem;
-        box-shadow: var(--md-shadow-2);
-        transition: all var(--md-transition-standard);
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        box-shadow: var(--shadow-md), 0 4px 20px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s var(--ease-smooth);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stDownloadButton button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s var(--ease-smooth);
     }
     
     .stDownloadButton button:hover {
-        background-color: var(--md-success-700);
-        box-shadow: var(--md-shadow-3);
-        transform: translateY(-1px);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg), 0 8px 30px rgba(76, 175, 80, 0.4);
     }
     
-    .stDownloadButton button:active {
-        box-shadow: var(--md-shadow-1);
-        transform: translateY(0);
+    .stDownloadButton button:hover::before {
+        left: 100%;
     }
     
-    /* ========== PLOTLY CHARTS - Material Card ========== */
+    /* ========== PLOTLY CHARTS - Premium Card ========== */
     
     .js-plotly-plot {
-        border-radius: 4px;
+        border-radius: 16px;
         overflow: hidden;
-        background-color: #FFFFFF;
-        box-shadow: var(--md-shadow-2);
+        background: white;
+        box-shadow: var(--shadow-lg);
         border: 1px solid var(--md-grey-200);
-        transition: box-shadow var(--md-transition-standard);
+        transition: all 0.3s var(--ease-smooth);
     }
     
     .js-plotly-plot:hover {
-        box-shadow: var(--md-shadow-3);
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-4px);
     }
     
-    /* ========== DIVIDER ========== */
+    /* ========== ELEGANT DIVIDER ========== */
     
     hr {
-        margin: 2rem 0;
+        margin: 3rem 0;
         border: none;
         height: 1px;
-        background-color: var(--md-grey-300);
+        background: linear-gradient(90deg, transparent 0%, var(--md-grey-300) 50%, transparent 100%);
     }
     
-    /* ========== TEXT STYLES ========== */
+    /* ========== ENHANCED TEXT ========== */
     
     .stMarkdown p, .stMarkdown li {
         color: var(--md-grey-800) !important;
-        line-height: 1.6;
+        line-height: 1.7;
+        font-weight: 400;
     }
     
     .stMarkdown strong {
         color: var(--md-grey-900) !important;
-        font-weight: 500;
+        font-weight: 700;
     }
     
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
     .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
         color: var(--md-grey-900) !important;
-        font-weight: 500 !important;
-        letter-spacing: -0.01em;
+        font-weight: 700 !important;
+        letter-spacing: -0.02em;
     }
     
     .stMarkdown code {
-        background-color: var(--md-grey-100);
-        padding: 0.2rem 0.4rem;
-        border-radius: 3px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
         color: var(--md-primary-700);
         font-size: 0.9em;
         font-family: 'Roboto Mono', monospace;
+        font-weight: 500;
         border: 1px solid var(--md-grey-300);
+        box-shadow: var(--shadow-xs);
     }
     
-    /* ========== SCROLLBAR - Material ========== */
+    /* ========== MODERN SCROLLBAR ========== */
     
     ::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
     }
     
     ::-webkit-scrollbar-track {
-        background-color: var(--md-grey-100);
+        background: var(--md-grey-100);
+        border-radius: 10px;
     }
     
     ::-webkit-scrollbar-thumb {
-        background-color: var(--md-grey-400);
-        border-radius: 6px;
-        border: 2px solid var(--md-grey-100);
+        background: linear-gradient(180deg, var(--md-grey-400) 0%, var(--md-grey-500) 100%);
+        border-radius: 10px;
+        border: 3px solid var(--md-grey-100);
+        transition: background 0.3s var(--ease-smooth);
     }
     
     ::-webkit-scrollbar-thumb:hover {
-        background-color: var(--md-grey-500);
+        background: linear-gradient(180deg, var(--md-primary-400) 0%, var(--md-primary-600) 100%);
     }
     
-    /* ========== TOGGLE/CHECKBOX - Material ========== */
-    
-    .stCheckbox, .stRadio {
-        padding: 0.5rem;
-    }
-    
-    /* ========== SPINNER - Material ========== */
+    /* ========== LOADING SPINNER ========== */
     
     .stSpinner > div {
         border-color: var(--md-primary-500) transparent transparent transparent !important;
+        animation: spinner 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    }
+    
+    @keyframes spinner {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* ========== CHECKBOX & RADIO - Modern Toggle ========== */
+    
+    .stCheckbox, .stRadio {
+        padding: 0.75rem;
+        border-radius: 8px;
+        transition: background 0.3s var(--ease-smooth);
+    }
+    
+    .stCheckbox:hover, .stRadio:hover {
+        background: rgba(33, 150, 243, 0.05);
+    }
+    
+    /* ========== PROFESSIONAL CAPTION ========== */
+    
+    .stCaption {
+        color: var(--md-grey-600) !important;
+        font-size: 0.875rem !important;
+        font-weight: 400 !important;
+    }
+    
+    /* ========== MODERN PROGRESS BAR ========== */
+    
+    .stProgress > div > div {
+        background: var(--gradient-primary) !important;
+        border-radius: 10px !important;
+    }
+    
+    /* ========== FADE IN ANIMATION FOR ALL ELEMENTS ========== */
+    
+    .element-container {
+        animation: fadeIn 0.5s var(--ease-smooth);
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -2032,41 +2244,41 @@ def main():
     # Continue with Statistical Analysis mode (toggle ON)
     
     # Methodology Section (Collapsible)
-    with st.expander("ðŸ“- **About the Analysis Methods**", expanded=False):
+    with st.expander("**About the Analysis Methods**", expanded=False):
         st.markdown("""
-        ### ðŸ§¬ Data & Methods Overview
+        ###  Data & Methods Overview
         
         This analysis integrates multiple computational approaches to understand how obesity affects the tumor microenvironment in pancreatic cancer:
         
         ---
         
-        #### ðŸ”¹ **BayesPrism** - Cell Type Deconvolution
+        #### **BayesPrism** - Cell Type Deconvolution
         A fully Bayesian method that infers tumor microenvironment composition from bulk RNA-seq data. BayesPrism estimates the proportion of different cell types in each tumor sample, providing cell-type-specific gene expression profiles.
         
-        ðŸ“š **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
+        **Reference:** [Danko-Lab/BayesPrism](https://github.com/Danko-Lab/BayesPrism)
         
         ---
         
-        #### ðŸ”¹ **STABL** - Feature Selection
+        #### **STABL** - Feature Selection
         Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
-        ðŸ“š **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
+        **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
-        #### ðŸ”¹ **Bayesian Hierarchical Model** - Effect Size Estimation
+        #### **Bayesian Hierarchical Model** - Effect Size Estimation
         A three-group hierarchical model comparing:
         - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (â‰¥ 30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
-        ðŸ“š **References:**
+        **References:**
         - [Bayesian Hierarchical Modeling - Wikipedia](https://en.wikipedia.org/wiki/Bayesian_hierarchical_modeling)
         - [Markov Chain Monte Carlo - Wikipedia](https://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo)
         
         ---
         
-        #### ðŸ”¹ **Diagnostic Metrics**
+        #### **Diagnostic Metrics**
         - **R-hat:** Measures convergence (should be < 1.01 for good convergence)
         - **ESS (Effective Sample Size):** Number of independent samples (higher is better, > 400 recommended)
         - **Energy:** Hamiltonian Monte Carlo diagnostic (identifies sampling problems)
@@ -2074,7 +2286,7 @@ def main():
         
         ---
         
-        #### ðŸ“Š **Dataset**
+        #### **Dataset**
         - **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
         - **Samples:** 140 tumor samples with clinical annotations
         - **Cell Types:** Deconvolved into immune and non-immune cell populations
@@ -2082,7 +2294,7 @@ def main():
         
         ---
         
-        #### ðŸŽ¯ **Analysis Workflow**
+        #### **Analysis Workflow**
         1. **Deconvolution:** BayesPrism â’ Cell type proportions/Cell-specific expression matrix
         2. **Expression:** TPM values â’ Gene expression matrix
         3. **Signatures:** Aggregate genes â’ Signature scores (Z-scores)
@@ -2170,7 +2382,7 @@ def main():
     
     # Main content
     if generate:
-        st.markdown(f'<div class="sub-header">ðŸ“ˆ Interactive Analysis Results</div>', 
+        st.markdown(f'<div class="sub-header"> Interactive Analysis Results</div>', 
                    unsafe_allow_html=True)
         
         col1, col2, col3, col4 = st.columns(4)
@@ -2185,16 +2397,16 @@ def main():
         
         # Tabs
         tabs = st.tabs([
-            "ðŸŽ¯ STABL & Bayesian",
-            "ðŸŒŠ Ridge Plot",
-            "ðŸ” Diagnostics",
-            "ðŸ§¬ Gene BMI",
-            "ðŸ’Š Gene Survival"
+            "STABL & Bayesian",
+            "Ridge Plot",
+            "Diagnostics",
+            "Gene BMI",
+            "Gene Survival"
         ])
         
         # Tab 1: STABL & Bayesian
         with tabs[0]:
-            st.markdown("### ðŸ“Š STABL Feature Selection")
+            st.markdown("### STABL Feature Selection")
             
             st.markdown("""
             <div class="method-box">
@@ -2209,7 +2421,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ðŸ“ˆ Z-score Heatmap")
+            st.markdown("#### Z-score Heatmap")
             st.caption("Z-scores represent standardized signature expression across BMI categories")
             with st.spinner("Generating interactive STABL heatmap..."):
                 fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
@@ -2235,7 +2447,7 @@ def main():
             """, unsafe_allow_html=True)
             
             st.markdown("#### ðŸ“Š Effect Sizes with Credible Intervals")
-            st.caption("Hover for exact effect sizes â€¢ Click legend to toggle comparisons")
+            st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
@@ -2247,7 +2459,7 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>ðŸ“Š Ridge Plots Explained</b><br>
+            <b>Ridge Plots Explained</b><br>
             Each "ridge" shows the full distribution of MCMC samples for one cell type:
             <ul>
             <li><b>Width:</b> Uncertainty in effect size estimate</li>
@@ -2260,7 +2472,7 @@ def main():
             """, unsafe_allow_html=True)
             
             st.markdown("#### ðŸŒŠ Overlapped Posterior Distributions")
-            st.caption("Interactive ridge plot â€¢ Hover for details â€¢ Scroll to zoom â€¢ Double-click to reset")
+            st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
@@ -2401,7 +2613,7 @@ def main():
     <div style='text-align: center; color: #666; padding: 2rem;'>
     <b>Interactive Cell Analysis Viewer</b><br>
     Real-time interactive visualizations with Plotly<br>
-    <i>Zoom â€¢ Pan â€¢ Hover â€¢ Explore</i>
+    <i>Zoom | Pan | Hover | Explore</i>
     </div>
     """, unsafe_allow_html=True)
 
