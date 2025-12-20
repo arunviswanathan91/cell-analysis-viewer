@@ -339,7 +339,7 @@ def format_signature_name(sig_name, max_length=40):
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     """Generate interactive STABL Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning(¸ STABL data not available")
+        st.warning("STABL data not available")
         return None
     
     zscores = comp_data['zscores']
