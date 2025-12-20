@@ -1444,7 +1444,7 @@ def render_signature_explorer():
                 "Genes in this signature:",
                 genes_text,
                 height=200,
-                key='gene_list_display'
+                key=f'gene_list_{selected_sig_idx}'
             )
             
             # Download genes
