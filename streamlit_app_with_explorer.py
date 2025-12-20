@@ -2487,7 +2487,7 @@ def main():
                 st.markdown("""
                 <div class="method-box">
                 <b>🔍 What is MCMC?</b><br>
-                    ### 🔁 Bayesian Inference & MCMC — What’s happening here?
+                    🔁 Bayesian Inference & MCMC — What’s happening here?
                     
                     Our analysis uses **Bayesian modeling** to estimate how biological signatures change with BMI.
                     Instead of producing a single fixed value, the model estimates a **range of plausible values**
@@ -2509,7 +2509,7 @@ def main():
                     
                     ---
                     
-                    ### 📊 Why show diagnostics?
+                    📊 Why show diagnostics?
                     
                     Because MCMC is a random walk, we must check whether it worked properly.
                     The diagnostic plots help answer:
