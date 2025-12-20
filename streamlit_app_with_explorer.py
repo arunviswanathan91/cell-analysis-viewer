@@ -764,7 +764,35 @@ def load_compartment_data(compartment):
     data = {}
     try:
         zscore_file = os.path.join(DATA_DIR, "zscores_complete", f"{comp_key}_zcomplete.csv")
-        data['zscores'] = pd.read_csv(zscore_file)
+        # Load and convert wide format to long format
+        df_wide = pd.read_csv(zscore_file)
+        
+        # Get sample column (first column)
+        sample_col = df_wide.columns[0]
+        
+        # Get feature columns (those with ||)
+        feature_cols = [c for c in df_wide.columns if '||' in str(c)]
+        
+        if feature_cols:
+            # Melt to long format
+            df_long = df_wide.melt(
+                id_vars=[sample_col],
+                value_vars=feature_cols,
+                var_name='Feature',
+                value_name='Z'
+            )
+            
+            # Split Feature into CellType and Signature
+            df_long[['CellType', 'Signature']] = df_long['Feature'].str.split('||', n=1, expand=True)
+            
+            # Rename sample column to 'Sample'
+            df_long = df_long.rename(columns={sample_col: 'Sample'})
+            
+            # Select final columns
+            data['zscores'] = df_long[['Sample', 'CellType', 'Signature', 'Z']].copy()
+        else:
+            # No feature columns found
+            data['zscores'] = None
     except:
         data['zscores'] = None
     try:
@@ -961,27 +989,33 @@ def clean_label_text(text):
 
 
 def get_available_cells(compartment):
-    """Get cell types from Z-score data"""
+    """Get cell types from Z-score data (wide format)"""
     comp_data = load_compartment_data(compartment)
-    if comp_data['zscores'] is not None:
-        # Try different possible column names for cell type
-        possible_cols = ['CellType', 'celltype', 'cell_type', 'Cell_Type', 'CELLTYPE']
-        cells = []
-        for col in possible_cols:
-            if col in comp_data['zscores'].columns:
-                try:
-                    cells = sorted(comp_data['zscores'][col].unique().tolist())
-                    if len(cells) > 0:
-                        break
-                except Exception as e:
-                    continue
-        if len(cells) == 0:
-            # Debug: show what columns are available
-            st.sidebar.warning(f"Ã¢Å¡Â Ã¯Â¸Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
-        return cells
-    else:
-        st.sidebar.error(f"Ã¢ÂÅ’ Z-score data not loaded for {compartment}. Check if file exists: data/zscores_complete/{compartment.lower().replace(' ', '_').replace('-', '_')}_zcomplete.csv")
-    return []
+    
+    if comp_data['zscores'] is None:
+        st.sidebar.error(f"❌ Z-score data not loaded for {compartment}. Check if file exists: data/zscores_complete/{compartment.lower().replace(' ', '_').replace('-', '_')}_zcomplete.csv")
+        return []
+    
+    df = comp_data['zscores']
+    
+    # For wide format: columns are like "CELLTYPE||SIGNATURE"
+    # Extract cell types from column names
+    cell_types = set()
+    
+    for col in df.columns:
+        col_str = str(col)
+        if '||' in col_str:
+            # Extract cell type (part before ||)
+            cell_type = col_str.split('||')[0].strip()
+            cell_types.add(cell_type)
+    
+    if len(cell_types) == 0:
+        # Debug: show what columns are available
+        st.sidebar.warning(f"⚠️ No cell types found in z-score data. Available columns: {list(df.columns[:10])}")
+        return []
+    
+    # Return sorted list
+    return sorted(list(cell_types))
 
 def get_cell_signatures(cell_type):
     """Get signatures for this cell type"""
