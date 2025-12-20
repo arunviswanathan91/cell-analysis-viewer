@@ -2614,57 +2614,7 @@ def main():
                 fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
-            
-            # Energy plot
-            st.markdown("#### âš¡ Energy Diagnostic")
-            st.markdown("""
-            **Hamiltonian Monte Carlo Energy**
-            - Monitors the "energy" of the sampling process (from physics analogy)
-            - **Good:** Energy transitions are smooth and explore well
-            - **Problem:** Divergent transitions indicate sampling difficulties
-            - **Interpretation:** Chains should transition smoothly between energy states
-            """)
-            with st.spinner("Generating energy plot..."):
-                fig = plot_energy_diagnostic(comp_data)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            
-            # Trace plots
-            st.markdown("#### ðŸ“ˆ Trace Plots (First 6 Cell Types)")
-            st.markdown("""
-            **What to Look For:**
-            - **"Hairy caterpillar":** Good mixing (chains bouncing around randomly)
-            - **Flat mixing:** All chains overlap (converged to same distribution)
-            - **âš ï¸ Trends:** Bad (chain drifting, not converged)
-            - **âš ï¸ Stuck chains:** Bad (chain not exploring)
-            """)
-            with st.spinner("Generating trace plots..."):
-                fig = plot_trace_diagnostic(comp_data, n_celltypes=6)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            
-            # Rank plots
-            st.markdown("#### ðŸ“Š Rank Plots (First 6 Cell Types)")
-            st.markdown("**Rank histograms:** All chains should have uniform distributions (good mixing)")
-            with st.spinner("Generating rank plots..."):
-                fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            
-            # Autocorrelation
-            st.markdown("#### ðŸ”- Autocorrelation Plots (First 6 Cell Types)")
-            st.markdown("**Autocorrelation:** Should decay quickly to zero (independent samples)")
-            with st.spinner("Generating autocorrelation plots..."):
-                fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-        
+                    
         # Tab 4: Gene BMI
         with tabs[3]:
             st.markdown("### ðŸ“ˆ Gene-Level BMI Associations")
