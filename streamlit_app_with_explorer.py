@@ -2719,7 +2719,7 @@ def plot_survival_hr_with_distribution(patient_data, signature_name):
     return fig
 
 
-def def plot_gene_survival_interactive(genes, clinical, tpm):
+def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
     if not LIFELINES_AVAILABLE or tpm is None:
         st.info("Ã¢â€žÂ¹Ã¯Â¸Â Survival analysis not available")
