@@ -866,39 +866,49 @@ def extract_base_sample_id(sample_id):
     return sample_str
 
 @st.cache_data
+@st.cache_data
 def load_zscore_data_survival():
-    """Load z-score data for survival analysis"""
+    """Load long-format Z-score data for survival analysis"""
     all_data = []
     comp_map = {
         'Immune Fine': 'immune_fine',
         'Immune Coarse': 'immune_coarse',
         'Non-Immune': 'non_immune'
     }
+
     for compartment_name, comp_key in comp_map.items():
         zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
         if not os.path.exists(zfile):
             continue
+
         try:
-            df = pd.read_csv(zfile, low_memory=False)
-            # Get sample column (first column)
-            sample_col = df.columns[0]
-            # Get feature columns (contain "||")
-            feature_cols = [c for c in df.columns if "||" in str(c)]
-            if not feature_cols:
+            df = pd.read_csv(zfile)
+
+            # Expect: Sample, CellType, Signature, Z
+            required = {'Sample', 'CellType', 'Signature', 'Z'}
+            if not required.issubset(df.columns):
+                st.warning(f"{zfile} missing required columns: {required}")
                 continue
-            # Melt to long format
-            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
-                             var_name="feature", value_name="Z")
-            # Extract base sample ID
-            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
-            # Add compartment info
-            df_long['compartment'] = compartment_name
-            all_data.append(df_long)
+
+            df = df.copy()
+            df['feature'] = (
+                df['CellType'].astype(str).str.strip() + "||" +
+                df['Signature'].astype(str).str.strip()
+            )
+            df['base_sample_id'] = df['Sample'].apply(extract_base_sample_id)
+            df['compartment'] = compartment_name
+
+            all_data.append(df[['base_sample_id', 'feature', 'Z', 'compartment']])
+
         except Exception as e:
+            st.warning(f"Failed to load {zfile}: {e}")
             continue
+
     if not all_data:
         return None
+
     return pd.concat(all_data, ignore_index=True)
+
 
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
