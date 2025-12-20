@@ -3697,7 +3697,7 @@ def main():
                                         with col2:
                                             plot_name, plot_func = plot_functions[plot_count]
                                             fig = plot_func(patient_data, sig_display_name)
-                            if fig:
+                                            if fig:
                                                     st.plotly_chart(fig, use_container_width=True)
                                             plot_count += 1
     # Footer
