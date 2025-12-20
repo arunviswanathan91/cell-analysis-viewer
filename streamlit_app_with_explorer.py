@@ -763,7 +763,7 @@ def load_compartment_data(compartment):
     comp_key = comp_map[compartment]
     data = {}
     try:
-        zscore_file = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        zscore_file = os.path.join(DATA_DIR, "zscores_complete", f"{comp_key}_zcomplete.csv")
         data['zscores'] = pd.read_csv(zscore_file)
     except:
         data['zscores'] = None
@@ -867,49 +867,6 @@ def extract_base_sample_id(sample_id):
 
 @st.cache_data
 @st.cache_data
-def load_zscore_data_survival():
-    """Load long-format Z-score data for survival analysis"""
-    all_data = []
-    comp_map = {
-        'Immune Fine': 'immune_fine',
-        'Immune Coarse': 'immune_coarse',
-        'Non-Immune': 'non_immune'
-    }
-
-    for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
-        if not os.path.exists(zfile):
-            continue
-
-        try:
-            df = pd.read_csv(zfile)
-
-            # Expect: Sample, CellType, Signature, Z
-            required = {'Sample', 'CellType', 'Signature', 'Z'}
-            if not required.issubset(df.columns):
-                st.warning(f"{zfile} missing required columns: {required}")
-                continue
-
-            df = df.copy()
-            df['feature'] = (
-                df['CellType'].astype(str).str.strip() + "||" +
-                df['Signature'].astype(str).str.strip()
-            )
-            df['base_sample_id'] = df['Sample'].apply(extract_base_sample_id)
-            df['compartment'] = compartment_name
-
-            all_data.append(df[['base_sample_id', 'feature', 'Z', 'compartment']])
-
-        except Exception as e:
-            st.warning(f"Failed to load {zfile}: {e}")
-            continue
-
-    if not all_data:
-        return None
-
-    return pd.concat(all_data, ignore_index=True)
-
-
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
     if pd.isna(bmi):
@@ -963,7 +920,7 @@ def load_zscore_data_survival():
         'Non-Immune': 'non_immune'
     }
     for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        zfile = os.path.join(DATA_DIR, "zscores_complete", f"{comp_key}_zcomplete.csv")
         if not os.path.exists(zfile):
             continue
         try:
@@ -1023,7 +980,7 @@ def get_available_cells(compartment):
             st.sidebar.warning(f"Ã¢Å¡Â Ã¯Â¸Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
         return cells
     else:
-        st.sidebar.error(f"Ã¢ÂÅ’ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        st.sidebar.error(f"Ã¢ÂÅ’ Z-score data not loaded for {compartment}. Check if file exists: data/zscores_complete/{compartment.lower().replace(' ', '_').replace('-', '_')}_zcomplete.csv")
     return []
 
 def get_cell_signatures(cell_type):
