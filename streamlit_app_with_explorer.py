@@ -995,51 +995,46 @@ def extract_base_sample_id(sample_id):
 
 @st.cache_data
 def load_zscore_data_survival():
-    """Load z-score data for survival analysis"""
-    all_data = []
-    
-    comp_map = {
-        'Immune Fine': 'immune_fine',
-        'Immune Coarse': 'immune_coarse',
-        'Non-Immune': 'non_immune'
+    """
+    Load Z-score matrices for survival analysis from zscores_complete.
+    Returns a long-format DataFrame with:
+    sample_id, feature (Cell||Signature), Z
+    """
+    base = "data/zscores_complete"
+
+    files = {
+        "immune_fine": "immune_fine_zcomplete.csv",
+        "immune_coarse": "immune_coarse_zcomplete.csv",
+        "non_immune": "non_immune_zcomplete.csv",
     }
-    
-    for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
-        
-        if not os.path.exists(zfile):
+
+    dfs = []
+    for comp, fname in files.items():
+        path = os.path.join(base, fname)
+        if not os.path.exists(path):
+            st.error(f"❌ Missing file: {path}")
             continue
-        
-        try:
-            df = pd.read_csv(zfile, low_memory=False)
-            
-            # Get sample column (first column)
-            sample_col = df.columns[0]
-            
-            # Get feature columns (contain "||")
-            feature_cols = [c for c in df.columns if "||" in str(c)]
-            
-            if not feature_cols:
-                continue
-            
-            # Melt to long format
-            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
-                             var_name="feature", value_name="Z")
-            
-            # Extract base sample ID
-            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
-            
-            # Add compartment info
-            df_long['compartment'] = compartment_name
-            
-            all_data.append(df_long)
-        except Exception as e:
-            continue
-    
-    if not all_data:
-        return None
-    
-    return pd.concat(all_data, ignore_index=True)
+
+        df = pd.read_csv(path)
+
+        # Expect first column = sample_id, others = features
+        id_col = df.columns[0]
+        df = df.rename(columns={id_col: "sample_id"})
+
+        long = df.melt(
+            id_vars="sample_id",
+            var_name="feature",
+            value_name="Z"
+        )
+        long["compartment"] = comp
+        dfs.append(long)
+
+    if not dfs:
+        return pd.DataFrame()
+
+    out = pd.concat(dfs, ignore_index=True)
+    out["sample_id"] = out["sample_id"].astype(str)
+    return out
 
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
