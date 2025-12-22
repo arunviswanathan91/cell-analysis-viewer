@@ -3583,7 +3583,7 @@ def render_signature_survival():
     st.write("📁 DATA_DIR =", DATA_DIR)
     st.write("📂 DATA_DIR exists?", os.path.exists(DATA_DIR))
     if os.path.exists(DATA_DIR):
-    st.write("Contents of DATA_DIR:", os.listdir(DATA_DIR))
+        st.write("Contents of DATA_DIR:", os.listdir(DATA_DIR))
 
     if sig_features is None or zscore_data is None:
         st.error("❌ Survival data not available")
