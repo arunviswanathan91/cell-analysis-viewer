@@ -3603,17 +3603,49 @@ def render_signature_survival():
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
     
-    # Debug output
+# Debug output
     st.write(f"DEBUG: sig_features = {type(sig_features).__name__}, len = {len(sig_features) if sig_features is not None else None}")
     st.write(f"DEBUG: zscore_data = {type(zscore_data).__name__}, len = {len(zscore_data) if zscore_data is not None else None}")
     
     if sig_features is None or zscore_data is None:
-        st.error("âŒ Survival data not available")
+        st.error("❌ Survival data not available")
         st.info("**Required:** data/survival/significant_features.csv")
         return
     
+    # Show unique compartment values for debugging
+    if 'compartment' in sig_features.columns:
+        unique_comps = sig_features['compartment'].unique().tolist()
+        with st.expander("🔍 Debug: Compartment Names", expanded=False):
+            st.write(f"Compartments found in CSV: {unique_comps}")
+    else:
+        st.error("❌ 'compartment' column not found in significant_features.csv")
+        st.info(f"Available columns: {list(sig_features.columns)}")
+        return
+    
+    # Normalize compartment names (handle different naming conventions)
+    def normalize_compartment(name):
+        """Convert compartment name to standard format"""
+        if pd.isna(name):
+            return None
+        name_str = str(name).strip().lower().replace('_', ' ').replace('-', ' ')
+        
+        # Map to standard names
+        if 'immune' in name_str and 'fine' in name_str:
+            return 'Immune Fine'
+        elif 'immune' in name_str and 'coarse' in name_str:
+            return 'Immune Coarse'
+        elif 'non' in name_str and 'immune' in name_str:
+            return 'Non-Immune'
+        elif name_str in ['nonimmune', 'non immune']:
+            return 'Non-Immune'
+        else:
+            return None
+    
+    # Apply normalization to sig_features
+    sig_features['compartment_normalized'] = sig_features['compartment'].apply(normalize_compartment)
+    
     # SIDEBAR: Compartment
-    st.sidebar.title("ðŸ” Data Selection")
+    st.sidebar.title("🔍 Data Selection")
     st.sidebar.markdown("### Step 1: Compartment")
     compartment = st.sidebar.selectbox(
         "Choose compartment:",
@@ -3621,10 +3653,15 @@ def render_signature_survival():
         index=0
     )
     
-    # Filter by compartment
-    filtered_sigs = sig_features[sig_features['compartment'] == compartment].copy()
+    # Filter by normalized compartment
+    filtered_sigs = sig_features[sig_features['compartment_normalized'] == compartment].copy()
+    
     if len(filtered_sigs) == 0:
-        st.warning(f"âš ï¸ No survival signatures for {compartment}")
+        st.warning(f"⚠️ No survival signatures for {compartment}")
+        st.info(f"**Possible issues:**")
+        st.info(f"• Check that significant_features.csv has a 'compartment' column")
+        st.info(f"• Compartments in CSV: {unique_comps}")
+        st.info(f"• Expected format: 'Immune Fine', 'immune_fine', or similar")
         return
     
     # Extract cell types
