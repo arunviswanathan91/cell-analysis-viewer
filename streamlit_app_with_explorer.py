@@ -965,15 +965,23 @@ def load_compartment_data(compartment):
     return data
 
 @st.cache_data
+@st.cache_data
 def load_significant_features():
     sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
+    st.write("🔍 Trying to load:", sig_file)
+    st.write("Exists?", os.path.exists(sig_file))
     try:
         sig_df = pd.read_csv(sig_file)
+        st.write("Loaded shape:", sig_df.shape)
+        st.write("Columns:", list(sig_df.columns))
+
         if 'hr_p' in sig_df.columns:
             sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
+            st.write("After hr_p filter:", sig_df.shape)
+
         return sig_df
     except Exception as e:
-        st.error(f"Failed to load {sig_file}")
+        st.error("❌ Exception while loading survival CSV")
         st.exception(e)
         return None
 
