@@ -965,14 +965,13 @@ def load_compartment_data(compartment):
     return data
 
 @st.cache_data
-@st.cache_data
 def load_significant_features():
     sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
-    st.write("🔍 Trying to load:", sig_file)
-    st.write("Exists?", os.path.exists(sig_file))
+    st.write("🔍 Reading survival CSV:", sig_file)
+
     try:
         sig_df = pd.read_csv(sig_file)
-        st.write("Loaded shape:", sig_df.shape)
+        st.write("✅ Survival CSV loaded:", sig_df.shape)
         st.write("Columns:", list(sig_df.columns))
 
         if 'hr_p' in sig_df.columns:
@@ -980,10 +979,12 @@ def load_significant_features():
             st.write("After hr_p filter:", sig_df.shape)
 
         return sig_df
+
     except Exception as e:
-        st.error("❌ Exception while loading survival CSV")
+        st.error("❌ Error loading survival CSV")
         st.exception(e)
         return None
+
 
 
 def extract_base_sample_id(sample_id):
@@ -1001,14 +1002,11 @@ def extract_base_sample_id(sample_id):
     
     return sample_str
 
+
 @st.cache_data
 def load_zscore_data_survival():
-    """
-    Load Z-score matrices for survival analysis from zscores_complete.
-    Returns a long-format DataFrame with:
-    sample_id, feature (Cell||Signature), Z
-    """
-    base = "data/zscores_complete"
+    base = os.path.join(DATA_DIR, "zscores_complete")
+    st.write("🔍 Z-score base:", base)
 
     files = {
         "immune_fine": "immune_fine_zcomplete.csv",
@@ -1019,30 +1017,38 @@ def load_zscore_data_survival():
     dfs = []
     for comp, fname in files.items():
         path = os.path.join(base, fname)
-        if not os.path.exists(path):
-            st.error(f"❌ Missing file: {path}")
-            continue
+        st.write(f"  → Reading {path}")
 
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path)
+            st.write(f"    ✅ {fname} loaded:", df.shape)
 
-        # Expect first column = sample_id, others = features
-        id_col = df.columns[0]
-        df = df.rename(columns={id_col: "sample_id"})
+            sample_col = df.columns[0]
+            feature_cols = [c for c in df.columns if "||" in c]
+            if not feature_cols:
+                st.warning(f"    ⚠ No feature columns in {fname}")
+                continue
 
-        long = df.melt(
-            id_vars="sample_id",
-            var_name="feature",
-            value_name="Z"
-        )
-        long["compartment"] = comp
-        dfs.append(long)
+            df_long = df.melt(
+                id_vars=[sample_col],
+                value_vars=feature_cols,
+                var_name="feature",
+                value_name="Z"
+            )
+            df_long["base_sample_id"] = df_long[sample_col].astype(str)
+            df_long["compartment"] = comp
+            dfs.append(df_long)
+
+        except Exception as e:
+            st.error(f"❌ Error reading {fname}")
+            st.exception(e)
 
     if not dfs:
-        return pd.DataFrame()
+        st.error("❌ No z-score files could be loaded")
+        return None
 
-    out = pd.concat(dfs, ignore_index=True)
-    out["sample_id"] = out["sample_id"].astype(str)
-    return out
+    return pd.concat(dfs, ignore_index=True)
+
 
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
