@@ -4140,9 +4140,7 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
         
         # Tab 2: Ridge Plot
-        with tabs[1]:
-            st.markdown("### 🧾 Posterior Distribution Visualization")
-            
+        with st.expander("📖 How to interpret the ridge plot", expanded=False):
             st.markdown("""
             <div class="method-box">
             <b>Ridge Plots Explained</b><br>
@@ -4156,20 +4154,14 @@ def main():
             <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
             </div>
             """, unsafe_allow_html=True)
-            
-            st.markdown("#### 📊  Overlapped Posterior Distributions")
-            st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
-            with st.spinner("Generating interactive ridge plot..."):
-                fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=False)
+
         
 # Tab 3: Bayesian Diagnostics
         with tabs[2]:
             st.markdown("### 🔎 Bayesian MCMC Diagnostics")
             
             # Collapsible guide at the top
-            with st.expander("🌀 Understanding MCMC Diagnostics Ã¢â‚¬â€ Click to Learn More", expanded=False):
+            with st.expander("🌀 Understanding MCMC Diagnostics 👆🏻 Click to Learn More", expanded=False):
                 st.markdown("""
                 <div class="method-box">
                 <b>💡 What is MCMC?</b><br><br>
@@ -4290,7 +4282,7 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### 💡 Trace Plots (First 6 Cell Types)")
+            st.markdown("#### 👣 Trace Plots (First 6 Cell Types)")
             
             with st.expander("💡 How to read trace plots?", expanded=False):
                 st.markdown("""
@@ -4309,7 +4301,7 @@ def main():
             st.markdown("---")
             
             # Rank plots
-            st.markdown("#### Ã°Å¸â€œÅ  Rank Plots (First 6 Cell Types)")
+            st.markdown("#### 🎖️ Rank Plots (First 6 Cell Types)")
             
             with st.expander("💡 What are rank plots?", expanded=False):
                 st.markdown("""
