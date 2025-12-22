@@ -4139,6 +4139,7 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         
+        
         # Tab 2: Ridge Plot
         with tabs[1]:
             st.markdown("### 🧾 Posterior Distribution Visualization")
@@ -4158,6 +4159,18 @@ def main():
                 <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
                 </div>
                 """, unsafe_allow_html=True)
+        
+            # ✅ Now actually draw the ridge plot
+            st.markdown("#### 📊 Overlapped Posterior Distributions")
+            st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
+        
+            with st.spinner("Generating interactive ridge plot..."):
+                fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=False)
+                else:
+                    st.info("ℹ️ Ridge plot not available for this selection.")
+
 
 
         
