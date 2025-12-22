@@ -1071,53 +1071,42 @@ def load_significant_features():
         return None
     
     # Try multiple encodings
-    encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
+    encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
     sig_df = None
     
     for encoding in encodings:
         try:
             sig_df = pd.read_csv(sig_file, encoding=encoding)
-            st.success(f"✅ Successfully loaded with encoding: {encoding}")
+            # Success - no need to notify user about encoding
             break
         except (UnicodeDecodeError, UnicodeError):
             continue
-        except Exception as e:
-            st.error(f"❌ Error with encoding {encoding}: {e}")
+        except Exception:
             continue
     
     if sig_df is None:
-        st.error(f"❌ Could not read file with any encoding: {encodings}")
+        st.error(f"❌ Could not read survival features file")
         return None
-    
-    st.write(f"📊 Loaded survival features: {len(sig_df)} rows, {len(sig_df.columns)} columns")
-    st.write(f"📋 Columns: {list(sig_df.columns)}")
-    
-    # Show first few rows
-    with st.expander("Preview data (first 5 rows)"):
-        st.dataframe(sig_df.head())
     
     # Look for p-value column (try different possible names)
     p_col = None
     for col_name in ['hr_p', 'p_value', 'pvalue', 'p', 'P_value', 'HR_p', 'p-value']:
         if col_name in sig_df.columns:
             p_col = col_name
-            st.write(f"✅ Found p-value column: '{p_col}'")
             break
     
     if p_col is None:
-        st.warning(f"⚠️ No p-value column found. Returning all features.")
-        st.write(f"Available columns: {list(sig_df.columns)}")
+        st.warning(f"⚠️ No p-value column found in survival data")
         return sig_df
     
     # Filter for significant features
     sig_df_filtered = sig_df[sig_df[p_col] < 0.05].copy()
-    st.write(f"✅ After filtering ({p_col} < 0.05): {len(sig_df_filtered)} significant features")
     
     if len(sig_df_filtered) == 0:
-        st.error(f"❌ No significant features found (all {p_col} >= 0.05)")
-        st.write(f"📈 P-value range: {sig_df[p_col].min():.6f} to {sig_df[p_col].max():.6f}")
+        st.error(f"❌ No significant features found (all p-values ≥ 0.05)")
         return None
     
+    # Success - return filtered data
     return sig_df_filtered
 
 def extract_base_sample_id(sample_id):
@@ -3617,6 +3606,10 @@ def render_signature_survival():
     clinical = load_clinical_data()
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
+    
+    # Debug output
+    st.write(f"DEBUG: sig_features = {type(sig_features).__name__}, len = {len(sig_features) if sig_features is not None else None}")
+    st.write(f"DEBUG: zscore_data = {type(zscore_data).__name__}, len = {len(zscore_data) if zscore_data is not None else None}")
     
     if sig_features is None or zscore_data is None:
         st.error("âŒ Survival data not available")
