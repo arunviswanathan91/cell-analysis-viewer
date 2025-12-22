@@ -1658,7 +1658,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
     
     fig2 = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, RÃƒâ€šÃ‚Â²={row['r_squared']:.3f})" 
+        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, R²={row['r_squared']:.3f})" 
                        for _, row in top_genes.iterrows()],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
@@ -1722,7 +1722,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
 def plot_energy_diagnostic(comp_data):
     """Generate interactive energy diagnostic plot"""
     if comp_data['energy'] is None:
-        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Energy data not available")
+        st.info("❌ Energy data not available")
         return None
     
     energy = comp_data['energy']
@@ -1757,7 +1757,7 @@ def plot_energy_diagnostic(comp_data):
 def plot_trace_diagnostic(comp_data, n_celltypes=6):
     """Generate trace plots for first N cell types"""
     if comp_data['posterior_overweight'] is None:
-        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Posterior data not available")
+        st.info("❌ Posterior data not available")
         return None
     
     # Get posterior data
