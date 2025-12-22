@@ -3769,9 +3769,10 @@ def render_signature_survival():
             st.metric("Event Rate", f"{event_rate:.1f}%")
         
         st.markdown("---")
-        st.markdown("### ðŸ“Š Interactive Survival Plots")
+        st.markdown("### 📊 Interactive Survival Plots")
         
-        # 7 PLOTS IN 3x3 GRID
+        
+        # 7 PLOTS IN 2-COLUMN LAYOUT (4 rows: 2+2+2+1)
         plot_configs = [
             ("BMI vs Time", plot_survival_bmi_vs_time),
             ("BMI vs HR", plot_survival_bmi_vs_hr),
@@ -3783,32 +3784,39 @@ def render_signature_survival():
         ]
         
         plot_count = 0
-        for row_idx in range(3):
-            if row_idx < 2:
-                cols = st.columns(3)
-                for col_idx in range(3):
-                    if plot_count < len(plot_configs):
-                        with cols[col_idx]:
-                            plot_name, plot_func = plot_configs[plot_count]
-                            with st.spinner(f"{plot_name}..."):
-                                fig = plot_func(patient_data, selected_sig_display)
-                                if fig:
-                                    st.plotly_chart(fig, use_container_width=True)
-                                else:
-                                    st.info("â„¹ï¸ Insufficient data")
-                            plot_count += 1
-            else:
-                if plot_count < len(plot_configs):
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
+        n_plots = len(plot_configs)
+        
+        # Calculate number of complete rows (2 plots each) and remaining plots
+        n_complete_rows = n_plots // 2
+        n_remaining = n_plots % 2
+        
+        # Render complete rows (2 plots each)
+        for row_idx in range(n_complete_rows):
+            cols = st.columns(2)
+            for col_idx in range(2):
+                if plot_count < n_plots:
+                    with cols[col_idx]:
                         plot_name, plot_func = plot_configs[plot_count]
-                        with st.spinner(f"{plot_name}..."):
+                        with st.spinner(f"⏳ Generating {plot_name}..."):
                             fig = plot_func(patient_data, selected_sig_display)
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True)
                             else:
-                                st.info("â„¹ï¸ Insufficient data")
+                                st.info("ℹ️ Insufficient data")
                         plot_count += 1
+        
+        # Render remaining plot (if any) centered
+        if n_remaining > 0:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                plot_name, plot_func = plot_configs[plot_count]
+                with st.spinner(f"⏳ Generating {plot_name}..."):
+                    fig = plot_func(patient_data, selected_sig_display)
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("ℹ️ Insufficient data")
+                plot_count += 1
 
 
 def main():
