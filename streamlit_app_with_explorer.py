@@ -1221,9 +1221,9 @@ def format_signature_name(sig_name, max_length=40):
 # ==================================================================================
 
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
-    """Generate interactive STABL Z-score heatmap"""
+    """Generate interactive Stabl Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("❌ STABL data not available")
+        st.warning("❌ Stabl data not available")
         return None
     
     zscores = comp_data['zscores']
@@ -1246,12 +1246,12 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     
     stabl_features = comp_data['stabl']['feature'].tolist() if comp_data['stabl'] is not None else []
     
-    # Add STABL marker to signature names
+    # Add Stabl marker to signature names
     signatures = []
     for sig in heatmap_data.index:
         feature_name = f"{cell_type}||{sig}"
         if feature_name in stabl_features:
-            signatures.append(f"{sig} ÃƒÂ¢Ã‚Â­Ã‚Â")
+            signatures.append(f"{sig} ⭐")
         else:
             signatures.append(sig)
     
@@ -1273,11 +1273,11 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     
     fig.update_layout(
         title=dict(
-            text=f'{cell_type} - {sig_name}<br>STABL Z-scores by BMI Group',
+            text=f'{cell_type} - {sig_name}<br>Stabl Z-scores by BMI Group',
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='BMI Category',
-        yaxis_title='Signatures (ÃƒÂ¢Ã‚Â­Ã‚Â = STABL-selected)',
+        yaxis_title='Signatures (⭐= STABL-selected)',
         height=max(600, len(heatmap_data) * 25),
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
