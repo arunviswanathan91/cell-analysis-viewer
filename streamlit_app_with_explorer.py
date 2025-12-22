@@ -3595,11 +3595,11 @@ def render_signature_explorer():
 
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
-    st.markdown('<div class="sub-header">ðŸŽ¯ Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">🎯Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>ðŸ“Š BMI-Stratified Survival Analysis</b><br>
+    <b>📋 BMI-Stratified Survival Analysis</b><br>
     Explore how signature expression affects patient outcomes across BMI categories using Cox proportional hazards modeling.
     </div>
     """, unsafe_allow_html=True)
@@ -3713,7 +3713,7 @@ def render_signature_survival():
     
     # MAIN ANALYSIS
     if generate:
-        st.markdown(f'<div class="sub-header">ðŸ“Š Results: {selected_sig_display}</div>', 
+        st.markdown(f'<div class="sub-header">📋 Results: {selected_sig_display}</div>', 
                    unsafe_allow_html=True)
         
         # Get z-scores
