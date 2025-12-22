@@ -3697,7 +3697,7 @@ def render_signature_survival():
     
     # Generate button
     st.sidebar.markdown("---")
-    generate = st.sidebar.button("ðŸš€ Generate Analysis", type="primary")
+    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
     
     # Current selection
     st.sidebar.markdown("---")
