@@ -1530,11 +1530,11 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
+                orientation="v",
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01
             )
         )
         
