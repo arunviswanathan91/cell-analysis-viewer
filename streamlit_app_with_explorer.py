@@ -4142,7 +4142,7 @@ def main():
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=False)
         
 # Tab 3: Bayesian Diagnostics
         with tabs[2]:
