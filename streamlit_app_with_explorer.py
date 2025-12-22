@@ -3810,46 +3810,47 @@ def render_signature_survival():
 
 def main():
     # 3-Mode Selector
-    st.sidebar.title("âš™ï¸ Application Mode")
+    st.sidebar.title("⚙️ Application Mode")
     
     mode = st.sidebar.radio(
         "Select Analysis Mode:",
         options=[
-            "ðŸ“š Signature Explorer",
-            "ðŸ“Š Statistical Analysis",
-            "ðŸŽ¯ Signature Survival"
+            "🔍 Signature Explorer",
+            "📈 Statistical Analysis",
+            "🎯 Signature Survival"
         ],
         index=0
     )
     
-    if mode == "ðŸ“š Signature Explorer":
+    if mode == "🔍 Signature Explorer":
         st.sidebar.info("Browse the signature database")
-    elif mode == "ðŸ“Š Statistical Analysis":
-        st.sidebar.success("STABL, Bayesian, Diagnostics & Genes")
+    elif mode == "📈 Statistical Analysis":
+        st.sidebar.success("Stabl ML, and Bayesian Hierarchial Modeling")
     else:
-        st.sidebar.warning("Survival analysis stratified by BMI")
+        st.sidebar.warning("🎯 Survival analysis of signature stratified by BMI")
     
     st.sidebar.markdown("---")
     
     
     # Main Header
-    st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
+    st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Ductal Adenocarcinoma: An ML driven bayesian model</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
     <b> Interactive Analysis Platform</b><br>
-    Exploring the relationship between BMI, tumor microenvironment cell types, and metabolic signatures in pancreatic adenocarcinoma (PAAD).
-    All visualizations powered by Plotly: Hover for details * Zoom with box select * Pan with click-drag * Reset with double-click
+    Exploring the relationship between BMI, tumor microenvironment, cell types, and transcriptomic changes in pancreatic ductal adenocarcinoma (PDAC).
+    Modes available  🔍 Signature Explorer, 📈 Statistical Analysis, 🎯 Signature Survival, Selct the modes from sidebar and explore the model.
+    All visualizations powered by Plotly: Hover for details | Zoom with box select | Pan with click-drag | Reset with double-click
     </div>
     """, unsafe_allow_html=True)
     
     # Route to appropriate mode
-    if mode == "ðŸ“š Signature Explorer":
+    if mode == "🔍 Signature Explorer":
         render_signature_explorer()
         return
     
-    elif mode == "ðŸŽ¯ Signature Survival":
+    elif mode == "🎯 Signature Survival":
         render_signature_survival()
         return
     
@@ -3871,16 +3872,16 @@ def main():
         
         ---
         
-        #### **STABL** - Feature Selection
-        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
+        #### **Stabl** - Feature Selection
+        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. Stabl uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
         **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
         #### **Bayesian Hierarchical Model** - Effect Size Estimation
-        A three-group hierarchical model comparing:
-        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ 30)
+        A three-group model comparing: 
+        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (>30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
@@ -3917,7 +3918,7 @@ def main():
         """)
     
     # Sidebar
-    st.sidebar.title("ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  Data Selection")
+    st.sidebar.title("📑  Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -3954,7 +3955,7 @@ def main():
     signatures = get_cell_signatures(selected_cell)
     
     if not signatures:
-        st.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No signatures found for {selected_cell}")
+        st.warning(f"❌ No signatures found for {selected_cell}")
         return
     
     # Create formatted options for display
@@ -3976,7 +3977,7 @@ def main():
     
     # Generate button
     st.sidebar.markdown("---")
-    generate = st.sidebar.button("ÃƒÂ°Ã…Â¸Ã…Â¡Ã¢â€šÂ¬ Generate Analysis", type="primary")
+    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
     
     # Current selection with full signature name
     st.sidebar.markdown("---")
@@ -4023,14 +4024,14 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ‚Â¬ What is STABL?</b><br>
+            <b>❓ What is STABL?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
             <li>Counting how often each feature is selected</li>
             <li>Keeping only features selected consistently (stable features)</li>
             </ol>
-            <b>ÃƒÂ¢Ã‚Â­Ã‚Â Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            <b>⭐ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
             </div>
             """, unsafe_allow_html=True)
             
@@ -4047,7 +4048,7 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>ÃƒÂ°Ã…Â¸Ã‚Â§Ã‚Â® Bayesian Hierarchical Model</b><br>
+            <b>📛 Bayesian Hierarchical Model</b><br>
             Estimates how much each cell type's signature changes with increasing BMI:
             <ul>
             <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -4059,7 +4060,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  Effect Sizes with Credible Intervals")
+            st.markdown("#### 📝 Effect Sizes with Credible Intervals")
             st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
@@ -4068,7 +4069,7 @@ def main():
         
         # Tab 2: Ridge Plot
         with tabs[1]:
-            st.markdown("### ÃƒÂ°Ã…Â¸Ã…â€™Ã…Â  Posterior Distribution Visualization")
+            st.markdown("### 🧾 Posterior Distribution Visualization")
             
             st.markdown("""
             <div class="method-box">
@@ -4084,7 +4085,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### ÃƒÂ°Ã…Â¸Ã…â€™Ã…Â  Overlapped Posterior Distributions")
+            st.markdown("#### 📊  Overlapped Posterior Distributions")
             st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
@@ -4093,13 +4094,13 @@ def main():
         
 # Tab 3: Bayesian Diagnostics
         with tabs[2]:
-            st.markdown("### Ã°Å¸â€Â¬ Bayesian MCMC Diagnostics")
+            st.markdown("### 🔎 Bayesian MCMC Diagnostics")
             
             # Collapsible guide at the top
-            with st.expander("Ã°Å¸â€œâ€“ Understanding MCMC Diagnostics Ã¢â‚¬â€ Click to Learn More", expanded=False):
+            with st.expander("🌀 Understanding MCMC Diagnostics Ã¢â‚¬â€ Click to Learn More", expanded=False):
                 st.markdown("""
                 <div class="method-box">
-                <b>Ã°Å¸â€Â What is MCMC?</b><br><br>
+                <b>💡 What is MCMC?</b><br><br>
             
                 Our analysis uses <b>Bayesian modeling</b> to estimate how biological signatures change with BMI.
                 Rather than giving a single fixed value, the model learns a <b>range of plausible values</b>,
@@ -4107,7 +4108,7 @@ def main():
             
                 To achieve this, we use a method called <b>Markov Chain Monte Carlo (MCMC)</b>.
             
-                Ã°Å¸â€”ÂºÃ¯Â¸Â <b>Analogy:</b><br>
+                💡 <b>Analogy:</b><br>
                 Imagine exploring a foggy mountain range to find the highest peaks.
                 You can only take small steps, guided by the terrain around you.
                 Over time, you spend more time near the highest regions.
@@ -4119,12 +4120,12 @@ def main():
                     <li>And builds a map of what values best explain the data.</li>
                 </ul>
             
-                This map is called the <b>posterior distribution</b> Ã¢â‚¬â€ it represents our updated belief
+                This map is called the <b>posterior distribution</b> 💡 it represents our updated belief
                 about the true effects after seeing the data.
             
                 <hr>
             
-                Ã°Å¸â€œÅ  <b>Why do we show diagnostics?</b><br><br>
+                💡 <b>Why do we show diagnostics?</b><br><br>
             
                 Because MCMC is a stochastic (random) process, we must verify that it explored the space properly.
                 The diagnostic plots help answer:
@@ -4138,7 +4139,7 @@ def main():
             
                 If these checks look good, we can trust both the estimated effects <i>and</i> their uncertainty.
             
-                Ã¢Å“â€Ã¯Â¸Â <b>In short:</b><br>
+                💡 <b>In short:</b><br>
                 <b>MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.</b>
                 </div>
                 """, unsafe_allow_html=True)
@@ -4147,16 +4148,16 @@ def main():
             
                 with col1:
                     st.markdown("""
-                    **Ã¢Å“â€¦ Good Convergence Indicators**
+                    ✨ Good Convergence Indicators**
                     - **R-hat < 1.01:** Chains agree very well  
                     - **ESS > 400:** Enough independent samples  
                     - **Smooth energy transitions:** Good mixing  
-                    - **Ã¢â‚¬Å“Hairy caterpillarÃ¢â‚¬Â traces:** Stable, well-mixed chains  
+                    - **🐛“Hairy caterpillar traces:** Stable, well-mixed chains  
                     """)
             
                 with col2:
                     st.markdown("""
-                    **Ã¢Å¡Â Ã¯Â¸Â Warning Signs**
+                    **⛔ Warning Signs**
                     - **R-hat > 1.05:** Chains disagree (no convergence)  
                     - **ESS < 100:** Strong autocorrelation  
                     - **Divergent transitions:** Geometry or tuning issues  
@@ -4167,9 +4168,9 @@ def main():
 
             
             # ESS and R-hat
-            st.markdown("#### Ã°Å¸â€œÅ  ESS & R-hat Statistics")
+            st.markdown("#### 💡  ESS & R-hat Statistics")
             
-            with st.expander("Ã¢â€žÂ¹Ã¯Â¸Â What do ESS and R-hat mean?", expanded=False):
+            with st.expander("💡 What do ESS and R-hat mean?", expanded=False):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("""
@@ -4198,9 +4199,9 @@ def main():
             st.markdown("---")
             
             # Energy plot
-            st.markdown("#### Ã¢Å¡Â¡ Energy Diagnostic")
+            st.markdown("#### ⚡ Energy Diagnostic")
             
-            with st.expander("Ã¢â€žÂ¹Ã¯Â¸Â What is the Energy diagnostic?", expanded=False):
+            with st.expander("💡 What is the Energy diagnostic?", expanded=False):
                 st.markdown("""
                 **Hamiltonian Monte Carlo Energy**
                 - Monitors the "energy" of the sampling process (from physics analogy)
@@ -4217,15 +4218,15 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### Ã°Å¸â€œË† Trace Plots (First 6 Cell Types)")
+            st.markdown("#### 💡 Trace Plots (First 6 Cell Types)")
             
-            with st.expander("Ã¢â€žÂ¹Ã¯Â¸Â How to read trace plots?", expanded=False):
+            with st.expander("💡 How to read trace plots?", expanded=False):
                 st.markdown("""
                 **What to Look For:**
                 - **"Hairy caterpillar":** Ã¢Å“â€¦ Good mixing (chains bouncing around randomly)
-                - **Flat mixing:** Ã¢Å“â€¦ All chains overlap (converged to same distribution)
-                - **Ã¢Å¡Â Ã¯Â¸Â Trends:** Bad (chain drifting, not converged)
-                - **Ã¢Å¡Â Ã¯Â¸Â Stuck chains:** Bad (chain not exploring)
+                - **Flat mixing:**All chains overlap (converged to same distribution)
+                - ** Trends:** Bad (chain drifting, not converged)
+                - ** Stuck chains:** Bad (chain not exploring)
                 """)
             
             with st.spinner("Generating trace plots..."):
@@ -4238,7 +4239,7 @@ def main():
             # Rank plots
             st.markdown("#### Ã°Å¸â€œÅ  Rank Plots (First 6 Cell Types)")
             
-            with st.expander("Ã¢â€žÂ¹Ã¯Â¸Â What are rank plots?", expanded=False):
+            with st.expander("💡 What are rank plots?", expanded=False):
                 st.markdown("""
                 **Rank histograms:** 
                 - All chains should have uniform distributions (good mixing)
@@ -4253,9 +4254,9 @@ def main():
             st.markdown("---")
             
             # Autocorrelation
-            st.markdown("#### Ã°Å¸â€œâ€° Autocorrelation Plots (First 6 Cell Types)")
+            st.markdown("#### 💡 Autocorrelation Plots (First 6 Cell Types)")
             
-            with st.expander("Ã¢â€žÂ¹Ã¯Â¸Â What is autocorrelation?", expanded=False):
+            with st.expander("💡 What is autocorrelation?", expanded=False):
                 st.markdown("""
                 **Autocorrelation:** 
                 - Measures how correlated successive samples are
@@ -4271,8 +4272,8 @@ def main():
                     
         # Tab 4: Gene BMI
         with tabs[3]:
-            st.markdown("### ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã‹â€  Gene-Level BMI Associations")
-            st.info("ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¡ Hover for statistics ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Click-drag to zoom ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Double-click to reset")
+            st.markdown("### 📈  Gene-Level BMI Associations")
+            st.info(" Hover for statistics| Click-drag to zoom | Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
@@ -4282,8 +4283,8 @@ def main():
         
         # Tab 5: Gene Survival
         with tabs[4]:
-            st.markdown("### ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã…Â  Gene-Level Survival Analysis")
-            st.info("ÃƒÂ°Ã…Â¸Ã¢â‚¬â„¢Ã‚Â¡ Forest plot with confidence intervals ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Hover for full statistics")
+            st.markdown("### 📈  Gene-Level Survival Analysis")
+            st.info("Forest plot with confidence intervals| Hover for full statistics")
             with st.spinner("Running survival analysis..."):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
