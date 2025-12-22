@@ -998,42 +998,64 @@ def load_zscore_data_survival():
     """
     Load Z-score matrices for survival analysis from zscores_complete.
     Returns a long-format DataFrame with:
-    sample_id, feature (Cell||Signature), Z
+    sample_id, feature (Cell||Signature), Z, compartment, base_sample_id
     """
     base = "data/zscores_complete"
 
     files = {
-        "immune_fine": "immune_fine_zcomplete.csv",
-        "immune_coarse": "immune_coarse_zcomplete.csv",
-        "non_immune": "non_immune_zcomplete.csv",
+        "Immune Fine": "immune_fine_zcomplete.csv",
+        "Immune Coarse": "immune_coarse_zcomplete.csv",
+        "Non-Immune": "non_immune_zcomplete.csv",
     }
 
     dfs = []
+    errors = []
+    
     for comp, fname in files.items():
         path = os.path.join(base, fname)
+        
         if not os.path.exists(path):
-            st.error(f"âŒ Missing file: {path}")
+            errors.append(f"Missing: {path}")
             continue
 
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path, low_memory=False)
+            
+            # Expect first column = sample_id, others = features
+            id_col = df.columns[0]
+            df = df.rename(columns={id_col: "sample_id"})
 
-        # Expect first column = sample_id, others = features
-        id_col = df.columns[0]
-        df = df.rename(columns={id_col: "sample_id"})
+            # Melt to long format
+            long = df.melt(
+                id_vars="sample_id",
+                var_name="feature",
+                value_name="Z"
+            )
+            long["compartment"] = comp
+            
+            # Add base_sample_id for matching with clinical data
+            long['base_sample_id'] = long['sample_id'].apply(extract_base_sample_id)
+            
+            dfs.append(long)
+            
+        except Exception as e:
+            errors.append(f"Error loading {fname}: {str(e)}")
+            continue
 
-        long = df.melt(
-            id_vars="sample_id",
-            var_name="feature",
-            value_name="Z"
-        )
-        long["compartment"] = comp
-        dfs.append(long)
-
+    # Show any errors
+    if errors:
+        with st.expander("⚠️ Z-score loading issues", expanded=False):
+            for err in errors:
+                st.warning(err)
+    
     if not dfs:
-        return pd.DataFrame()
+        st.error(f"❌ No z-score files loaded from {base}/")
+        st.info("Expected files: " + ", ".join(files.values()))
+        return None
 
     out = pd.concat(dfs, ignore_index=True)
     out["sample_id"] = out["sample_id"].astype(str)
+    
     return out
 
 def assign_bmi_category(bmi):
@@ -1120,32 +1142,6 @@ def extract_base_sample_id(sample_id):
     return sample_str
 
 @st.cache_data
-def load_zscore_data_survival():
-    """Load z-score data for survival analysis from all compartments"""
-    all_data = []
-    comp_map = {
-        'Immune Fine': 'immune_fine',
-        'Immune Coarse': 'immune_coarse',
-        'Non-Immune': 'non_immune'
-    }
-    for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
-        if not os.path.exists(zfile):
-            continue
-        try:
-            df = pd.read_csv(zfile, low_memory=False)
-            sample_col = df.columns[0]
-            feature_cols = [c for c in df.columns if "||" in str(c)]
-            if not feature_cols:
-                continue
-            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
-                             var_name="feature", value_name="Z")
-            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
-            df_long['compartment'] = compartment_name
-            all_data.append(df_long)
-        except:
-            continue
-    return pd.concat(all_data, ignore_index=True) if all_data else None
 
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
