@@ -25,6 +25,11 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import gaussian_filter1d
 import warnings
 warnings.filterwarnings('ignore')
+# Fix emoji encoding
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 
 # Try optional imports
 try:
