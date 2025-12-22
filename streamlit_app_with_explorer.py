@@ -3579,6 +3579,12 @@ def render_signature_survival():
     zscore_data = load_zscore_data_survival()
     st.write("sig_features is None?", sig_features is None)
     st.write("zscore_data is None?", zscore_data is None)
+    st.write("📁 BASE_DIR =", BASE_DIR)
+    st.write("📁 DATA_DIR =", DATA_DIR)
+    st.write("📂 DATA_DIR exists?", os.path.exists(DATA_DIR))
+    if os.path.exists(DATA_DIR):
+    st.write("Contents of DATA_DIR:", os.listdir(DATA_DIR))
+
     if sig_features is None or zscore_data is None:
         st.error("❌ Survival data not available")
         st.info("**Required:** data/survival/significant_features.csv")
