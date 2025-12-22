@@ -1063,53 +1063,62 @@ def clean_label_text(text):
 @st.cache_data
 def load_significant_features():
     """Load significant survival features (p < 0.05)"""
-    try:
-        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
-        
-        # Debug: Check if file exists
-        if not os.path.exists(sig_file):
-            st.error(f"❌ File not found: {sig_file}")
-            return None
-        
-        # Try to read the file
-        sig_df = pd.read_csv(sig_file)
-        st.write(f"✅ Loaded survival features: {len(sig_df)} rows, {len(sig_df.columns)} columns")
-        st.write(f"📋 Columns: {list(sig_df.columns)}")
-        
-        # Show first few rows
-        st.write("First 5 rows:")
-        st.dataframe(sig_df.head())
-        
-        # Look for p-value column (try different possible names)
-        p_col = None
-        for col_name in ['hr_p', 'p_value', 'pvalue', 'p', 'P_value', 'HR_p']:
-            if col_name in sig_df.columns:
-                p_col = col_name
-                st.write(f"✅ Found p-value column: '{p_col}'")
-                break
-        
-        if p_col is None:
-            st.warning(f"⚠️ No p-value column found. Returning all features.")
-            st.write(f"Available columns: {list(sig_df.columns)}")
-            return sig_df
-        
-        # Filter for significant features
-        sig_df_filtered = sig_df[sig_df[p_col] < 0.05].copy()
-        st.write(f"✅ After filtering ({p_col} < 0.05): {len(sig_df_filtered)} significant features")
-        
-        if len(sig_df_filtered) == 0:
-            st.error(f"❌ No significant features found (all {p_col} >= 0.05)")
-            st.write(f"Min p-value: {sig_df[p_col].min():.6f}")
-            st.write(f"Max p-value: {sig_df[p_col].max():.6f}")
-            return None
-        
-        return sig_df_filtered
-            
-    except Exception as e:
-        st.error(f"❌ Error loading significant features: {e}")
-        import traceback
-        st.code(traceback.format_exc())
+    sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
+    
+    # Check if file exists
+    if not os.path.exists(sig_file):
+        st.error(f"❌ File not found: {sig_file}")
         return None
+    
+    # Try multiple encodings
+    encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252', 'utf-16']
+    sig_df = None
+    
+    for encoding in encodings:
+        try:
+            sig_df = pd.read_csv(sig_file, encoding=encoding)
+            st.success(f"✅ Successfully loaded with encoding: {encoding}")
+            break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+        except Exception as e:
+            st.error(f"❌ Error with encoding {encoding}: {e}")
+            continue
+    
+    if sig_df is None:
+        st.error(f"❌ Could not read file with any encoding: {encodings}")
+        return None
+    
+    st.write(f"📊 Loaded survival features: {len(sig_df)} rows, {len(sig_df.columns)} columns")
+    st.write(f"📋 Columns: {list(sig_df.columns)}")
+    
+    # Show first few rows
+    with st.expander("Preview data (first 5 rows)"):
+        st.dataframe(sig_df.head())
+    
+    # Look for p-value column (try different possible names)
+    p_col = None
+    for col_name in ['hr_p', 'p_value', 'pvalue', 'p', 'P_value', 'HR_p', 'p-value']:
+        if col_name in sig_df.columns:
+            p_col = col_name
+            st.write(f"✅ Found p-value column: '{p_col}'")
+            break
+    
+    if p_col is None:
+        st.warning(f"⚠️ No p-value column found. Returning all features.")
+        st.write(f"Available columns: {list(sig_df.columns)}")
+        return sig_df
+    
+    # Filter for significant features
+    sig_df_filtered = sig_df[sig_df[p_col] < 0.05].copy()
+    st.write(f"✅ After filtering ({p_col} < 0.05): {len(sig_df_filtered)} significant features")
+    
+    if len(sig_df_filtered) == 0:
+        st.error(f"❌ No significant features found (all {p_col} >= 0.05)")
+        st.write(f"📈 P-value range: {sig_df[p_col].min():.6f} to {sig_df[p_col].max():.6f}")
+        return None
+    
+    return sig_df_filtered
 
 def extract_base_sample_id(sample_id):
     """Extract base patient ID from sample identifiers"""
