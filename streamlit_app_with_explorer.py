@@ -3908,13 +3908,13 @@ def main():
         ---
         
         #### **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism ÃƒÂ¢Ã¢â‚¬â„¢ Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values ÃƒÂ¢Ã¢â‚¬â„¢ Gene expression matrix
-        3. **Signatures:** Aggregate genes ÃƒÂ¢Ã¢â‚¬â„¢ Signature scores (Z-scores)
-        4. **Selection:** STABL ÃƒÂ¢Ã¢â‚¬â„¢ Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical ÃƒÂ¢Ã¢â‚¬â„¢ Effect sizes with uncertainty
-        6. **Validation:** MCMC diagnostics ÃƒÂ¢Ã¢â‚¬â„¢ Convergence checks
-        7. **Survival:** Cox regression ÃƒÂ¢Ã¢â‚¬â„¢ Clinical relevance
+        1. **Deconvolution:** BayesPrism ➜ Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values from CPTAC-3 ➜ Gene expression matrix of PDAC patients
+        3. **Signatures:** Custom signature databse ➜ Signature scores (Z-scores)
+        4. **Selection:** Sabl ML based  ➜ Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical with MCMC ➜ Effect sizes with uncertainty (Feature level/ Cell level)
+        6. **Validation:** MCMC diagnostics ➜ Convergence checks
+        7. **Survival:** Cox regression ➜ Clinical relevance of creble signature/features and cell type
         """)
     
     # Sidebar
