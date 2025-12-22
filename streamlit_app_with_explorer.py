@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Comprehensive Cell Analysis Viewer - Interactive Plots
 =======================================================
