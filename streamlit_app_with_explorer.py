@@ -964,7 +964,7 @@ def load_compartment_data(compartment):
     
     return data
 
-@st.cache_data
+#@st.cache_data
 def load_significant_features():
     sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
     st.write("🔍 Reading survival CSV:", sig_file)
@@ -1003,7 +1003,7 @@ def extract_base_sample_id(sample_id):
     return sample_str
 
 
-@st.cache_data
+#@st.cache_data
 def load_zscore_data_survival():
     base = os.path.join(DATA_DIR, "zscores_complete")
     st.write("🔍 Z-score base:", base)
