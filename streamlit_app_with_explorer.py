@@ -743,7 +743,8 @@ st.markdown("""
 # ============================= CONFIGURATION ======================================
 # ==================================================================================
 
-DATA_DIR = "data"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 LOG_TRANSFORM = True
 BMI_COLORS = {'Normal': '#2ECC71', 'Overweight': '#F39C12', 'Obese': '#E74C3C'}
 COLOR_OVERWEIGHT = "#1f78b4"
@@ -965,18 +966,17 @@ def load_compartment_data(compartment):
 
 @st.cache_data
 def load_significant_features():
-    """Load significant survival features"""
+    sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
     try:
-        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
         sig_df = pd.read_csv(sig_file)
-        
-        # Filter for significant features (p < 0.05)
         if 'hr_p' in sig_df.columns:
             sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
-        
         return sig_df
     except Exception as e:
+        st.error(f"Failed to load {sig_file}")
+        st.exception(e)
         return None
+
 
 def extract_base_sample_id(sample_id):
     """Extract base patient ID from sample identifiers"""
