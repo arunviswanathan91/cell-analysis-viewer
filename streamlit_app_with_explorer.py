@@ -3592,6 +3592,42 @@ def render_signature_explorer():
 # ==================================================================================
 # ===================== MODE 3: SIGNATURE SURVIVAL =================================
 # ==================================================================================
+PLOT_EXPLANATIONS = {
+    "BMI vs Time": """
+Shows patient BMI vs follow-up time. Each dot is a patient.
+Helps see raw survival patterns across BMI before modeling.
+""",
+
+    "BMI vs HR": """
+Shows how the hazard ratio of the signature changes across BMI.
+HR > 1 = higher risk, HR < 1 = protective.
+""",
+
+    "Dual-Axis": """
+Shows both mean follow-up time and hazard ratio vs BMI.
+Helps interpret risk in context of follow-up depth.
+""",
+
+    "Forest Plot": """
+Shows hazard ratios of the signature within BMI categories.
+Identifies where the signature is prognostic.
+""",
+
+    "Tertile": """
+BMI × signature interaction using Low/Medium/High signature groups.
+Tests whether BMI modifies signature effect.
+""",
+
+    "Median Split": """
+BMI × signature interaction using Low vs High (50/50 split).
+Higher power and simpler interpretation.
+""",
+
+    "HR + Distribution": """
+Shows HR trend across BMI plus patient count histogram.
+Reveals where estimates are reliable or sparse.
+"""
+}
 
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
@@ -3790,10 +3826,18 @@ def render_signature_survival():
                             fig = plot_func(patient_data, selected_sig_display)
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True)
+        
+                                # ✅ description
+                                with st.expander("ℹ️ What does this plot mean?"):
+                                    st.markdown(PLOT_EXPLANATIONS.get(
+                                        plot_name, "No explanation available."
+                                    ))
                             else:
                                 st.info("ℹ️ Insufficient data")
                         plot_count += 1
+
         
+        # Render remaining plot (if any) centered
         # Render remaining plot (if any) centered
         if n_remaining > 0:
             col1, col2, col3 = st.columns([1, 2, 1])
@@ -3803,9 +3847,16 @@ def render_signature_survival():
                     fig = plot_func(patient_data, selected_sig_display)
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
+        
+                        # description
+                        with st.expander("ℹ️ What does this plot mean?"):
+                            st.markdown(PLOT_EXPLANATIONS.get(
+                                plot_name, "No explanation available."
+                            ))
                     else:
                         st.info("ℹ️ Insufficient data")
                 plot_count += 1
+
 
 
 def main():
