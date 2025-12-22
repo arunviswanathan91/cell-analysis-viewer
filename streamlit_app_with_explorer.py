@@ -4116,7 +4116,7 @@ def main():
             
             st.markdown("---")
             
-            st.markdown("### ÃƒÂ°Ã…Â¸Ã¢â‚¬Å“Ã…Â  Bayesian Effect Size Estimation")
+            st.markdown("### 📝 Bayesian Effect Size Estimation")
             
             st.markdown("""
             <div class="method-box">
