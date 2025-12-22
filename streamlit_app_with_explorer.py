@@ -3604,15 +3604,6 @@ def render_signature_survival():
     zscore_data = load_zscore_data_survival()
     
     
-    # Show unique compartment values for debugging
-    if 'compartment' in sig_features.columns:
-        unique_comps = sig_features['compartment'].unique().tolist()
-        with st.expander("🔍 Debug: Compartment Names", expanded=False):
-            st.write(f"Compartments found in CSV: {unique_comps}")
-    else:
-        st.error("❌ 'compartment' column not found in significant_features.csv")
-        st.info(f"Available columns: {list(sig_features.columns)}")
-        return
     
     # Normalize compartment names (handle different naming conventions)
     def normalize_compartment(name):
