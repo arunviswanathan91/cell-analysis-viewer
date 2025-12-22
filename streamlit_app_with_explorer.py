@@ -1467,6 +1467,19 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 d_obo = np.zeros_like(xgrid)
             
             y_offset = y_base + i * SPACING
+
+            # static cell-type label on the left
+            fig.add_trace(go.Scatter(
+                x=[x_min - 0.02 * x_span],   # a bit left of the ridges
+                y=[y_offset + RIDGE_HEIGHT * 0.5],
+                mode='text',
+                text=[ct_name],
+                textposition='middle right',
+                textfont=dict(size=12, color='#2c3e50'),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+
             
             # Add traces for each comparison
             fig.add_trace(go.Scatter(
