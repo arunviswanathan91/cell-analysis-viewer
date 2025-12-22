@@ -1029,30 +1029,45 @@ def extract_base_sample_id(sample_id):
 
 @st.cache_data
 def load_zscore_data_survival():
-    """Load z-score data for survival analysis from all compartments"""
+    """Load z-score data for survival analysis from zscores_complete"""
     all_data = []
     comp_map = {
         'Immune Fine': 'immune_fine',
         'Immune Coarse': 'immune_coarse',
         'Non-Immune': 'non_immune'
     }
+    
     for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
+        # FIX: Use correct directory and filename pattern
+        zfile = os.path.join(DATA_DIR, "zscores_complete", f"{comp_key}_zcomplete.csv")
+        
         if not os.path.exists(zfile):
             continue
+            
         try:
             df = pd.read_csv(zfile, low_memory=False)
+            
+            # Expect first column = sample_id, others = features
             sample_col = df.columns[0]
             feature_cols = [c for c in df.columns if "||" in str(c)]
+            
             if not feature_cols:
                 continue
-            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
-                             var_name="feature", value_name="Z")
+            
+            df_long = df.melt(
+                id_vars=[sample_col], 
+                value_vars=feature_cols,
+                var_name="feature", 
+                value_name="Z"
+            )
+            
             df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
             df_long['compartment'] = compartment_name
             all_data.append(df_long)
-        except:
+            
+        except Exception as e:
             continue
+    
     return pd.concat(all_data, ignore_index=True) if all_data else None
 
 def assign_bmi_category(bmi):
