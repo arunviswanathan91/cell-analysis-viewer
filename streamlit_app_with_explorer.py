@@ -3603,14 +3603,6 @@ def render_signature_survival():
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
     
-# Debug output
-    st.write(f"DEBUG: sig_features = {type(sig_features).__name__}, len = {len(sig_features) if sig_features is not None else None}")
-    st.write(f"DEBUG: zscore_data = {type(zscore_data).__name__}, len = {len(zscore_data) if zscore_data is not None else None}")
-    
-    if sig_features is None or zscore_data is None:
-        st.error("❌ Survival data not available")
-        st.info("**Required:** data/survival/significant_features.csv")
-        return
     
     # Show unique compartment values for debugging
     if 'compartment' in sig_features.columns:
