@@ -4140,20 +4140,25 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
         
         # Tab 2: Ridge Plot
-        with st.expander("📖 How to interpret the ridge plot", expanded=False):
-            st.markdown("""
-            <div class="method-box">
-            <b>Ridge Plots Explained</b><br>
-            Each "ridge" shows the full distribution of MCMC samples for one cell type:
-            <ul>
-            <li><b>Width:</b> Uncertainty in effect size estimate</li>
-            <li><b>Peak location:</b> Most likely effect size</li>
-            <li><b>Overlap with zero:</b> Effect may not be significant</li>
-            <li><b>Vertical lines:</b> Mean effect sizes for each BMI comparison</li>
-            </ul>
-            <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
-            </div>
-            """, unsafe_allow_html=True)
+        with tabs[1]:
+            st.markdown("### 🧾 Posterior Distribution Visualization")
+        
+            # 🔽 Dropdown explanation
+            with st.expander("📖 How to interpret the ridge plot", expanded=False):
+                st.markdown("""
+                <div class="method-box">
+                <b>Ridge Plots Explained</b><br>
+                Each "ridge" shows the full distribution of MCMC samples for one cell type:
+                <ul>
+                <li><b>Width:</b> Uncertainty in effect size estimate</li>
+                <li><b>Peak location:</b> Most likely effect size</li>
+                <li><b>Overlap with zero:</b> Effect may not be significant</li>
+                <li><b>Vertical lines:</b> Mean effect sizes for each BMI comparison</li>
+                </ul>
+                <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
+                </div>
+                """, unsafe_allow_html=True)
+
 
         
 # Tab 3: Bayesian Diagnostics
