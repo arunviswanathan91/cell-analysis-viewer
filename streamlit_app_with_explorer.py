@@ -3577,7 +3577,8 @@ def render_signature_survival():
     clinical = load_clinical_data()
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
-    
+    st.write("sig_features is None?", sig_features is None)
+    st.write("zscore_data is None?", zscore_data is None)
     if sig_features is None or zscore_data is None:
         st.error("❌ Survival data not available")
         st.info("**Required:** data/survival/significant_features.csv")
