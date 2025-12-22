@@ -3584,6 +3584,18 @@ def render_signature_survival():
     st.write("📂 DATA_DIR exists?", os.path.exists(DATA_DIR))
     if os.path.exists(DATA_DIR):
         st.write("Contents of DATA_DIR:", os.listdir(DATA_DIR))
+    # List survival folder
+    surv_dir = os.path.join(DATA_DIR, "survival")
+    st.write("📂 survival dir exists?", os.path.exists(surv_dir))
+    if os.path.exists(surv_dir):
+        st.write("Contents of survival:", os.listdir(surv_dir))
+    
+    # List zscores_complete folder
+    zdir = os.path.join(DATA_DIR, "zscores_complete")
+    st.write("📂 zscores_complete exists?", os.path.exists(zdir))
+    if os.path.exists(zdir):
+        st.write("Contents of zscores_complete:", os.listdir(zdir))
+
 
     if sig_features is None or zscore_data is None:
         st.error("❌ Survival data not available")
