@@ -1514,6 +1514,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         # Add zero reference line
         fig.add_vline(x=0, line_dash="dash", line_color="darkred", line_width=2, opacity=0.7)
         
+       
         fig.update_layout(
             title=dict(
                 text='Overlapped Posterior Distributions by Cell Type',
@@ -1526,17 +1527,23 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 zeroline=False
             ),
             height=max(600, len(indices) * 80),
-            width=500,
+            width=850,
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
+        
+            # ✅ Legend outside to the right
             legend=dict(
                 orientation="v",
-                yanchor="top",
-                y=0.99,
+                x=1.02,
+                y=0.5,
                 xanchor="left",
-                x=0.01
-            )
+                yanchor="middle"
+            ),
+        
+            # ✅ Add right margin so legend has space
+            margin=dict(l=60, r=180, t=80, b=60)
         )
+
         
         return fig
         
