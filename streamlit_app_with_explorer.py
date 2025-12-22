@@ -1223,14 +1223,14 @@ def format_signature_name(sig_name, max_length=40):
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     """Generate interactive STABL Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â STABL data not available")
+        st.warning("❌ STABL data not available")
         return None
     
     zscores = comp_data['zscores']
     zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
     
     if len(zscores) == 0:
-        st.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No Z-scores found for {cell_type}")
+        st.warning(f"❌ No Z-scores found for {cell_type}")
         return None
     
     zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
@@ -1288,7 +1288,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
 def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     """Generate interactive Bayesian effect size heatmap"""
     if comp_data['bayesian'] is None:
-        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Bayesian data not available")
+        st.warning("❌ Bayesian data not available")
         return None
     
     bayes = comp_data['bayesian'].copy()
@@ -1304,7 +1304,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
     
     if len(cell_bayes) == 0:
-        st.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No Bayesian results for {cell_type}")
+        st.warning(f"❌ No Bayesian results for {cell_type}")
         return None
     
     cell_bayes['signature'] = cell_bayes['feature'].apply(
@@ -1320,7 +1320,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
                 break
     
     if len(effect_data) == 0:
-        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No effect size columns found")
+        st.warning("❌ No effect size columns found")
         return None
     
     heatmap_data = pd.concat(effect_data, axis=1).T
@@ -1362,7 +1362,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
 def plot_overlapped_ridges_interactive(cell_type, comp_data):
     """Generate interactive overlapped ridge plot"""
     if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
-        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Posterior data not available - ridge plot skipped")
+        st.info("❌ Posterior data not available - ridge plot skipped")
         return None
     
     try:
@@ -1526,6 +1526,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 zeroline=False
             ),
             height=max(600, len(indices) * 80),
+            width=850,
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
             legend=dict(
@@ -1540,7 +1541,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         return fig
         
     except Exception as e:
-        st.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Error creating ridge plot: {e}")
+        st.warning(f"❌ Error creating ridge plot: {e}")
         return None
 
 def plot_gene_bmi_interactive(genes, clinical, tpm):
