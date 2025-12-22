@@ -1633,14 +1633,14 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
         marker=dict(color=colors, line=dict(color='black', width=1)),
         text=[f"{s:.4f} {m}" for s, m in zip(plot_df['slope'], sig_markers)],
         textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>RÃƒâ€šÃ‚Â²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
+        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>R²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
         customdata=np.column_stack((plot_df['r_squared'], plot_df['p_value']))
     ))
     
     fig1.add_vline(x=0, line_dash="solid", line_color="black", line_width=2)
     
     fig1.update_layout(
-        title='Gene-Level BMI Association<br>ÃƒÅ½Ã¢â‚¬Â Expression per ÃƒÅ½Ã¢â‚¬Â BMI',
+        title='Gene-Level BMI Association<br> ∆ Expression per ∆ BMI',
         xaxis_title='Expression Change per 1 Unit BMI Increase',
         yaxis_title='Genes',
         height=max(500, len(plot_df) * 25),
