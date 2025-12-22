@@ -1526,7 +1526,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 zeroline=False
             ),
             height=max(600, len(indices) * 80),
-            width=850,
+            width=500,
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
             legend=dict(
