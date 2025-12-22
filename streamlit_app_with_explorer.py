@@ -1474,7 +1474,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty' if i > 0 else 'tozeroy',
                 fillcolor=f'rgba(227, 26, 28, 0.5)',
                 line=dict(color='rgba(227, 26, 28, 0.8)', width=1.5),
-                name=f'{ct_name} - Obese',
+                name=f'Obese',
                 hovertemplate=f'<b>{ct_name}</b><br>Obese vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='obese'
@@ -1485,7 +1485,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty',
                 fillcolor=f'rgba(31, 120, 180, 0.5)',
                 line=dict(color='rgba(31, 120, 180, 0.8)', width=1.5),
-                name=f'{ct_name} - Overweight',
+                name=f'Overweight',
                 hovertemplate=f'<b>{ct_name}</b><br>Overweight vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='overweight'
@@ -1496,7 +1496,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty',
                 fillcolor=f'rgba(51, 160, 44, 0.5)',
                 line=dict(color='rgba(51, 160, 44, 0.8)', width=1.5),
-                name=f'{ct_name} - Obese vs Overweight',
+                name=f'Obese vs Overweight',
                 hovertemplate=f'<b>{ct_name}</b><br>Obese vs Overweight<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='obo'
