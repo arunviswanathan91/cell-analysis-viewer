@@ -3435,14 +3435,6 @@ def render_signature_explorer():
             height=min(600, len(summary_df) * 35 + 38)
         )
         
-        # Download button
-        csv = summary_df.to_csv(index=False)
-        st.download_button(
-            label=" Download Summary as CSV",
-            data=csv,
-            file_name=f"{selected_cell}_signatures_summary.csv",
-            mime="text/csv"
-        )
     
     # Tab 2: Detailed View
     with sig_tabs[1]:
@@ -3485,26 +3477,7 @@ def render_signature_explorer():
                 key=f"gene_list_display_{selected_sig_idx}"
             )
             
-            # Download genes
-            genes_csv = '\n'.join(selected_sig['genes'])
-            st.download_button(
-                label=" Download Gene List",
-                data=genes_csv,
-                file_name=f"{selected_sig['signature']}_genes.txt",
-                mime="text/plain"
-            )
-        
-        # Show gene list as table
-        st.markdown("####  Gene List (Table View)")
-        genes_df = pd.DataFrame({'Gene Symbol': selected_sig['genes']})
-        genes_df['Index'] = range(1, len(genes_df) + 1)
-        genes_df = genes_df[['Index', 'Gene Symbol']]
-        
-        st.dataframe(
-            genes_df,
-            use_container_width=True,
-            height=min(400, len(genes_df) * 35 + 38)
-        )
+      
     
     # Tab 3: Statistics
     with sig_tabs[2]:
