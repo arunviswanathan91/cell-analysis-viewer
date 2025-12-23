@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Comprehensive Cell Analysis Viewer - Interactive Plots
 =======================================================
@@ -24,6 +25,11 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import gaussian_filter1d
 import warnings
 warnings.filterwarnings('ignore')
+# Fix emoji encoding
+import sys
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 
 # Try optional imports
 try:
@@ -998,42 +1004,64 @@ def load_zscore_data_survival():
     """
     Load Z-score matrices for survival analysis from zscores_complete.
     Returns a long-format DataFrame with:
-    sample_id, feature (Cell||Signature), Z
+    sample_id, feature (Cell||Signature), Z, compartment, base_sample_id
     """
     base = "data/zscores_complete"
 
     files = {
-        "immune_fine": "immune_fine_zcomplete.csv",
-        "immune_coarse": "immune_coarse_zcomplete.csv",
-        "non_immune": "non_immune_zcomplete.csv",
+        "Immune Fine": "immune_fine_zcomplete.csv",
+        "Immune Coarse": "immune_coarse_zcomplete.csv",
+        "Non-Immune": "non_immune_zcomplete.csv",
     }
 
     dfs = []
+    errors = []
+    
     for comp, fname in files.items():
         path = os.path.join(base, fname)
+        
         if not os.path.exists(path):
-            st.error(f"❌ Missing file: {path}")
+            errors.append(f"Missing: {path}")
             continue
 
-        df = pd.read_csv(path)
+        try:
+            df = pd.read_csv(path, low_memory=False)
+            
+            # Expect first column = sample_id, others = features
+            id_col = df.columns[0]
+            df = df.rename(columns={id_col: "sample_id"})
 
-        # Expect first column = sample_id, others = features
-        id_col = df.columns[0]
-        df = df.rename(columns={id_col: "sample_id"})
+            # Melt to long format
+            long = df.melt(
+                id_vars="sample_id",
+                var_name="feature",
+                value_name="Z"
+            )
+            long["compartment"] = comp
+            
+            # Add base_sample_id for matching with clinical data
+            long['base_sample_id'] = long['sample_id'].apply(extract_base_sample_id)
+            
+            dfs.append(long)
+            
+        except Exception as e:
+            errors.append(f"Error loading {fname}: {str(e)}")
+            continue
 
-        long = df.melt(
-            id_vars="sample_id",
-            var_name="feature",
-            value_name="Z"
-        )
-        long["compartment"] = comp
-        dfs.append(long)
-
+    # Show any errors
+    if errors:
+        with st.expander("⚠️ Z-score loading issues", expanded=False):
+            for err in errors:
+                st.warning(err)
+    
     if not dfs:
-        return pd.DataFrame()
+        st.error(f"❌ No z-score files loaded from {base}/")
+        st.info("Expected files: " + ", ".join(files.values()))
+        return None
 
     out = pd.concat(dfs, ignore_index=True)
     out["sample_id"] = out["sample_id"].astype(str)
+    
     return out
 
 def assign_bmi_category(bmi):
@@ -1063,14 +1091,51 @@ def clean_label_text(text):
 @st.cache_data
 def load_significant_features():
     """Load significant survival features (p < 0.05)"""
-    try:
-        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
-        sig_df = pd.read_csv(sig_file)
-        if 'hr_p' in sig_df.columns:
-            sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
-        return sig_df
-    except:
+    sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
+    
+    # Check if file exists
+    if not os.path.exists(sig_file):
+        st.error(f"❌ File not found: {sig_file}")
         return None
+    
+    # Try multiple encodings
+    encodings = ['utf-8', 'latin-1', 'iso-8859-1', 'cp1252']
+    sig_df = None
+    
+    for encoding in encodings:
+        try:
+            sig_df = pd.read_csv(sig_file, encoding=encoding)
+            # Success - no need to notify user about encoding
+            break
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+        except Exception:
+            continue
+    
+    if sig_df is None:
+        st.error(f"❌ Could not read survival features file")
+        return None
+    
+    # Look for p-value column (try different possible names)
+    p_col = None
+    for col_name in ['hr_p', 'p_value', 'pvalue', 'p', 'P_value', 'HR_p', 'p-value']:
+        if col_name in sig_df.columns:
+            p_col = col_name
+            break
+    
+    if p_col is None:
+        st.warning(f"⚠️ No p-value column found in survival data")
+        return sig_df
+    
+    # Filter for significant features
+    sig_df_filtered = sig_df[sig_df[p_col] < 0.05].copy()
+    
+    if len(sig_df_filtered) == 0:
+        st.error(f"❌ No significant features found (all p-values ≥ 0.05)")
+        return None
+    
+    # Success - return filtered data
+    return sig_df_filtered
 
 def extract_base_sample_id(sample_id):
     """Extract base patient ID from sample identifiers"""
@@ -1083,32 +1148,6 @@ def extract_base_sample_id(sample_id):
     return sample_str
 
 @st.cache_data
-def load_zscore_data_survival():
-    """Load z-score data for survival analysis from all compartments"""
-    all_data = []
-    comp_map = {
-        'Immune Fine': 'immune_fine',
-        'Immune Coarse': 'immune_coarse',
-        'Non-Immune': 'non_immune'
-    }
-    for compartment_name, comp_key in comp_map.items():
-        zfile = os.path.join(DATA_DIR, "zscores", f"{comp_key}_zscores.csv")
-        if not os.path.exists(zfile):
-            continue
-        try:
-            df = pd.read_csv(zfile, low_memory=False)
-            sample_col = df.columns[0]
-            feature_cols = [c for c in df.columns if "||" in str(c)]
-            if not feature_cols:
-                continue
-            df_long = df.melt(id_vars=[sample_col], value_vars=feature_cols,
-                             var_name="feature", value_name="Z")
-            df_long['base_sample_id'] = df_long[sample_col].apply(extract_base_sample_id)
-            df_long['compartment'] = compartment_name
-            all_data.append(df_long)
-        except:
-            continue
-    return pd.concat(all_data, ignore_index=True) if all_data else None
 
 def assign_bmi_category(bmi):
     """Assign BMI category using WHO standards"""
@@ -1151,11 +1190,11 @@ def get_available_cells(compartment):
         
         if len(cells) == 0:
             # Debug: show what columns are available
-            st.sidebar.warning(f"Ã¢Å¡Â Ã¯Â¸Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+            st.sidebar.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
         
         return cells
     else:
-        st.sidebar.error(f"Ã¢ÂÅ’ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        st.sidebar.error(f"ÃƒÂ¢Ã‚ÂÃ…â€™ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
     return []
 
 def get_cell_signatures(cell_type):
@@ -1182,16 +1221,16 @@ def format_signature_name(sig_name, max_length=40):
 # ==================================================================================
 
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
-    """Generate interactive STABL Z-score heatmap"""
+    """Generate interactive Stabl Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â STABL data not available")
+        st.warning("❌ Stabl data not available")
         return None
     
     zscores = comp_data['zscores']
     zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
     
     if len(zscores) == 0:
-        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No Z-scores found for {cell_type}")
+        st.warning(f"❌ No Z-scores found for {cell_type}")
         return None
     
     zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
@@ -1207,12 +1246,12 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     
     stabl_features = comp_data['stabl']['feature'].tolist() if comp_data['stabl'] is not None else []
     
-    # Add STABL marker to signature names
+    # Add Stabl marker to signature names
     signatures = []
     for sig in heatmap_data.index:
         feature_name = f"{cell_type}||{sig}"
         if feature_name in stabl_features:
-            signatures.append(f"{sig} Ã¢Â­Â")
+            signatures.append(f"{sig} ⭐")
         else:
             signatures.append(sig)
     
@@ -1234,11 +1273,11 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     
     fig.update_layout(
         title=dict(
-            text=f'{cell_type} - {sig_name}<br>STABL Z-scores by BMI Group',
+            text=f'{cell_type} - {sig_name}<br>Stabl Z-scores by BMI Group',
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='BMI Category',
-        yaxis_title='Signatures (Ã¢Â­Â = STABL-selected)',
+        yaxis_title='Signatures (⭐= STABL-selected)',
         height=max(600, len(heatmap_data) * 25),
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
@@ -1249,7 +1288,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
 def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     """Generate interactive Bayesian effect size heatmap"""
     if comp_data['bayesian'] is None:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â Bayesian data not available")
+        st.warning("❌ Bayesian data not available")
         return None
     
     bayes = comp_data['bayesian'].copy()
@@ -1265,7 +1304,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
     
     if len(cell_bayes) == 0:
-        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No Bayesian results for {cell_type}")
+        st.warning(f"❌ No Bayesian results for {cell_type}")
         return None
     
     cell_bayes['signature'] = cell_bayes['feature'].apply(
@@ -1281,7 +1320,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
                 break
     
     if len(effect_data) == 0:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â No effect size columns found")
+        st.warning("❌ No effect size columns found")
         return None
     
     heatmap_data = pd.concat(effect_data, axis=1).T
@@ -1323,7 +1362,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
 def plot_overlapped_ridges_interactive(cell_type, comp_data):
     """Generate interactive overlapped ridge plot"""
     if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available - ridge plot skipped")
+        st.info("❌ Posterior data not available - ridge plot skipped")
         return None
     
     try:
@@ -1428,6 +1467,19 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 d_obo = np.zeros_like(xgrid)
             
             y_offset = y_base + i * SPACING
+
+            # static cell-type label on the left
+            fig.add_trace(go.Scatter(
+                x=[x_min - 0.02 * x_span],   # a bit left of the ridges
+                y=[y_offset + RIDGE_HEIGHT * 0.5],
+                mode='text',
+                text=[ct_name],
+                textposition='middle right',
+                textfont=dict(size=12, color='#2c3e50'),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+
             
             # Add traces for each comparison
             fig.add_trace(go.Scatter(
@@ -1435,7 +1487,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty' if i > 0 else 'tozeroy',
                 fillcolor=f'rgba(227, 26, 28, 0.5)',
                 line=dict(color='rgba(227, 26, 28, 0.8)', width=1.5),
-                name=f'{ct_name} - Obese',
+                name=f'Obese',
                 hovertemplate=f'<b>{ct_name}</b><br>Obese vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='obese'
@@ -1446,7 +1498,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty',
                 fillcolor=f'rgba(31, 120, 180, 0.5)',
                 line=dict(color='rgba(31, 120, 180, 0.8)', width=1.5),
-                name=f'{ct_name} - Overweight',
+                name=f'Overweight',
                 hovertemplate=f'<b>{ct_name}</b><br>Overweight vs Normal<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='overweight'
@@ -1457,7 +1509,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 fill='tonexty',
                 fillcolor=f'rgba(51, 160, 44, 0.5)',
                 line=dict(color='rgba(51, 160, 44, 0.8)', width=1.5),
-                name=f'{ct_name} - Obese vs Overweight',
+                name=f'Obese vs Overweight',
                 hovertemplate=f'<b>{ct_name}</b><br>Obese vs Overweight<br>Effect: %{{x:.3f}}<extra></extra>',
                 showlegend=(i == 0),
                 legendgroup='obo'
@@ -1475,6 +1527,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         # Add zero reference line
         fig.add_vline(x=0, line_dash="dash", line_color="darkred", line_width=2, opacity=0.7)
         
+       
         fig.update_layout(
             title=dict(
                 text='Overlapped Posterior Distributions by Cell Type',
@@ -1487,27 +1540,34 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 zeroline=False
             ),
             height=max(600, len(indices) * 80),
+            width=850,
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
+        
+            # ✅ Legend outside to the right
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            )
+                orientation="v",
+                x=1.02,
+                y=0.5,
+                xanchor="left",
+                yanchor="middle"
+            ),
+        
+            # ✅ Add right margin so legend has space
+            margin=dict(l=60, r=180, t=80, b=60)
         )
+
         
         return fig
         
     except Exception as e:
-        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â Error creating ridge plot: {e}")
+        st.warning(f"❌ Error creating ridge plot: {e}")
         return None
 
 def plot_gene_bmi_interactive(genes, clinical, tpm):
     """Generate interactive gene-level BMI analysis plots"""
     if tpm is None:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â TPM data not available")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â TPM data not available")
         return None, None
     
     tpm_t = tpm.T
@@ -1538,7 +1598,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
             continue
     
     if not results:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â No genes analyzed")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No genes analyzed")
         return None, None
     
     results_df = pd.DataFrame(results).sort_values('p_value')
@@ -1573,14 +1633,14 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
         marker=dict(color=colors, line=dict(color='black', width=1)),
         text=[f"{s:.4f} {m}" for s, m in zip(plot_df['slope'], sig_markers)],
         textposition='outside',
-        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>RÃ‚Â²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
+        hovertemplate='<b>%{y}</b><br>Slope: %{x:.4f}<br>R²: %{customdata[0]:.3f}<br>p-value: %{customdata[1]:.3e}<extra></extra>',
         customdata=np.column_stack((plot_df['r_squared'], plot_df['p_value']))
     ))
     
     fig1.add_vline(x=0, line_dash="solid", line_color="black", line_width=2)
     
     fig1.update_layout(
-        title='Gene-Level BMI Association<br>ÃŽâ€ Expression per ÃŽâ€ BMI',
+        title='Gene-Level BMI Association<br> ∆ Expression per ∆ BMI',
         xaxis_title='Expression Change per 1 Unit BMI Increase',
         yaxis_title='Genes',
         height=max(500, len(plot_df) * 25),
@@ -1598,7 +1658,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
     
     fig2 = make_subplots(
         rows=n_rows, cols=n_cols,
-        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, RÃ‚Â²={row['r_squared']:.3f})" 
+        subplot_titles=[f"{row['gene']} (slope={row['slope']:.4f}, R²={row['r_squared']:.3f})" 
                        for _, row in top_genes.iterrows()],
         vertical_spacing=0.12,
         horizontal_spacing=0.1
@@ -1662,7 +1722,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
 def plot_energy_diagnostic(comp_data):
     """Generate interactive energy diagnostic plot"""
     if comp_data['energy'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Energy data not available")
+        st.info("❌ Energy data not available")
         return None
     
     energy = comp_data['energy']
@@ -1697,7 +1757,7 @@ def plot_energy_diagnostic(comp_data):
 def plot_trace_diagnostic(comp_data, n_celltypes=6):
     """Generate trace plots for first N cell types"""
     if comp_data['posterior_overweight'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
+        st.info("❌ Posterior data not available")
         return None
     
     # Get posterior data
@@ -1762,7 +1822,7 @@ def plot_trace_diagnostic(comp_data, n_celltypes=6):
 def plot_rank_diagnostic(comp_data, n_celltypes=6):
     """Generate rank plots for convergence diagnostic"""
     if comp_data['posterior_overweight'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
+        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Posterior data not available")
         return None
     
     df_over = comp_data['posterior_overweight']
@@ -1829,7 +1889,7 @@ def plot_rank_diagnostic(comp_data, n_celltypes=6):
 def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
     """Generate autocorrelation plots"""
     if comp_data['posterior_overweight'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Posterior data not available")
+        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Posterior data not available")
         return None
     
     df_over = comp_data['posterior_overweight']
@@ -1905,7 +1965,7 @@ def plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40):
 def plot_ess_rhat(comp_data):
     """Generate ESS and R-hat diagnostic plots"""
     if comp_data['diagnostics'] is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Diagnostic summary not available")
+        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Diagnostic summary not available")
         return None
     
     diag = comp_data['diagnostics']
@@ -1918,7 +1978,7 @@ def plot_ess_rhat(comp_data):
     
     # Filter for cell type effects
     if isinstance(diag.index, pd.RangeIndex):
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â Diagnostic data doesn't have parameter names")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â Diagnostic data doesn't have parameter names")
         return None
     
     # Convert index to string if needed
@@ -1928,7 +1988,7 @@ def plot_ess_rhat(comp_data):
     diag = diag[diag.index.str.contains('celltype_effect', na=False, case=False)]
     
     if len(diag) == 0:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â No cell type diagnostics found in data")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No cell type diagnostics found in data")
         return None
     
     # Create figure with two subplots
@@ -1946,7 +2006,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if ess_col is None:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â ESS column not found in diagnostics")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â ESS column not found in diagnostics")
         return None
     
     ess_bulk = diag[ess_col].values
@@ -1979,7 +2039,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if rhat_col is None:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â R-hat column not found in diagnostics")
+        st.warning("ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â R-hat column not found in diagnostics")
         # Continue with ESS plot only
         fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
         fig.update_layout(
@@ -2407,7 +2467,7 @@ def plot_survival_forest_bmi(patient_data, signature_name):
 
 
 def plot_survival_interaction_tertile(patient_data, signature_name):
-    """Plot 5: BMI × Signature Interaction (Tertiles)"""
+    """Plot 5: BMI Ã— Signature Interaction (Tertiles)"""
     if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
         return None
     
@@ -2451,7 +2511,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     
     fig = make_subplots(
         rows=1, cols=2,
-        subplot_titles=('Median Survival by BMI × Signature', 'Event Rate by BMI × Signature'),
+        subplot_titles=('Median Survival by BMI Ã— Signature', 'Event Rate by BMI Ã— Signature'),
         horizontal_spacing=0.12
     )
     
@@ -2533,7 +2593,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
     
     fig.update_layout(
-        title_text=f'{signature_name}<br>BMI × Signature Interaction (Tertiles)',
+        title_text=f'{signature_name}<br>BMI Ã— Signature Interaction (Tertiles)',
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
         height=500,
@@ -2544,7 +2604,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
 
 
 def plot_survival_interaction_median(patient_data, signature_name):
-    """Plot 6: BMI × Signature Interaction (Median Split)"""
+    """Plot 6: BMI Ã— Signature Interaction (Median Split)"""
     if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
         return None
     
@@ -2588,7 +2648,7 @@ def plot_survival_interaction_median(patient_data, signature_name):
     
     fig = make_subplots(
         rows=1, cols=2,
-        subplot_titles=('Median Survival by BMI × Signature', 'Event Rate by BMI × Signature'),
+        subplot_titles=('Median Survival by BMI Ã— Signature', 'Event Rate by BMI Ã— Signature'),
         horizontal_spacing=0.12
     )
     
@@ -2670,7 +2730,7 @@ def plot_survival_interaction_median(patient_data, signature_name):
     fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
     
     fig.update_layout(
-        title_text=f'{signature_name}<br>BMI × Signature Interaction (Median Split: High vs Low)',
+        title_text=f'{signature_name}<br>BMI Ã— Signature Interaction (Median Split: High vs Low)',
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
         height=500,
@@ -3013,7 +3073,7 @@ def plot_survival_forest_bmi(patient_data, signature_name):
     return fig
 
 def plot_survival_interaction_tertile(patient_data, signature_name):
-    """Plot 5: BMI × Signature (Tertiles)"""
+    """Plot 5: BMI Ã— Signature (Tertiles)"""
     if 'BMI' not in patient_data.columns:
         return None
     patient_data = patient_data.copy()
@@ -3062,7 +3122,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     return fig
 
 def plot_survival_interaction_median(patient_data, signature_name):
-    """Plot 6: BMI × Signature (Median Split)"""
+    """Plot 6: BMI Ã— Signature (Median Split)"""
     if 'BMI' not in patient_data.columns:
         return None
     patient_data = patient_data.copy()
@@ -3161,7 +3221,7 @@ def plot_survival_hr_with_distribution(patient_data, signature_name):
 def plot_gene_survival_interactive(genes, clinical, tpm):
     """Generate interactive gene-level survival forest plot"""
     if not LIFELINES_AVAILABLE or tpm is None:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â Survival analysis not available")
+        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â Survival analysis not available")
         return None
     
     tpm_t = tpm.T
@@ -3212,7 +3272,7 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
             continue
     
     if not results:
-        st.info("Ã¢â€žÂ¹Ã¯Â¸Â No genes passed survival criteria")
+        st.info("ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¹ÃƒÂ¯Ã‚Â¸Ã‚Â No genes passed survival criteria")
         return None
     
     results_df = pd.DataFrame(results).sort_values('hr', ascending=False).head(20)
@@ -3285,7 +3345,7 @@ def render_signature_explorer():
     signatures = load_signatures()
     
     if not signatures:
-        st.error("âŒ Failed to load signature database")
+        st.error("Ã¢ÂÅ’ Failed to load signature database")
         return
     
     # Create sidebar for selection
@@ -3305,7 +3365,7 @@ def render_signature_explorer():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.warning(f"âš ï¸ No cell types found for {compartment}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No cell types found for {compartment}")
         st.info("This may indicate missing z-score data files. The signature database may still contain entries for this compartment.")
         
         # Show all unique cell types from signature database
@@ -3342,7 +3402,7 @@ def render_signature_explorer():
     st.markdown("---")
     
     if not cell_signatures:
-        st.warning(f"âš ï¸ No signatures found for {selected_cell}")
+        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No signatures found for {selected_cell}")
         st.info("This cell type exists in the z-score data but may not have associated signatures in the database.")
         return
     
@@ -3375,14 +3435,6 @@ def render_signature_explorer():
             height=min(600, len(summary_df) * 35 + 38)
         )
         
-        # Download button
-        csv = summary_df.to_csv(index=False)
-        st.download_button(
-            label=" Download Summary as CSV",
-            data=csv,
-            file_name=f"{selected_cell}_signatures_summary.csv",
-            mime="text/csv"
-        )
     
     # Tab 2: Detailed View
     with sig_tabs[1]:
@@ -3422,29 +3474,10 @@ def render_signature_explorer():
                 "Genes in this signature:",
                 genes_text,
                 height=200,
-                key='gene_list_display'
+                key=f"gene_list_display_{selected_sig_idx}"
             )
             
-            # Download genes
-            genes_csv = '\n'.join(selected_sig['genes'])
-            st.download_button(
-                label=" Download Gene List",
-                data=genes_csv,
-                file_name=f"{selected_sig['signature']}_genes.txt",
-                mime="text/plain"
-            )
-        
-        # Show gene list as table
-        st.markdown("####  Gene List (Table View)")
-        genes_df = pd.DataFrame({'Gene Symbol': selected_sig['genes']})
-        genes_df['Index'] = range(1, len(genes_df) + 1)
-        genes_df = genes_df[['Index', 'Gene Symbol']]
-        
-        st.dataframe(
-            genes_df,
-            use_container_width=True,
-            height=min(400, len(genes_df) * 35 + 38)
-        )
+      
     
     # Tab 3: Statistics
     with sig_tabs[2]:
@@ -3553,14 +3586,50 @@ def render_signature_explorer():
 # ==================================================================================
 # ===================== MODE 3: SIGNATURE SURVIVAL =================================
 # ==================================================================================
+PLOT_EXPLANATIONS = {
+    "BMI vs Time": """
+Shows patient BMI vs follow-up time. Each dot is a patient.
+Helps see raw survival patterns across BMI before modeling.
+""",
+
+    "BMI vs HR": """
+Shows how the hazard ratio of the signature changes across BMI.
+HR > 1 = higher risk, HR < 1 = protective.
+""",
+
+    "Dual-Axis": """
+Shows both mean follow-up time and hazard ratio vs BMI.
+Helps interpret risk in context of follow-up depth.
+""",
+
+    "Forest Plot": """
+Shows hazard ratios of the signature within BMI categories.
+Identifies where the signature is prognostic.
+""",
+
+    "Tertile": """
+BMI × signature interaction using Low/Medium/High signature groups.
+Tests whether BMI modifies signature effect.
+""",
+
+    "Median Split": """
+BMI × signature interaction using Low vs High (50/50 split).
+Higher power and simpler interpretation.
+""",
+
+    "HR + Distribution": """
+Shows HR trend across BMI plus patient count histogram.
+Reveals where estimates are reliable or sparse.
+"""
+}
 
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
-    st.markdown('<div class="sub-header">🎯 Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">🎯Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>📊 BMI-Stratified Survival Analysis</b><br>
+    <b>📋 BMI-Stratified Survival Analysis</b><br>
     Explore how signature expression affects patient outcomes across BMI categories using Cox proportional hazards modeling.
     </div>
     """, unsafe_allow_html=True)
@@ -3570,10 +3639,29 @@ def render_signature_survival():
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
     
-    if sig_features is None or zscore_data is None:
-        st.error("❌ Survival data not available")
-        st.info("**Required:** data/survival/significant_features.csv")
-        return
+    
+    
+    # Normalize compartment names (handle different naming conventions)
+    def normalize_compartment(name):
+        """Convert compartment name to standard format"""
+        if pd.isna(name):
+            return None
+        name_str = str(name).strip().lower().replace('_', ' ').replace('-', ' ')
+        
+        # Map to standard names
+        if 'immune' in name_str and 'fine' in name_str:
+            return 'Immune Fine'
+        elif 'immune' in name_str and 'coarse' in name_str:
+            return 'Immune Coarse'
+        elif 'non' in name_str and 'immune' in name_str:
+            return 'Non-Immune'
+        elif name_str in ['nonimmune', 'non immune']:
+            return 'Non-Immune'
+        else:
+            return None
+    
+    # Apply normalization to sig_features
+    sig_features['compartment_normalized'] = sig_features['compartment'].apply(normalize_compartment)
     
     # SIDEBAR: Compartment
     st.sidebar.title("🔍 Data Selection")
@@ -3584,10 +3672,15 @@ def render_signature_survival():
         index=0
     )
     
-    # Filter by compartment
-    filtered_sigs = sig_features[sig_features['compartment'] == compartment].copy()
+    # Filter by normalized compartment
+    filtered_sigs = sig_features[sig_features['compartment_normalized'] == compartment].copy()
+    
     if len(filtered_sigs) == 0:
         st.warning(f"⚠️ No survival signatures for {compartment}")
+        st.info(f"**Possible issues:**")
+        st.info(f"• Check that significant_features.csv has a 'compartment' column")
+        st.info(f"• Compartments in CSV: {unique_comps}")
+        st.info(f"• Expected format: 'Immune Fine', 'immune_fine', or similar")
         return
     
     # Extract cell types
@@ -3597,7 +3690,7 @@ def render_signature_survival():
     available_cells = sorted(filtered_sigs['cell_type'].dropna().unique().tolist())
     
     if len(available_cells) == 0:
-        st.warning(f"⚠️ No cell types for {compartment}")
+        st.warning(f"âš ï¸ No cell types for {compartment}")
         return
     
     # SIDEBAR: Cell Type
@@ -3613,7 +3706,7 @@ def render_signature_survival():
     # Filter by cell
     cell_filtered = filtered_sigs[filtered_sigs['cell_type'] == selected_cell].copy()
     if len(cell_filtered) == 0:
-        st.warning(f"⚠️ No signatures for {selected_cell_display}")
+        st.warning(f"âš ï¸ No signatures for {selected_cell_display}")
         return
     
     # SIDEBAR: Signature DROPDOWN (KEY FEATURE!)
@@ -3650,13 +3743,13 @@ def render_signature_survival():
     
     # MAIN ANALYSIS
     if generate:
-        st.markdown(f'<div class="sub-header">📊 Results: {selected_sig_display}</div>', 
+        st.markdown(f'<div class="sub-header">📋 Results: {selected_sig_display}</div>', 
                    unsafe_allow_html=True)
         
         # Get z-scores
         feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
         if len(feature_data) == 0:
-            st.error(f"❌ No z-score data for {selected_feature}")
+            st.error(f"âŒ No z-score data for {selected_feature}")
             return
         
         # Merge with clinical
@@ -3675,7 +3768,7 @@ def render_signature_survival():
         ].copy()
         
         if len(patient_data) < 30:
-            st.warning(f"⚠️ Insufficient data (n={len(patient_data)}, need ≥30)")
+            st.warning(f"âš ï¸ Insufficient data (n={len(patient_data)}, need â‰¥30)")
             return
         
         # Metrics
@@ -3697,7 +3790,8 @@ def render_signature_survival():
         st.markdown("---")
         st.markdown("### 📊 Interactive Survival Plots")
         
-        # 7 PLOTS IN 3x3 GRID
+        
+        # 7 PLOTS IN 2-COLUMN LAYOUT (4 rows: 2+2+2+1)
         plot_configs = [
             ("BMI vs Time", plot_survival_bmi_vs_time),
             ("BMI vs HR", plot_survival_bmi_vs_hr),
@@ -3709,72 +3803,95 @@ def render_signature_survival():
         ]
         
         plot_count = 0
-        for row_idx in range(3):
-            if row_idx < 2:
-                cols = st.columns(3)
-                for col_idx in range(3):
-                    if plot_count < len(plot_configs):
-                        with cols[col_idx]:
-                            plot_name, plot_func = plot_configs[plot_count]
-                            with st.spinner(f"{plot_name}..."):
-                                fig = plot_func(patient_data, selected_sig_display)
-                                if fig:
-                                    st.plotly_chart(fig, use_container_width=True)
-                                else:
-                                    st.info("ℹ️ Insufficient data")
-                            plot_count += 1
-            else:
-                if plot_count < len(plot_configs):
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
+        n_plots = len(plot_configs)
+        
+        # Calculate number of complete rows (2 plots each) and remaining plots
+        n_complete_rows = n_plots // 2
+        n_remaining = n_plots % 2
+        
+        # Render complete rows (2 plots each)
+        for row_idx in range(n_complete_rows):
+            cols = st.columns(2)
+            for col_idx in range(2):
+                if plot_count < n_plots:
+                    with cols[col_idx]:
                         plot_name, plot_func = plot_configs[plot_count]
-                        with st.spinner(f"{plot_name}..."):
+                        with st.spinner(f"⏳ Generating {plot_name}..."):
                             fig = plot_func(patient_data, selected_sig_display)
                             if fig:
                                 st.plotly_chart(fig, use_container_width=True)
+        
+                                # ✅ description
+                                with st.expander("ℹ️ What does this plot mean?"):
+                                    st.markdown(PLOT_EXPLANATIONS.get(
+                                        plot_name, "No explanation available."
+                                    ))
                             else:
                                 st.info("ℹ️ Insufficient data")
                         plot_count += 1
 
+        
+        # Render remaining plot (if any) centered
+        # Render remaining plot (if any) centered
+        if n_remaining > 0:
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                plot_name, plot_func = plot_configs[plot_count]
+                with st.spinner(f"⏳ Generating {plot_name}..."):
+                    fig = plot_func(patient_data, selected_sig_display)
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True)
+        
+                        # description
+                        with st.expander("ℹ️ What does this plot mean?"):
+                            st.markdown(PLOT_EXPLANATIONS.get(
+                                plot_name, "No explanation available."
+                            ))
+                    else:
+                        st.info("ℹ️ Insufficient data")
+                plot_count += 1
+
+
 
 def main():
     # 3-Mode Selector
-    st.sidebar.title("⚙️ Application Mode")
+    st.sidebar.title("⚙️ Application Mode")
     
     mode = st.sidebar.radio(
         "Select Analysis Mode:",
         options=[
-            "📚 Signature Explorer",
-            "📊 Statistical Analysis",
+            "🔍 Signature Explorer",
+            "📈 Statistical Analysis",
             "🎯 Signature Survival"
         ],
         index=0
     )
     
-    if mode == "📚 Signature Explorer":
+    if mode == "🔍 Signature Explorer":
         st.sidebar.info("Browse the signature database")
-    elif mode == "📊 Statistical Analysis":
-        st.sidebar.success("STABL, Bayesian, Diagnostics & Genes")
+    elif mode == "📈 Statistical Analysis":
+        st.sidebar.success("Stabl ML, and Bayesian Hierarchial Modeling")
     else:
-        st.sidebar.warning("Survival analysis stratified by BMI")
+        st.sidebar.warning("🎯 Survival analysis of signature stratified by BMI")
     
     st.sidebar.markdown("---")
     
     
     # Main Header
-    st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis</div>', 
+    st.markdown('<div class="main-header"> Obesity-Driven Pancreatic Ductal Adenocarcinoma: An ML driven bayesian model</div>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
     <b> Interactive Analysis Platform</b><br>
-    Exploring the relationship between BMI, tumor microenvironment cell types, and metabolic signatures in pancreatic adenocarcinoma (PAAD).
-    All visualizations powered by Plotly: Hover for details * Zoom with box select * Pan with click-drag * Reset with double-click
+    Exploring the relationship between BMI, tumor microenvironment, cell types, and transcriptomic changes in pancreatic ductal adenocarcinoma (PDAC).
+    Modes available  🔍 Signature Explorer, 📈 Statistical Analysis, 🎯 Signature Survival, Selct the modes from sidebar and explore the model.
+    All visualizations powered by Plotly: Hover for details | Zoom with box select | Pan with click-drag | Reset with double-click
     </div>
     """, unsafe_allow_html=True)
     
     # Route to appropriate mode
-    if mode == "📚 Signature Explorer":
+    if mode == "🔍 Signature Explorer":
         render_signature_explorer()
         return
     
@@ -3800,16 +3917,16 @@ def main():
         
         ---
         
-        #### **STABL** - Feature Selection
-        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. STABL uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
+        #### **Stabl** - Feature Selection
+        Stability-driven feature selection that identifies the most robust biomarkers associated with BMI status. Stabl uses bootstrapping to find features that consistently show effects across multiple random samplings, reducing false positives.
         
         **Reference:** [gregbellan/Stabl](https://github.com/gregbellan/Stabl)
         
         ---
         
         #### **Bayesian Hierarchical Model** - Effect Size Estimation
-        A three-group hierarchical model comparing:
-        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (Ã¢â€°Â¥ 30)
+        A three-group model comparing: 
+        - **Normal BMI** (< 25) vs **Overweight** (25-30) vs **Obese** (>30)
         
         The model estimates cell-type-specific effects of obesity on metabolic signatures while accounting for between-sample variability. Uses **Markov Chain Monte Carlo (MCMC)** for posterior sampling.
         
@@ -3836,17 +3953,17 @@ def main():
         ---
         
         #### **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism Ã¢â€™ Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values Ã¢â€™ Gene expression matrix
-        3. **Signatures:** Aggregate genes Ã¢â€™ Signature scores (Z-scores)
-        4. **Selection:** STABL Ã¢â€™ Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical Ã¢â€™ Effect sizes with uncertainty
-        6. **Validation:** MCMC diagnostics Ã¢â€™ Convergence checks
-        7. **Survival:** Cox regression Ã¢â€™ Clinical relevance
+        1. **Deconvolution:** BayesPrism ➜ Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values from CPTAC-3 ➜ Gene expression matrix of PDAC patients
+        3. **Signatures:** Custom signature databse ➜ Signature scores (Z-scores)
+        4. **Selection:** Sabl ML based  ➜ Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical with MCMC ➜ Effect sizes with uncertainty (Feature level/ Cell level)
+        6. **Validation:** MCMC diagnostics ➜ Convergence checks
+        7. **Survival:** Cox regression ➜ Clinical relevance of creble signature/features and cell type
         """)
     
     # Sidebar
-    st.sidebar.title("Ã°Å¸â€œÅ  Data Selection")
+    st.sidebar.title("📑  Data Selection")
     
     # Step 1: Compartment
     st.sidebar.markdown("### Step 1: Select Compartment")
@@ -3867,7 +3984,7 @@ def main():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.error("Ã¢ÂÅ’ No cell types found")
+        st.error("ÃƒÂ¢Ã‚ÂÃ…â€™ No cell types found")
         return
     
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -3883,7 +4000,7 @@ def main():
     signatures = get_cell_signatures(selected_cell)
     
     if not signatures:
-        st.warning(f"Ã¢Å¡Â Ã¯Â¸Â No signatures found for {selected_cell}")
+        st.warning(f"❌ No signatures found for {selected_cell}")
         return
     
     # Create formatted options for display
@@ -3905,7 +4022,7 @@ def main():
     
     # Generate button
     st.sidebar.markdown("---")
-    generate = st.sidebar.button("Ã°Å¸Å¡â‚¬ Generate Analysis", type="primary")
+    generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
     
     # Current selection with full signature name
     st.sidebar.markdown("---")
@@ -3952,14 +4069,14 @@ def main():
             
             st.markdown("""
             <div class="method-box">
-            <b>Ã°Å¸â€Â¬ What is STABL?</b><br>
+            <b>❓ What is STABL?</b><br>
             STABL (STABility-driven feature seLection) identifies robust biomarkers by:
             <ol>
             <li>Running feature selection on multiple bootstrap samples</li>
             <li>Counting how often each feature is selected</li>
             <li>Keeping only features selected consistently (stable features)</li>
             </ol>
-            <b>Ã¢Â­Â Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+            <b>⭐ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
             </div>
             """, unsafe_allow_html=True)
             
@@ -3972,11 +4089,11 @@ def main():
             
             st.markdown("---")
             
-            st.markdown("### Ã°Å¸â€œÅ  Bayesian Effect Size Estimation")
+            st.markdown("### 📝 Bayesian Effect Size Estimation")
             
             st.markdown("""
             <div class="method-box">
-            <b>Ã°Å¸Â§Â® Bayesian Hierarchical Model</b><br>
+            <b>📛 Bayesian Hierarchical Model</b><br>
             Estimates how much each cell type's signature changes with increasing BMI:
             <ul>
             <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -3988,47 +4105,57 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
-            st.markdown("#### Ã°Å¸â€œÅ  Effect Sizes with Credible Intervals")
+            st.markdown("#### 📝 Effect Sizes with Credible Intervals")
             st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
             with st.spinner("Generating interactive Bayesian heatmap..."):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
         
+        
         # Tab 2: Ridge Plot
         with tabs[1]:
-            st.markdown("### Ã°Å¸Å’Å  Posterior Distribution Visualization")
-            
-            st.markdown("""
-            <div class="method-box">
-            <b>Ridge Plots Explained</b><br>
-            Each "ridge" shows the full distribution of MCMC samples for one cell type:
-            <ul>
-            <li><b>Width:</b> Uncertainty in effect size estimate</li>
-            <li><b>Peak location:</b> Most likely effect size</li>
-            <li><b>Overlap with zero:</b> Effect may not be significant</li>
-            <li><b>Vertical lines:</b> Mean effect sizes for each BMI comparison</li>
-            </ul>
-            <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
-            </div>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("#### Ã°Å¸Å’Å  Overlapped Posterior Distributions")
+            st.markdown("### 🧾 Posterior Distribution Visualization")
+        
+            # 🔽 Dropdown explanation
+            with st.expander("📖 How to interpret the ridge plot", expanded=False):
+                st.markdown("""
+                <div class="method-box">
+                <b>Ridge Plots Explained</b><br>
+                Each "ridge" shows the full distribution of MCMC samples for one cell type:
+                <ul>
+                <li><b>Width:</b> Uncertainty in effect size estimate</li>
+                <li><b>Peak location:</b> Most likely effect size</li>
+                <li><b>Overlap with zero:</b> Effect may not be significant</li>
+                <li><b>Vertical lines:</b> Mean effect sizes for each BMI comparison</li>
+                </ul>
+                <b>Colors:</b> Blue = Overweight, Red = Obese, Green = Obese vs Overweight
+                </div>
+                """, unsafe_allow_html=True)
+        
+            # ✅ Now actually draw the ridge plot
+            st.markdown("#### 📊 Overlapped Posterior Distributions")
             st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
+        
             with st.spinner("Generating interactive ridge plot..."):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=False)
+                else:
+                    st.info("ℹ️ Ridge plot not available for this selection.")
+
+
+
         
 # Tab 3: Bayesian Diagnostics
         with tabs[2]:
-            st.markdown("### ðŸ”¬ Bayesian MCMC Diagnostics")
+            st.markdown("### 🔎 Bayesian MCMC Diagnostics")
             
             # Collapsible guide at the top
-            with st.expander("ðŸ“– Understanding MCMC Diagnostics â€” Click to Learn More", expanded=False):
+            with st.expander("🌀 Understanding MCMC Diagnostics 👆🏻 Click to Learn More", expanded=False):
                 st.markdown("""
                 <div class="method-box">
-                <b>ðŸ” What is MCMC?</b><br><br>
+                <b>💡 What is MCMC?</b><br><br>
             
                 Our analysis uses <b>Bayesian modeling</b> to estimate how biological signatures change with BMI.
                 Rather than giving a single fixed value, the model learns a <b>range of plausible values</b>,
@@ -4036,7 +4163,7 @@ def main():
             
                 To achieve this, we use a method called <b>Markov Chain Monte Carlo (MCMC)</b>.
             
-                ðŸ—ºï¸ <b>Analogy:</b><br>
+                💡 <b>Analogy:</b><br>
                 Imagine exploring a foggy mountain range to find the highest peaks.
                 You can only take small steps, guided by the terrain around you.
                 Over time, you spend more time near the highest regions.
@@ -4048,12 +4175,12 @@ def main():
                     <li>And builds a map of what values best explain the data.</li>
                 </ul>
             
-                This map is called the <b>posterior distribution</b> â€” it represents our updated belief
+                This map is called the <b>posterior distribution</b> 💡 it represents our updated belief
                 about the true effects after seeing the data.
             
                 <hr>
             
-                ðŸ“Š <b>Why do we show diagnostics?</b><br><br>
+                💡 <b>Why do we show diagnostics?</b><br><br>
             
                 Because MCMC is a stochastic (random) process, we must verify that it explored the space properly.
                 The diagnostic plots help answer:
@@ -4067,7 +4194,7 @@ def main():
             
                 If these checks look good, we can trust both the estimated effects <i>and</i> their uncertainty.
             
-                âœ”ï¸ <b>In short:</b><br>
+                💡 <b>In short:</b><br>
                 <b>MCMC explores uncertainty, and diagnostics ensure the exploration is reliable.</b>
                 </div>
                 """, unsafe_allow_html=True)
@@ -4076,16 +4203,16 @@ def main():
             
                 with col1:
                     st.markdown("""
-                    **âœ… Good Convergence Indicators**
+                    ✨ Good Convergence Indicators**
                     - **R-hat < 1.01:** Chains agree very well  
                     - **ESS > 400:** Enough independent samples  
                     - **Smooth energy transitions:** Good mixing  
-                    - **â€œHairy caterpillarâ€ traces:** Stable, well-mixed chains  
+                    - **🐛“Hairy caterpillar traces:** Stable, well-mixed chains  
                     """)
             
                 with col2:
                     st.markdown("""
-                    **âš ï¸ Warning Signs**
+                    **⛔ Warning Signs**
                     - **R-hat > 1.05:** Chains disagree (no convergence)  
                     - **ESS < 100:** Strong autocorrelation  
                     - **Divergent transitions:** Geometry or tuning issues  
@@ -4096,9 +4223,9 @@ def main():
 
             
             # ESS and R-hat
-            st.markdown("#### ðŸ“Š ESS & R-hat Statistics")
+            st.markdown("#### 💡  ESS & R-hat Statistics")
             
-            with st.expander("â„¹ï¸ What do ESS and R-hat mean?", expanded=False):
+            with st.expander("💡 What do ESS and R-hat mean?", expanded=False):
                 col1, col2 = st.columns(2)
                 with col1:
                     st.markdown("""
@@ -4127,9 +4254,9 @@ def main():
             st.markdown("---")
             
             # Energy plot
-            st.markdown("#### âš¡ Energy Diagnostic")
+            st.markdown("#### ⚡ Energy Diagnostic")
             
-            with st.expander("â„¹ï¸ What is the Energy diagnostic?", expanded=False):
+            with st.expander("💡 What is the Energy diagnostic?", expanded=False):
                 st.markdown("""
                 **Hamiltonian Monte Carlo Energy**
                 - Monitors the "energy" of the sampling process (from physics analogy)
@@ -4146,15 +4273,15 @@ def main():
             st.markdown("---")
             
             # Trace plots
-            st.markdown("#### ðŸ“ˆ Trace Plots (First 6 Cell Types)")
+            st.markdown("#### 👣 Trace Plots (First 6 Cell Types)")
             
-            with st.expander("â„¹ï¸ How to read trace plots?", expanded=False):
+            with st.expander("💡 How to read trace plots?", expanded=False):
                 st.markdown("""
                 **What to Look For:**
-                - **"Hairy caterpillar":** âœ… Good mixing (chains bouncing around randomly)
-                - **Flat mixing:** âœ… All chains overlap (converged to same distribution)
-                - **âš ï¸ Trends:** Bad (chain drifting, not converged)
-                - **âš ï¸ Stuck chains:** Bad (chain not exploring)
+                - **"Hairy caterpillar":** Ã¢Å“â€¦ Good mixing (chains bouncing around randomly)
+                - **Flat mixing:**All chains overlap (converged to same distribution)
+                - ** Trends:** Bad (chain drifting, not converged)
+                - ** Stuck chains:** Bad (chain not exploring)
                 """)
             
             with st.spinner("Generating trace plots..."):
@@ -4165,9 +4292,9 @@ def main():
             st.markdown("---")
             
             # Rank plots
-            st.markdown("#### ðŸ“Š Rank Plots (First 6 Cell Types)")
+            st.markdown("#### 🎖️ Rank Plots (First 6 Cell Types)")
             
-            with st.expander("â„¹ï¸ What are rank plots?", expanded=False):
+            with st.expander("💡 What are rank plots?", expanded=False):
                 st.markdown("""
                 **Rank histograms:** 
                 - All chains should have uniform distributions (good mixing)
@@ -4182,9 +4309,9 @@ def main():
             st.markdown("---")
             
             # Autocorrelation
-            st.markdown("#### ðŸ“‰ Autocorrelation Plots (First 6 Cell Types)")
+            st.markdown("#### 💡 Autocorrelation Plots (First 6 Cell Types)")
             
-            with st.expander("â„¹ï¸ What is autocorrelation?", expanded=False):
+            with st.expander("💡 What is autocorrelation?", expanded=False):
                 st.markdown("""
                 **Autocorrelation:** 
                 - Measures how correlated successive samples are
@@ -4200,8 +4327,8 @@ def main():
                     
         # Tab 4: Gene BMI
         with tabs[3]:
-            st.markdown("### Ã°Å¸â€œË† Gene-Level BMI Associations")
-            st.info("Ã°Å¸â€™Â¡ Hover for statistics Ã¢â‚¬Â¢ Click-drag to zoom Ã¢â‚¬Â¢ Double-click to reset")
+            st.markdown("### 📈  Gene-Level BMI Associations")
+            st.info(" Hover for statistics| Click-drag to zoom | Double-click to reset")
             with st.spinner("Running BMI regression analysis..."):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
@@ -4211,8 +4338,8 @@ def main():
         
         # Tab 5: Gene Survival
         with tabs[4]:
-            st.markdown("### Ã°Å¸â€™Å  Gene-Level Survival Analysis")
-            st.info("Ã°Å¸â€™Â¡ Forest plot with confidence intervals Ã¢â‚¬Â¢ Hover for full statistics")
+            st.markdown("### 📈  Gene-Level Survival Analysis")
+            st.info("Forest plot with confidence intervals| Hover for full statistics")
             with st.spinner("Running survival analysis..."):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
