@@ -2605,7 +2605,12 @@ def render_signature_explorer():
         index=0,
         key='explorer_cell'
     )
-    selected_cell = cell_display[selected_cell_display]
+    selected_cell = cell_display.get(selected_cell_display)
+
+    if selected_cell is None:
+        st.error("❌ Cell type mapping failed — Z-score and signature cell names do not match.")
+        return
+
     
     # Get signatures for this cell type
     cell_signatures = get_cell_signatures(selected_cell)
