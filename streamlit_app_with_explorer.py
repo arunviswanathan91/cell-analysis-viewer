@@ -805,16 +805,49 @@ CONFIDENCE_THRESHOLD = 10
 # ==================================================================================
 
 @st.cache_data
+@st.cache_data
 def load_signatures():
-    """Load signatures from JSON"""
+    """Load signatures from JSON and normalize gene structure"""
     try:
         sig_file = os.path.join(DATA_DIR, "signatures", "ALL_CELL_SIGNATURES_FLAT.json")
         with open(sig_file, 'r') as f:
             data = json.load(f)
-        return data.get('entries', [])
+
+        entries = data.get('entries', [])
+        normalized = []
+
+        for sig in entries:
+            sig = sig.copy()  # avoid mutating cached object
+
+            genes = sig.get("genes", [])
+
+            # NEW schema: genes = {positive: [...], negative: [...]}
+            if isinstance(genes, dict):
+                pos = genes.get("positive", [])
+                neg = genes.get("negative", [])
+                sig["genes"] = list(dict.fromkeys(pos + neg))  # flatten + dedupe
+                sig["positive_genes"] = pos
+                sig["negative_genes"] = neg
+
+            # OLD schema: genes already a list
+            elif isinstance(genes, list):
+                sig["genes"] = genes
+                sig["positive_genes"] = genes
+                sig["negative_genes"] = []
+
+            else:
+                sig["genes"] = []
+                sig["positive_genes"] = []
+                sig["negative_genes"] = []
+
+            normalized.append(sig)
+
+        return normalized
+
     except Exception as e:
         st.error(f"Error loading signatures: {e}")
         return []
+
 
 @st.cache_data
 def load_clinical_data():
