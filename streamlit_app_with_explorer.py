@@ -969,20 +969,6 @@ def load_compartment_data(compartment):
     
     return data
 
-@st.cache_data
-def load_significant_features():
-    """Load significant survival features"""
-    try:
-        sig_file = os.path.join(DATA_DIR, "survival", "significant_features.csv")
-        sig_df = pd.read_csv(sig_file)
-        
-        # Filter for significant features (p < 0.05)
-        if 'hr_p' in sig_df.columns:
-            sig_df = sig_df[sig_df['hr_p'] < 0.05].copy()
-        
-        return sig_df
-    except Exception as e:
-        return None
 
 def extract_base_sample_id(sample_id):
     """Extract base patient ID from sample identifiers"""
