@@ -1190,11 +1190,11 @@ def get_available_cells(compartment):
         
         if len(cells) == 0:
             # Debug: show what columns are available
-            st.sidebar.warning(f"ÃƒÂ¢Ã…Â¡Ã‚Â ÃƒÂ¯Ã‚Â¸Ã‚Â No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+            st.sidebar.warning(f"❌ No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
         
         return cells
     else:
-        st.sidebar.error(f"ÃƒÂ¢Ã‚ÂÃ…â€™ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        st.sidebar.error(f"❌ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
     return []
 
 def get_cell_signatures(cell_type):
@@ -3469,15 +3469,42 @@ def render_signature_explorer():
             st.markdown("**Gene List:**")
             
             # Display genes in a nice format
-            genes_text = ', '.join(selected_sig['genes'])
-            st.text_area(
-                "Genes in this signature:",
-                genes_text,
-                height=200,
-                key=f"gene_list_display_{selected_sig_idx}"
+            # Get positive and negative markers
+            positive_genes = set(selected_sig.get('positive_markers', []))
+            negative_genes = set(selected_sig.get('negative_markers', []))
+            
+            # Build colored gene list
+            colored_genes = []
+            for gene in selected_sig['genes']:
+                if gene in positive_genes:
+                    colored_genes.append(f'<span style="color: #4CAF50; font-weight: 600;">{gene}</span>')
+                elif gene in negative_genes:
+                    colored_genes.append(f'<span style="color: #E53935; font-weight: 600;">{gene}</span>')
+                else:
+                    colored_genes.append(f'<span style="color: #666;">{gene}</span>')
+            
+            # Display with color coding
+            genes_html = ', '.join(colored_genes)
+            
+            st.markdown(
+                f"""
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; 
+                            max-height: 200px; overflow-y: auto; font-family: monospace; 
+                            font-size: 0.9rem; line-height: 1.8;">
+                {genes_html}
+                </div>
+                """,
+                unsafe_allow_html=True
             )
             
-      
+            # Add legend
+            st.markdown("""
+            <div style="margin-top: 0.5rem; font-size: 0.85rem;">
+            <span style="color: #4CAF50; font-weight: 600;">● Positive markers</span> &nbsp;&nbsp;
+            <span style="color: #E53935; font-weight: 600;">● Negative markers</span> &nbsp;&nbsp;
+            <span style="color: #666;">● Other genes</span>
+            </div>
+            """, unsafe_allow_html=True)
     
     # Tab 3: Statistics
     with sig_tabs[2]:
