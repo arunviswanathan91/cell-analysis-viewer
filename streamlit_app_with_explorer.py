@@ -3465,76 +3465,46 @@ def render_signature_explorer():
             **Signature ID:** {selected_sig['signature']}
             """)
         
-
         with col2:
             st.markdown("**Gene List:**")
             
-            # DEBUG: Check what's in the signature
-            st.caption(f"🔍 Debug: Checking signature structure...")
+            # Display genes in a nice format
+            # Get positive and negative markers
+            positive_genes = set(selected_sig.get('positive_markers', []))
+            negative_genes = set(selected_sig.get('negative_markers', []))
             
-            # Get positive and negative markers (try different possible field names)
-            positive_genes = set(selected_sig.get('positive_markers', []) or 
-                                selected_sig.get('positive', []) or 
-                                selected_sig.get('pos_markers', []))
-            negative_genes = set(selected_sig.get('negative_markers', []) or 
-                                selected_sig.get('negative', []) or 
-                                selected_sig.get('neg_markers', []))
-            
-            # DEBUG: Show counts
-            st.caption(f"✅ Found: {len(positive_genes)} positive, {len(negative_genes)} negative markers")
-            
-            # Build colored gene list with STRONG inline styles
+            # Build colored gene list
             colored_genes = []
             for gene in selected_sig['genes']:
                 if gene in positive_genes:
-                    colored_genes.append(
-                        f'<span style="color: #4CAF50 !important; font-weight: 700 !important;">{gene}</span>'
-                    )
+                    colored_genes.append(f'<span style="color: #4CAF50; font-weight: 600;">{gene}</span>')
                 elif gene in negative_genes:
-                    colored_genes.append(
-                        f'<span style="color: #E53935 !important; font-weight: 700 !important;">{gene}</span>'
-                    )
+                    colored_genes.append(f'<span style="color: #E53935; font-weight: 600;">{gene}</span>')
                 else:
-                    colored_genes.append(
-                        f'<span style="color: #424242 !important;">{gene}</span>'
-                    )
+                    colored_genes.append(f'<span style="color: #666;">{gene}</span>')
             
-            # Display with STRONG styling
+            # Display with color coding
             genes_html = ', '.join(colored_genes)
             
             st.markdown(
                 f"""
-                <style>
-                .gene-list-container span {{
-                    color: inherit !important;
-                }}
-                </style>
-                <div class="gene-list-container" style="background: #f8f9fa; padding: 1.5rem; 
-                     border-radius: 8px; max-height: 300px; overflow-y: auto; 
-                     font-family: 'Courier New', monospace; font-size: 0.95rem; 
-                     line-height: 2; border: 1px solid #ddd;">
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; 
+                            max-height: 200px; overflow-y: auto; font-family: monospace; 
+                            font-size: 0.9rem; line-height: 1.8;">
                 {genes_html}
                 </div>
                 """,
                 unsafe_allow_html=True
             )
             
-            # Legend
+            # Add legend
             st.markdown("""
-            <div style="margin-top: 1rem; padding: 0.75rem; background: #fff; 
-                 border-radius: 6px; border: 1px solid #e0e0e0;">
-            <strong>Legend:</strong><br>
-            <span style="color: #4CAF50 !important; font-weight: 700 !important;">● Positive markers</span> &nbsp;&nbsp;
-            <span style="color: #E53935 !important; font-weight: 700 !important;">● Negative markers</span> &nbsp;&nbsp;
-            <span style="color: #424242 !important;">● Other genes</span>
+            <div style="margin-top: 0.5rem; font-size: 0.85rem;">
+            <span style="color: #4CAF50; font-weight: 600;">● Positive markers</span> &nbsp;&nbsp;
+            <span style="color: #E53935; font-weight: 600;">● Negative markers</span> &nbsp;&nbsp;
+            <span style="color: #666;">● Other genes</span>
             </div>
             """, unsafe_allow_html=True)
-            
-            # DEBUG: Show sample genes
-            if positive_genes:
-                st.caption(f"📊 Sample positive: {', '.join(list(positive_genes)[:3])}")
-            if negative_genes:
-                st.caption(f"📊 Sample negative: {', '.join(list(negative_genes)[:3])}")
     
     # Tab 3: Statistics
     with sig_tabs[2]:
