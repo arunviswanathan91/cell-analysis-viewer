@@ -3683,233 +3683,177 @@ Reveals where estimates are reliable or sparse.
 """
 }
 
+COMPARISONS = {
+    "Overweight vs Normal": "overweight_vs_normal",
+    "Obese vs Normal": "obese_vs_normal",
+    "Obese vs Overweight": "obese_vs_overweight"
+}
+
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
-    st.markdown('<div class="sub-header">🎯Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
-    
+    st.markdown('<div class="sub-header">🎯 Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
+
     st.markdown("""
     <div class="info-box">
     <b>📋 BMI-Stratified Survival Analysis</b><br>
     Explore how signature expression affects patient outcomes across BMI categories using Cox proportional hazards modeling.
     </div>
     """, unsafe_allow_html=True)
-    
-    # Load data
+
+    # ================= LOAD DATA =================
     clinical = load_clinical_data()
     sig_features = load_significant_features()
     zscore_data = load_zscore_data_survival()
-    
-    
-    @st.cache_data
-    # Normalize compartment names (handle different naming conventions)
-    def normalize_compartment(name):
-        """Convert compartment name to standard format"""
-        if pd.isna(name):
-            return None
-        name_str = str(name).strip().lower().replace('_', ' ').replace('-', ' ')
-        
-        # Map to standard names
-        if 'immune' in name_str and 'fine' in name_str:
-            return 'Immune Fine'
-        elif 'immune' in name_str and 'coarse' in name_str:
-            return 'Immune Coarse'
-        elif 'non' in name_str and 'immune' in name_str:
-            return 'Non-Immune'
-        elif name_str in ['nonimmune', 'non immune']:
-            return 'Non-Immune'
-        else:
-            return None
-    
-    # Apply normalization to sig_features
-    sig_features['compartment_normalized'] = sig_features['compartment'].apply(normalize_compartment)
-    
-    # SIDEBAR: Compartment
+
+    if sig_features is None or len(sig_features) == 0:
+        st.error("❌ No survival features available")
+        return
+
+    # ================= SIDEBAR =================
     st.sidebar.title("🔍 Data Selection")
-    st.sidebar.markdown("### Step 1: Compartment")
-    compartment = st.sidebar.selectbox(
-        "Choose compartment:",
-        options=['Immune Fine', 'Immune Coarse', 'Non-Immune'],
+
+    # ---- Step 1: Comparison ----
+    st.sidebar.markdown("### Step 1: Comparison")
+    comparison_display = st.sidebar.selectbox(
+        "Choose comparison:",
+        options=list(COMPARISONS.keys()),
         index=0
     )
-    
-    # Filter by normalized compartment
-    filtered_sigs = sig_features[sig_features['compartment_normalized'] == compartment].copy()
-    
-    if len(filtered_sigs) == 0:
-        st.warning(f"⚠️ No survival signatures for {compartment}")
-        st.info(f"**Possible issues:**")
-        st.info(f"• Check that significant_features.csv has a 'compartment' column")
-        st.info(f"• Compartments in CSV: {unique_comps}")
-        st.info(f"• Expected format: 'Immune Fine', 'immune_fine', or similar")
+    comparison_key = COMPARISONS[comparison_display]
+
+    # ---- Step 2: Compartment (from CSV) ----
+    st.sidebar.markdown("### Step 2: Compartment")
+    available_compartments = sorted(
+        sig_features
+        .loc[sig_features['comparison'] == comparison_key, 'compartment']
+        .dropna()
+        .unique()
+        .tolist()
+    )
+
+    if not available_compartments:
+        st.warning("⚠️ No compartments available for this comparison")
         return
-    
-    # Extract cell types
+
+    compartment = st.sidebar.selectbox(
+        "Choose compartment:",
+        options=available_compartments,
+        index=0
+    )
+
+    # ---- Filter by comparison + compartment ----
+    filtered_sigs = sig_features[
+        (sig_features['comparison'] == comparison_key) &
+        (sig_features['compartment'] == compartment)
+    ].copy()
+
+    if filtered_sigs.empty:
+        st.warning("⚠️ No signatures for this selection")
+        return
+
+    # ================= CELL TYPE =================
     filtered_sigs['cell_type'] = filtered_sigs['feature'].apply(
         lambda x: x.split('||')[0] if '||' in str(x) else None
     )
-    available_cells = sorted(filtered_sigs['cell_type'].dropna().unique().tolist())
-    
-    if len(available_cells) == 0:
-        st.warning(f"âš ï¸ No cell types for {compartment}")
+
+    available_cells = sorted(filtered_sigs['cell_type'].dropna().unique())
+    if not available_cells:
+        st.warning("⚠️ No cell types found")
         return
-    
-    # SIDEBAR: Cell Type
-    st.sidebar.markdown("### Step 2: Cell Type")
-    cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
+
+    st.sidebar.markdown("### Step 3: Cell Type")
+    cell_display = {c.replace('_', ' ').title(): c for c in available_cells}
     selected_cell_display = st.sidebar.selectbox(
-        f"Choose cell type ({len(available_cells)} available):",
-        options=list(cell_display.keys()),
-        index=0
+        "Choose cell type:",
+        options=list(cell_display.keys())
     )
     selected_cell = cell_display[selected_cell_display]
-    
-    # Filter by cell
+
     cell_filtered = filtered_sigs[filtered_sigs['cell_type'] == selected_cell].copy()
-    if len(cell_filtered) == 0:
-        st.warning(f"âš ï¸ No signatures for {selected_cell_display}")
+    if cell_filtered.empty:
+        st.warning("⚠️ No signatures for selected cell type")
         return
-    
-    # SIDEBAR: Signature DROPDOWN (KEY FEATURE!)
-    st.sidebar.markdown("### Step 3: Signature")
+
+    # ================= SIGNATURE =================
+    st.sidebar.markdown("### Step 4: Signature")
     sig_display_map = {}
     for _, row in cell_filtered.iterrows():
         feat = row['feature']
-        sig_part = feat.split('||')[1] if '||' in str(feat) else feat
-        clean_name = clean_label_text(sig_part)
-        sig_display_map[clean_name] = feat
-    
+        sig_name = feat.split('||')[1] if '||' in str(feat) else feat
+        sig_display_map[clean_label_text(sig_name)] = feat
+
     selected_sig_display = st.sidebar.selectbox(
-        f"Choose signature ({len(sig_display_map)} significant):",
-        options=list(sig_display_map.keys()),
-        index=0
+        "Choose signature:",
+        options=list(sig_display_map.keys())
     )
     selected_feature = sig_display_map[selected_sig_display]
-    
-    # Generate button
+
+    # ================= GENERATE =================
     st.sidebar.markdown("---")
     generate = st.sidebar.button("🚀 Generate Analysis", type="primary")
-    
-    # Current selection
+
+    sig_row = cell_filtered[cell_filtered['feature'] == selected_feature].iloc[0]
+
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Current Selection")
-    sig_row = cell_filtered[cell_filtered['feature'] == selected_feature].iloc[0]
     st.sidebar.info(f"""
+    **Comparison:** {comparison_display}  
     **Compartment:** {compartment}  
     **Cell Type:** {selected_cell_display}  
     **Signature:** {selected_sig_display}  
     **HR:** {sig_row['hr']:.3f}  
     **p-value:** {sig_row['hr_p']:.3e}
     """)
-    
-    # MAIN ANALYSIS
-    if generate:
-        st.markdown(f'<div class="sub-header">📋 Results: {selected_sig_display}</div>', 
-                   unsafe_allow_html=True)
-        
-        # Get z-scores
-        feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
-        if len(feature_data) == 0:
-            st.error(f"âŒ No z-score data for {selected_feature}")
-            return
-        
-        # Merge with clinical
-        patient_data = clinical.merge(
-            feature_data[['base_sample_id', 'Z']],
-            left_on='sample_id',
-            right_on='base_sample_id',
-            how='inner'
-        )
-        
-        # Filter for survival
-        patient_data = patient_data[
-            (patient_data['follow_up_months'] > 0) &
-            (patient_data['follow_up_months'].notna()) &
-            (patient_data['vital_status_binary'].notna())
-        ].copy()
-        
-        if len(patient_data) < 30:
-            st.warning(f"âš ï¸ Insufficient data (n={len(patient_data)}, need â‰¥30)")
-            return
-        
-        # Metrics
-        n_total = len(patient_data)
-        n_events = int(patient_data['vital_status_binary'].sum())
-        median_followup = patient_data['follow_up_months'].median()
-        event_rate = 100 * n_events / n_total
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Patients", n_total)
-        with col2:
-            st.metric("Events", n_events)
-        with col3:
-            st.metric("Median Follow-up", f"{median_followup:.1f} mo")
-        with col4:
-            st.metric("Event Rate", f"{event_rate:.1f}%")
-        
-        st.markdown("---")
-        st.markdown("### 📊 Interactive Survival Plots")
-        
-        
-        # 7 PLOTS IN 2-COLUMN LAYOUT (4 rows: 2+2+2+1)
-        plot_configs = [
-            ("BMI vs Time", plot_survival_bmi_vs_time),
-            ("BMI vs HR", plot_survival_bmi_vs_hr),
-            ("Dual-Axis", plot_survival_bmi_dual_axis),
-            ("Forest Plot", plot_survival_forest_bmi),
-            ("Tertile", plot_survival_interaction_tertile),
-            ("Median Split", plot_survival_interaction_median),
-            ("HR + Distribution", plot_survival_hr_with_distribution)
-        ]
-        
-        plot_count = 0
-        n_plots = len(plot_configs)
-        
-        # Calculate number of complete rows (2 plots each) and remaining plots
-        n_complete_rows = n_plots // 2
-        n_remaining = n_plots % 2
-        
-        # Render complete rows (2 plots each)
-        for row_idx in range(n_complete_rows):
-            cols = st.columns(2)
-            for col_idx in range(2):
-                if plot_count < n_plots:
-                    with cols[col_idx]:
-                        plot_name, plot_func = plot_configs[plot_count]
-                        with st.spinner(f"⏳ Generating {plot_name}..."):
-                            fig = plot_func(patient_data, selected_sig_display)
-                            if fig:
-                                st.plotly_chart(fig, use_container_width=True)
-        
-                                # ✅ description
-                                with st.expander("ℹ️ What does this plot mean?"):
-                                    st.markdown(PLOT_EXPLANATIONS.get(
-                                        plot_name, "No explanation available."
-                                    ))
-                            else:
-                                st.info("ℹ️ Insufficient data")
-                        plot_count += 1
 
-        
-        # Render remaining plot (if any) centered
-        # Render remaining plot (if any) centered
-        if n_remaining > 0:
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                plot_name, plot_func = plot_configs[plot_count]
-                with st.spinner(f"⏳ Generating {plot_name}..."):
-                    fig = plot_func(patient_data, selected_sig_display)
+    # ================= MAIN ANALYSIS =================
+    if not generate:
+        return
+
+    feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
+    if feature_data.empty:
+        st.error("❌ No z-score data found")
+        return
+
+    patient_data = clinical.merge(
+        feature_data[['base_sample_id', 'Z']],
+        left_on='sample_id',
+        right_on='base_sample_id',
+        how='inner'
+    )
+
+    patient_data = patient_data[
+        (patient_data['follow_up_months'] > 0) &
+        (patient_data['vital_status_binary'].notna())
+    ]
+
+    if len(patient_data) < 30:
+        st.warning("⚠️ Insufficient data for survival analysis")
+        return
+
+    st.markdown("### 📊 Interactive Survival Plots")
+
+    plot_configs = [
+        ("BMI vs Time", plot_survival_bmi_vs_time),
+        ("BMI vs HR", plot_survival_bmi_vs_hr),
+        ("Dual-Axis", plot_survival_bmi_dual_axis),
+        ("Forest Plot", plot_survival_forest_bmi),
+        ("Tertile", plot_survival_interaction_tertile),
+        ("Median Split", plot_survival_interaction_median),
+        ("HR + Distribution", plot_survival_hr_with_distribution)
+    ]
+
+    for i in range(0, len(plot_configs), 2):
+        cols = st.columns(2)
+        for j in range(2):
+            if i + j < len(plot_configs):
+                name, fn = plot_configs[i + j]
+                with cols[j]:
+                    fig = fn(patient_data, selected_sig_display)
                     if fig:
                         st.plotly_chart(fig, use_container_width=True)
-        
-                        # description
                         with st.expander("ℹ️ What does this plot mean?"):
-                            st.markdown(PLOT_EXPLANATIONS.get(
-                                plot_name, "No explanation available."
-                            ))
-                    else:
-                        st.info("ℹ️ Insufficient data")
-                plot_count += 1
+                            st.markdown(PLOT_EXPLANATIONS[name])
+
 
 
 
