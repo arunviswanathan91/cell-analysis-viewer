@@ -3700,7 +3700,7 @@ def render_signature_survival():
     zscore_data = load_zscore_data_survival()
     
     
-    
+    @st.cache_data
     # Normalize compartment names (handle different naming conventions)
     def normalize_compartment(name):
         """Convert compartment name to standard format"""
