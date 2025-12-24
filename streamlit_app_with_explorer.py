@@ -3503,8 +3503,8 @@ def render_signature_explorer():
             
             # Display genes in a nice format
             # Get positive and negative markers
-            positive_genes = set(selected_sig.get('positive_markers', []))
-            negative_genes = set(selected_sig.get('negative_markers', []))
+            positive_genes = set(selected_sig.get('positive_genes', []))
+            negative_genes = set(selected_sig.get('negative_genes', []))
             
             # Build colored gene list
             colored_genes = []
