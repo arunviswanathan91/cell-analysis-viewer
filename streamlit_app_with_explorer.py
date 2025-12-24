@@ -3978,7 +3978,7 @@ def main():
     )
     
     # Load data
-    with st.spinner(f"Loading {compartment} data..."):
+    with st.spinner("⏳"):
         comp_data = load_compartment_data(compartment)
         clinical = load_clinical_data()
         tpm = load_tpm_data()
@@ -4085,7 +4085,7 @@ def main():
             
             st.markdown("#### Z-score Heatmap")
             st.caption("Z-scores represent standardized signature expression across BMI categories")
-            with st.spinner("Generating interactive STABL heatmap..."):
+            with st.spinner("⏳"):
                 fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4110,7 +4110,7 @@ def main():
             
             st.markdown("#### 📝 Effect Sizes with Credible Intervals")
             st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
-            with st.spinner("Generating interactive Bayesian heatmap..."):
+            with st.spinner("⏳"):
                 fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4140,7 +4140,7 @@ def main():
             st.markdown("#### 📊 Overlapped Posterior Distributions")
             st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
         
-            with st.spinner("Generating interactive ridge plot..."):
+            with st.spinner("⏳"):
                 fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=False)
@@ -4249,7 +4249,7 @@ def main():
                     - **Problem:** R-hat > 1.05 (chains disagree, not converged)
                     """)
             
-            with st.spinner("Generating ESS/R-hat plot..."):
+            with st.spinner("⏳"):
                 fig = plot_ess_rhat(comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4268,7 +4268,7 @@ def main():
                 - **Interpretation:** Chains should transition smoothly between energy states
                 """)
             
-            with st.spinner("Generating energy plot..."):
+            with st.spinner("⏳"):
                 fig = plot_energy_diagnostic(comp_data)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4287,7 +4287,7 @@ def main():
                 - ** Stuck chains:** Bad (chain not exploring)
                 """)
             
-            with st.spinner("Generating trace plots..."):
+            with st.spinner("⏳"):
                 fig = plot_trace_diagnostic(comp_data, n_celltypes=6)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4304,7 +4304,7 @@ def main():
                 - Non-uniform = chains exploring different regions (bad convergence)
                 """)
             
-            with st.spinner("Generating rank plots..."):
+            with st.spinner("⏳"):
                 fig = plot_rank_diagnostic(comp_data, n_celltypes=6)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4323,7 +4323,7 @@ def main():
                 - Dashed lines show significance threshold
                 """)
             
-            with st.spinner("Generating autocorrelation plots..."):
+            with st.spinner("⏳"):
                 fig = plot_autocorrelation(comp_data, n_celltypes=6, max_lag=40)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
@@ -4332,7 +4332,7 @@ def main():
         with tabs[3]:
             st.markdown("### 📈  Gene-Level BMI Associations")
             st.info(" Hover for statistics| Click-drag to zoom | Double-click to reset")
-            with st.spinner("Running BMI regression analysis..."):
+            with st.spinner("⏳"):
                 fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
                 if fig1:
                     st.plotly_chart(fig1, use_container_width=True)
@@ -4343,7 +4343,7 @@ def main():
         with tabs[4]:
             st.markdown("### 📈  Gene-Level Survival Analysis")
             st.info("Forest plot with confidence intervals| Hover for full statistics")
-            with st.spinner("Running survival analysis..."):
+            with st.spinner("⏳"):
                 fig = plot_gene_survival_interactive(genes, clinical, tpm)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
