@@ -4064,8 +4064,7 @@ def main():
             "Diagnostics",
             "Gene BMI",
             "Gene Survival",
-            "Signature Survival"
-        ])
+            ])
         
         # Tab 1: STABL & Bayesian
         with tabs[0]:
