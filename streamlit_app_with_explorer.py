@@ -455,10 +455,7 @@ st.set_page_config(
 
 # ── Load RemoteRAG client (cached for session) ────────────────
 if REMOTE_RAG_AVAILABLE:
-    @st.cache_resource(show_spinner=False)
-    def _get_rag():
-        return load_remote_rag()
-    _rag_client = _get_rag()
+    _rag_client = load_remote_rag()
 else:
     _rag_client = None
 

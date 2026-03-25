@@ -49,16 +49,8 @@ def _resolve_space_url() -> str:
 def load_remote_rag() -> RemoteRAG:
     """
     Load and cache the RAG client for the app session.
-    Checks health and warns if Space is still booting.
     """
-    rag = get_rag_client(_resolve_space_url())
-    h   = rag.health()
-    if h.get("status") != "ready":
-        st.toast(
-            "🔄 RAG Space is warming up — first response may be slow.",
-            icon="⏳",
-        )
-    return rag
+    return get_rag_client(_resolve_space_url())
 
 
 # ──────────────────────────────────────────────
