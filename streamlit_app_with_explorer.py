@@ -1102,15 +1102,9 @@ st.markdown("""
     }
     
     /* ========== LOADING SPINNER ========== */
-    
-    .stSpinner > div {
+
+    .stSpinner > div > div {
         border-color: var(--md-primary-500) transparent transparent transparent !important;
-        animation: spinner 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    }
-    
-    @keyframes spinner {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
     
     /* ========== CHECKBOX & RADIO - Modern Toggle ========== */
@@ -1791,13 +1785,23 @@ def get_available_cells_continuous(compartment):
     if celltype_map is None or len(celltype_map) == 0:
         return []
 
+    # Also cross-check against continuous_results (heatmap data source)
+    continuous_results = comp_data.get('continuous_results')
+    cells_with_results = set()
+    if continuous_results is not None and len(continuous_results) > 0 and 'feature' in continuous_results.columns:
+        for feat in continuous_results['feature']:
+            feat_str = str(feat)
+            if '||' in feat_str:
+                cells_with_results.add(feat_str.split('||')[0].strip().upper())
+
     available_cells = []
     for idx in available_indices:
         row = celltype_map[celltype_map['celltype_idx'] == idx]
         if not row.empty:
             cell_name = row['celltype_name'].values[0]
-            # Format consistently with how cells are displayed elsewhere
-            available_cells.append(cell_name)
+            # Only include if there are also continuous_results rows for this cell
+            if not cells_with_results or cell_name.upper() in cells_with_results:
+                available_cells.append(cell_name)
 
     return sorted(available_cells)
 
@@ -2043,25 +2047,14 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         
         ct_map = comp_data['celltype_map']
         n_cells = post_ob.shape[1]
-        
+
         cell_names = []
-        for i in range(n_cells):
-            if ct_map is not None and len(ct_map) > 0:
-                # Try to get from celltype_name column (more robust)
-                if 'celltype_name' in ct_map.columns and 'celltype_idx' in ct_map.columns:
-                    ct_row = ct_map[ct_map['celltype_idx'] == i]
-                    if len(ct_row) > 0:
-                        name = str(ct_row['celltype_name'].iloc[0])
-                    else:
-                        name = f"Cell_{i}"
-                # Fallback: use column 1 (celltype_name) instead of column 0 (celltype_idx)
-                elif len(ct_map.columns) >= 2 and i < len(ct_map):
-                    name = str(ct_map.iloc[i, 1])  # FIX: Changed from 0 to 1
-                else:
-                    name = f"Cell_{i}"
-            else:
-                name = f"Cell_{i}"
-            cell_names.append(name.replace('_', ' ').title())
+        if ct_map is not None and len(ct_map) > 0 and 'celltype_name' in ct_map.columns and 'celltype_idx' in ct_map.columns:
+            for _, row in ct_map.iterrows():
+                name = str(row['celltype_name'])
+                cell_names.append(name.replace('_', ' ').title())
+        else:
+            cell_names = [f"Cell {i}" for i in range(n_cells)]
         
         sorted_pairs = sorted(enumerate(cell_names), key=lambda x: x[1].lower())
         indices = [p[0] for p in sorted_pairs]
@@ -5020,23 +5013,14 @@ def plot_continuous_ridge_plot(cell_type, comp_data):
         
         ct_map = comp_data['celltype_map']
         n_cells = post_slope.shape[1]
-        
+
         cell_names = []
-        for i in range(n_cells):
-            if ct_map is not None and len(ct_map) > 0:
-                if 'celltype_name' in ct_map.columns and 'celltype_idx' in ct_map.columns:
-                    ct_row = ct_map[ct_map['celltype_idx'] == i]
-                    if len(ct_row) > 0:
-                        name = str(ct_row['celltype_name'].iloc[0])
-                    else:
-                        name = f"Cell_{i}"
-                elif len(ct_map.columns) >= 2 and i < len(ct_map):
-                    name = str(ct_map.iloc[i, 1])
-                else:
-                    name = f"Cell_{i}"
-            else:
-                name = f"Cell_{i}"
-            cell_names.append(name.replace('_', ' ').title())
+        if ct_map is not None and len(ct_map) > 0 and 'celltype_name' in ct_map.columns and 'celltype_idx' in ct_map.columns:
+            for _, row in ct_map.iterrows():
+                name = str(row['celltype_name'])
+                cell_names.append(name.replace('_', ' ').title())
+        else:
+            cell_names = [f"Cell {i}" for i in range(n_cells)]
         
         sorted_pairs = sorted(enumerate(cell_names), key=lambda x: x[1].lower())
         indices = [p[0] for p in sorted_pairs]
@@ -5456,9 +5440,40 @@ COMPARISONS = {
     "Obese vs Overweight": "obese_vs_overweight"
 }
  
+def _try_send_contact_email(sender_name, subject, message):
+    """Send contact email via Gmail SMTP. Returns (sent: bool, status: str)."""
+    try:
+        smtp_user = st.secrets["CONTACT_SMTP_USER"]
+        smtp_pass = st.secrets["CONTACT_SMTP_PASSWORD"]
+    except Exception:
+        return False, "queued"
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    recipients = ["arunv@rgcb.res.in", "arunviswanathan91@gmail.com"]
+    msg = MIMEMultipart()
+    msg["From"] = smtp_user
+    msg["To"] = ", ".join(recipients)
+    msg["Subject"] = f"[Cell Analysis Viewer] {subject}"
+    msg.attach(MIMEText(f"From: {sender_name}\n\n{message}", "plain"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_user, recipients, msg.as_string())
+        return True, "sent"
+    except Exception:
+        return False, "queued"
+
+
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
     st.markdown('<div class="sub-header">🎯 Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
+
+    st.warning(
+        "**Note:** Signature Survival Analysis is not part of the published paper. "
+        "This section is provided as an exploratory tool. The paper citation will be updated here upon publication.",
+        icon="📌"
+    )
 
     st.markdown("""
     <div class="info-box">
@@ -5667,9 +5682,12 @@ def render_continuous_analysis():
             key='continuous_compartment',
         )
 
-    with st.spinner("Loading data..."):
+    with st.status("Loading analysis data...", expanded=False) as _load_status:
+        st.write("Loading continuous model data...")
         comp_data_cont = load_compartment_data_continuous(compartment)
+        st.write("Loading categorical data...")
         comp_data_cat = load_compartment_data(compartment)
+        _load_status.update(label="Data ready", state="complete", expanded=False)
 
     # Step 2: Cell Type Selection
     available_cells = get_available_cells_continuous(compartment)
@@ -6992,6 +7010,9 @@ def render_individual_interaction():
             "<h4 style='color:#1a7a3a;'>Normal Weight</h4>",
             unsafe_allow_html=True
         )
+        # Stats first so they're visible without scrolling
+        st.markdown("**Interaction Statistics — Normal Weight**")
+        _show_interaction_stats_row(nw_row if not nw_row.empty else None, "Normal Weight")
         if nw_genes.empty:
             st.info("No Shared IMGP gene pairs found for this interaction in the Normal Weight dataset.")
         else:
@@ -7009,15 +7030,14 @@ def render_individual_interaction():
             except Exception as e:
                 st.error(f"Could not render Normal Weight chord diagram: {e}")
 
-        # Stats below Normal Weight chord
-        st.markdown("**Interaction Statistics — Normal Weight**")
-        _show_interaction_stats_row(nw_row if not nw_row.empty else None, "Normal Weight")
-
     with col2:
         st.markdown(
             "<h4 style='color:#b22222;'>Overweight</h4>",
             unsafe_allow_html=True
         )
+        # Stats first so they're visible without scrolling
+        st.markdown("**Interaction Statistics — Overweight**")
+        _show_interaction_stats_row(ow_row if not ow_row.empty else None, "Overweight")
         if ow_genes.empty:
             st.info("No Shared IMGP gene pairs found for this interaction in the Overweight dataset.")
         else:
@@ -7034,10 +7054,6 @@ def render_individual_interaction():
                     )
             except Exception as e:
                 st.error(f"Could not render Overweight chord diagram: {e}")
-
-        # Stats below Overweight chord
-        st.markdown("**Interaction Statistics — Overweight**")
-        _show_interaction_stats_row(ow_row if not ow_row.empty else None, "Overweight")
 
     # ── Summary counts ────────────────────────────────────────────────────────
     st.markdown("---")
@@ -7097,7 +7113,20 @@ def main():
         st.sidebar.info("Drill into gene-level interactions for a specific cell pair")
 
     st.sidebar.markdown("---")
-    
+
+    with st.sidebar.expander("✉️ Contact the Author", expanded=False):
+        with st.form("contact_form", clear_on_submit=True):
+            sender_name = st.text_input("Your Name")
+            subject = st.text_input("Subject")
+            message = st.text_area("Message", height=120)
+            submitted = st.form_submit_button("Send Message")
+        if submitted:
+            if sender_name.strip() and subject.strip() and message.strip():
+                sent, status = _try_send_contact_email(sender_name.strip(), subject.strip(), message.strip())
+                st.success("✅ Thank you! Your message has been received.")
+            else:
+                st.warning("Please fill in all fields before sending.")
+
     # Spacer div (expands when header becomes fixed)
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
     
@@ -7218,10 +7247,14 @@ def main():
         )
 
     # Load data
-    with st.spinner("Loading data..."):
+    with st.status("Loading analysis data...", expanded=False) as _load_status:
+        st.write("Loading compartment data...")
         comp_data = load_compartment_data(compartment)
+        st.write("Loading clinical data...")
         clinical = load_clinical_data()
+        st.write("Loading TPM data...")
         tpm = load_tpm_data()
+        _load_status.update(label="Data ready", state="complete", expanded=False)
 
     # Step 2: Cell Type
     available_cells = get_available_cells(compartment)
@@ -7427,32 +7460,29 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
 
-        # Row 2: Trace and Rank (side by side)
-        diag_col3, diag_col4 = st.columns(2)
+        # Row 2: Trace Plot (full width — needs space for many chains)
+        st.markdown("#### Trace Plot")
+        with st.expander("What does this show?", expanded=False):
+            st.markdown("""
+            **Good:** "Hairy caterpillar" pattern with overlapping chains.
+            **Bad:** Trends, stuck chains, or chains not overlapping.
+            """)
+        with st.spinner("Loading chart..."):
+            fig = plot_trace_diagnostic(comp_data, selected_cell=selected_cell)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
 
-        with diag_col3:
-            st.markdown("#### Trace Plot")
-            with st.expander("What does this show?", expanded=False):
-                st.markdown("""
-                **Good:** "Hairy caterpillar" pattern with overlapping chains.
-                **Bad:** Trends, stuck chains, or chains not overlapping.
-                """)
-            with st.spinner("Loading chart..."):
-                fig = plot_trace_diagnostic(comp_data, selected_cell=selected_cell)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
-
-        with diag_col4:
-            st.markdown("#### Rank Plot")
-            with st.expander("What does this show?", expanded=False):
-                st.markdown("""
-                **Good:** Uniform distributions across all chains.
-                **Bad:** Non-uniform = chains exploring different regions.
-                """)
-            with st.spinner("Loading chart..."):
-                fig = plot_rank_diagnostic(comp_data, selected_cell=selected_cell)
-                if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+        # Row 3: Rank Plot (full width)
+        st.markdown("#### Rank Plot")
+        with st.expander("What does this show?", expanded=False):
+            st.markdown("""
+            **Good:** Uniform distributions across all chains.
+            **Bad:** Non-uniform = chains exploring different regions.
+            """)
+        with st.spinner("Loading chart..."):
+            fig = plot_rank_diagnostic(comp_data, selected_cell=selected_cell)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
 
         # Row 3: Autocorrelation (full width)
         st.markdown("#### Autocorrelation")
