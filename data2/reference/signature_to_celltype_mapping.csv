@@ -1,0 +1,66 @@
+signature_celltype_key,signature_celltype_normalized,canonical_celltype,mapping_method,signature_count,is_mapped
+ACINAR,acinar,ACINAR,manual_fix,34,True
+ADIPOCYTES,adipocytes,ADIPOCYTES,manual_fix,19,True
+APCAF,apcaf,FIBROBLASTS,manual_fix,24,True
+B CELLS,b cell,B_CELLS,manual_fix,30,True
+BASOPHILS,basophils,BASOPHILS,manual_fix,32,True
+B_CELLS,b cell,B_CELLS,manual_fix,40,True
+B_CELLS_NAIVE,b cell naive,B_CELLS_NAIVE,manual_fix,33,True
+B_NAIVE,b naive,B_CELLS_NAIVE,manual_fix,32,True
+CD4+ T CELLS,cd4 plus t cell,CD4+_T_CELLS,manual_fix,38,True
+CD4_TEX,cd4 tex,CD4+_T_CELLS,manual_fix,29,True
+CD4_TFH,cd4 tfh,CD4_TFH,manual_fix,30,True
+CD4_TH1,cd4 th1,CD4_T_TH1,manual_fix,37,True
+CD4_TH17,cd4 th17,CD4+_T_CELLS,manual_fix,35,True
+CD4_TH2,cd4 th2,CD4+_T_CELLS,manual_fix,37,True
+CD4_TH22,cd4 th22,CD4+_T_CELLS,manual_fix,33,True
+CD4_TNAIVE,cd4 tnaive,CD4_T_NAIVE,manual_fix,32,True
+CD4_TREG,cd4 treg,CD4_T_REGULATORY,manual_fix,34,True
+CD4_TRM,cd4 trm,CD4+_T_CELLS,manual_fix,38,True
+CD4_T_NAIVE,cd4 t naive,CD4_T_NAIVE,exact_match,33,True
+CD4_T_REGULATORY,cd4 t regulatory,CD4_T_REGULATORY,exact_match,33,True
+CD4_T_TH1,cd4 t th1,CD4_T_TH1,exact_match,33,True
+CD8_STEMLIKE,cd8 stemlike,CD8_T_GENERAL,manual_fix,30,True
+CD8_TEFFECTOR,cd8 teffector,CD8_T_GENERAL,manual_fix,34,True
+CD8_TEX,cd8 tex,CD8_T_EXHAUSTED,manual_fix,43,True
+CD8_TMEMORY,cd8 tmemory,CD8_TMEMORY,manual_fix,31,True
+CD8_TNAIVE,cd8 tnaive,CD8_T_GENERAL,manual_fix,34,True
+CD8_TRM,cd8 trm,CD8_TMEMORY,manual_fix,35,True
+CD8_T_EFFECTOR,cd8 t effector,CD8_T_GENERAL,manual_fix,34,True
+CD8_T_EXHAUSTED,cd8 t exhausted,CD8_T_EXHAUSTED,exact_match,34,True
+CD8_T_GENERAL,cd8 t general,CD8_T_GENERAL,manual_fix,36,True
+CD8_T_NAIVE,cd8 t naive,CD8_T_GENERAL,manual_fix,33,True
+DENDRITIC_CELLS,dendritic cell,DENDRITIC_CELLS,manual_fix,38,True
+ENDOTHELIAL,endothelial,FIBROBLASTS,manual_fix,32,True
+FIBROBLASTS,fibroblasts,FIBROBLASTS,manual_fix,33,True
+ICAF,icaf,ICAF,manual_fix,33,True
+ISLET_ENDOCRINE,islet endocrine,ISLET_ENDOCRINE,manual_fix,23,True
+MACROPHAGES,macrophages,TAM,manual_fix,36,True
+MAIT_CELLS,mait cell,MAIT_CELLS,manual_fix,31,True
+MAST,mast,MAST,manual_fix,26,True
+MDC,mdc,MDC,manual_fix,37,True
+MDSC,mdsc,MONOCYTES,manual_fix,27,True
+MONOCYTES,monocytes,MONOCYTES,manual_fix,40,True
+MONOCYTE_CLASSICAL,monocyte classical,MONOCYTE_CLASSICAL,manual_fix,37,True
+MONOCYTE_NON_CLASSICAL,monocyte non classical,MONOCYTE_NON_CLASSICAL,manual_fix,25,True
+MYCAF,mycaf,MYCAF,manual_fix,35,True
+MYELOID_CELLS,myeloid cell,MONOCYTES,manual_fix,35,True
+NEURAL,neural,NEURAL,manual_fix,25,True
+NEUTROPHILS,neutrophils,MONOCYTES,manual_fix,27,True
+NKT_CELLS,nkt cell,T_CELLS,manual_fix,36,True
+NK_CELLS,nk cell,NK_CELLS,manual_fix,45,True
+NORMAL_DUCTAL,normal ductal,NORMAL_DUCTAL,manual_fix,35,True
+PDC,pdc,PDC,manual_fix,35,True
+PERICYTES_SMC,pericytes smc,PERICYTES_SMC,manual_fix,36,True
+PLASMA_CELLS,plasma cell,B_CELLS,manual_fix,32,True
+SCHWANN,schwann,SCHWANN,manual_fix,26,True
+STELLATE,stellate,STELLATE,manual_fix,24,True
+T CELLS GENERAL,t cell general,T_CELLS,manual_fix,40,True
+TAM,tam,TAM,manual_fix,22,True
+TAM_C1QC,tam c1qc,TAM,manual_fix,35,True
+TAM_SPP1,tam spp1,TAM,manual_fix,34,True
+TUMOR_BASAL,tumor basal,TUMOR_CLASSICAL,manual_fix,34,True
+TUMOR_CLASSICAL,tumor classical,TUMOR_CLASSICAL,manual_fix,35,True
+TUMOR_EPITHELIAL,tumor epithelial,TUMOR_EPITHELIAL,manual_fix,36,True
+T_CELLS,t cell,T_CELLS,manual_fix,32,True
+T_GAMMA_DELTA,t gamma delta,T_GAMMA_DELTA,manual_fix,36,True

@@ -1,0 +1,224 @@
+feature
+B CELLS||Autophagy_Regulation_Signature
+B CELLS||Cellular_Stress_Response_Signature
+B CELLS||Hypoxia_Response_Signature
+B CELLS||Immunosenescence_Signature
+BASOPHILS||Activation_Signaling_Signature
+BASOPHILS||Adipose_Allergy_Signature
+BASOPHILS||Adipose_Signaling_Signature
+BASOPHILS||Allergic_Inflammation_Signature
+BASOPHILS||Angiogenesis_Regulation_Signature
+BASOPHILS||Anti_Apoptotic_Signature
+BASOPHILS||Autophagy_Regulation_Signature
+BASOPHILS||Cellular_Stress_Response_Signature
+BASOPHILS||Chronic_Activation_Signature
+BASOPHILS||Complement_Activation_Signature
+BASOPHILS||Cytokine_Production_Signature
+BASOPHILS||Degranulation_Signature
+BASOPHILS||ER_Stress_Response_Signature
+BASOPHILS||Epigenetic_Dysregulation_Signature
+BASOPHILS||Epigenetic_Silencing_Signature
+BASOPHILS||FcÎµRI_Signaling_Signature
+BASOPHILS||Histamine_Signature
+BASOPHILS||Hyperreactive_Signaling_Signature
+BASOPHILS||Hypoxia_Response_Signature
+BASOPHILS||IgE_Response_Signature
+BASOPHILS||Immunosenescence_Signature
+BASOPHILS||Inflammatory_Mediator_Signature
+BASOPHILS||Inflammatory_Response_Signature
+BASOPHILS||Lineage_Program_Signature
+BASOPHILS||Lipid_Mediator_Activity_Signature
+BASOPHILS||Lipid_Mediator_Signature
+BASOPHILS||Microbiome_Response_Signature
+BASOPHILS||Mitochondrial_Function_Signature
+BASOPHILS||Prostaglandin_Signature
+BASOPHILS||Protease_Release_Activity_Signature
+BASOPHILS||Receptor_Expression_Signature
+BASOPHILS||Senescence_Signature
+BASOPHILS||Surface_Receptor_Expression_Signature
+BASOPHILS||Survival_Program_Signature
+BASOPHILS||Type2_Cytokine_Expression_Signature
+BASOPHILS||Type2_Response_Signature
+B_CELLS||Hypoxia_Response_Signature
+B_CELLS||Immunoglobulin_Production_Signature
+B_CELLS||Immunosenescence_Signature
+B_CELLS||Lipid_Metabolism_Signature
+B_CELLS||MHC_II_Presentation_Signature
+B_CELLS||MHC_I_Presentation_Signature
+B_CELLS||ROS_Response_Signature
+B_CELLS||Regulatory_B_Cell_Signature
+B_CELLS||Regulatory_B_Function_Signature
+B_CELLS||Type_I_Interferon_Response_Signature
+CD4+ T CELLS||Adipokine_Signaling_Signature
+CD4+ T CELLS||Angiogenesis_Regulation_Signature
+CD4+ T CELLS||Apoptosis_Resistance_Signature
+CD4+ T CELLS||CD4_Tissue_Homing_Signature
+CD4+ T CELLS||Cellular_Stress_Response_Signature
+CD4+ T CELLS||Chemokine_Network_Signature
+CD4+ T CELLS||Costimulatory_Activity_Signature
+CD4+ T CELLS||ECM_Remodeling_Signature
+CD4+ T CELLS||ER_Stress_Response_Signature
+CD4+ T CELLS||Energy_Sensing_Activity_Signature
+CD4+ T CELLS||Fibrosis_Mediation_Signature
+CD4+ T CELLS||Glycolytic_Metabolism_Signature
+CD4+ T CELLS||Helper_Function_Signature
+CD4+ T CELLS||Hypoxia_Response_Signature
+CD4+ T CELLS||Immunosenescence_Signature
+CD4+ T CELLS||Inflammatory_Cytokine_Signature
+CD4+ T CELLS||Microbiome_Response_Signature
+CD4+ T CELLS||Mitochondrial_Dysfunction_Signature
+CD4+ T CELLS||Oxidative_Stress_Response_Signature
+CD4+ T CELLS||TGFB_Signaling_Signature
+CD4+ T CELLS||Transcriptional_Activation_Signature
+CD4+ T CELLS||Treg_Signature
+CD8_T_GENERAL||Chronic_Activation_Signature
+CD8_T_GENERAL||Costimulation_Signature
+CD8_T_GENERAL||Cytotoxicity_Signature
+CD8_T_GENERAL||Effector_Differentiation_Signature
+CD8_T_GENERAL||Glycolysis_Signature
+CD8_T_GENERAL||Hypoxia_Response_Signature
+CD8_T_GENERAL||Immunosenescence_Signature
+CD8_T_GENERAL||Inflammatory_Response_Signature
+CD8_T_GENERAL||Perforin_Granzyme_Pathway_Signature
+DENDRITIC CELLS||Cellular_Stress_Response_Signature
+DENDRITIC CELLS||Costimulation_Activity_Signature
+DENDRITIC CELLS||ER_Stress_Response_Signature
+DENDRITIC CELLS||Growth_Factor_Expression_Signature
+DENDRITIC CELLS||Hypoxia_Response_Signature
+DENDRITIC CELLS||IL12_Production_Signature
+DENDRITIC CELLS||MHC_II_Presentation_Signature
+DENDRITIC CELLS||MHC_I_Antigen_Processing_Signature
+DENDRITIC CELLS||Maturation_Program_Signature
+DENDRITIC CELLS||Microbiome_Response_Signature
+DENDRITIC CELLS||Migration_Activity_Signature
+DENDRITIC CELLS||Regulatory_Cytokine_Signature
+DENDRITIC CELLS||Senescence_Signature
+DENDRITIC CELLS||Tolerogenic_Programming_Signature
+DENDRITIC CELLS||cDC1_Cross_Presentation_Signature
+DENDRITIC CELLS||cDC2_T_Helper_Priming_Signature
+DENDRITIC_CELLS||Antigen_Presentation_Signature
+DENDRITIC_CELLS||Cell_Proliferation_Signature
+DENDRITIC_CELLS||Chemokine_Production_Signature
+DENDRITIC_CELLS||Costimulation_Activity_Signature
+DENDRITIC_CELLS||Costimulation_Signature
+DENDRITIC_CELLS||Cross_Presentation_Signature
+DENDRITIC_CELLS||Cytokine_Production_Signature
+DENDRITIC_CELLS||Dendritic_Cell_Identity_Signature
+DENDRITIC_CELLS||ER_Stress_Response_Signature
+DENDRITIC_CELLS||Fatty_Acid_Oxidation_Signature
+DENDRITIC_CELLS||Glycolysis_Signature
+DENDRITIC_CELLS||Hedgehog_Signaling_Signature
+DENDRITIC_CELLS||Hypoxia_Response_Signature
+DENDRITIC_CELLS||MHC_II_Presentation_Signature
+DENDRITIC_CELLS||MHC_I_Antigen_Processing_Signature
+DENDRITIC_CELLS||Maturation_Signature
+DENDRITIC_CELLS||Migration_Activity_Signature
+DENDRITIC_CELLS||Migration_Signature
+DENDRITIC_CELLS||PI3K_AKT_Signaling_Signature
+DENDRITIC_CELLS||Phagocytosis_Signature
+DENDRITIC_CELLS||Senescence_Signature
+DENDRITIC_CELLS||TGF_Beta_Signaling_Signature
+DENDRITIC_CELLS||Tolerogenic_Programming_Signature
+DENDRITIC_CELLS||Type_I_Interferon_Response_Signature
+DENDRITIC_CELLS||p53_Pathway_Signature
+MONOCYTES||Adipose_Signaling_Signature
+MONOCYTES||Angiogenesis_Regulation_Signature
+MONOCYTES||Cellular_Stress_Response_Signature
+MONOCYTES||Checkpoint_Ligand_Expression_Signature
+MONOCYTES||Chemokine_Production_Signature
+MONOCYTES||Cholesterol_Handling_Signature
+MONOCYTES||Complement_Activation_Signature
+MONOCYTES||Complement_Receptor_Signaling_Signature
+MONOCYTES||Danger_Signal_Recognition_Signature
+MONOCYTES||ER_Stress_Response_Signature
+MONOCYTES||Efferocytosis_Activity_Signature
+MONOCYTES||Epigenetic_Dysregulation_Signature
+MONOCYTES||Fatty_Acid_Oxidation_Signature
+MONOCYTES||Glucose_Fatty_Acid_Cycle_Signature
+MONOCYTES||Hypoxia_Response_Signature
+MONOCYTES||Immunosenescence_Signature
+MONOCYTES||Inflammasome_Activity_Signature
+MONOCYTES||Inflammatory_Response_Signature
+MONOCYTES||Lipogenesis_Activity_Signature
+MONOCYTES||Lysosomal_Activity_Signature
+MONOCYTES||Lysosomal_Biogenesis_Signature
+MONOCYTES||M1_Polarization_Signature
+MONOCYTES||M2_Polarization_Signature
+MONOCYTES||MHC_II_Presentation_Signature
+MONOCYTES||Matrix_Remodeling_Activity_Signature
+MONOCYTES||Microbiome_Response_Signature
+MONOCYTES||Mitochondrial_Function_Signature
+MONOCYTES||Monocyte_Activation_Signature
+MONOCYTES||Monocyte_Subset_Plasticity_Signature
+MONOCYTES||Oxidative_Stress_Response_Signature
+MONOCYTES||Phagocytosis_Signature
+MONOCYTES||Senescence_Signature
+MONOCYTES||TLR_Signaling_Signature
+MONOCYTES||Wound_Healing_Support_Signature
+NK CELLS||ADCC_Function_Signature
+NK CELLS||Activating_Receptor_Signature
+NK CELLS||Adipose_Signaling_Signature
+NK CELLS||Cellular_Stress_Response_Signature
+NK CELLS||Chronic_Activation_Signature
+NK CELLS||Complement_Activation_Signature
+NK CELLS||Cytokine_Receptor_Activity_Signature
+NK CELLS||Degranulation_Activity_Signature
+NK CELLS||Developmental_Program_Signature
+NK CELLS||ER_Stress_Response_Signature
+NK CELLS||Effector_Programming_Signature
+NK CELLS||Hypoxia_Response_Signature
+NK CELLS||KIR_Signaling_Signature
+NK CELLS||Mitochondrial_Function_Signature
+NK CELLS||NCR_Signature
+NK CELLS||NK_Development_Signature
+NK CELLS||NK_Exhaustion_Signature
+NK CELLS||Tissue_Residency_Signature
+NK CELLS||Type1_IFN_Response_Signature
+NK CELLS||Wound_Healing_Support_Signature
+NK_CELLS||ADCC_Function_Signature
+NK_CELLS||Activating_Receptor_Signature
+NK_CELLS||Adipokine_Response_Signature
+NK_CELLS||Adipose_Signaling_Signature
+NK_CELLS||Autophagy_Regulation_Signature
+NK_CELLS||Cell_Migration_Signature
+NK_CELLS||Cell_Proliferation_Signature
+NK_CELLS||Cellular_Stress_Response_Signature
+NK_CELLS||Cytokine_Production_Signature
+NK_CELLS||Cytolytic_Deficiency_Signature
+NK_CELLS||Degranulation_Signature
+NK_CELLS||Dysfunction_Signature
+NK_CELLS||ER_Stress_Response_Signature
+NK_CELLS||ER_Stress_Signature
+NK_CELLS||Exhaustion_Signature
+NK_CELLS||Fatty_Acid_Oxidation_Signature
+NK_CELLS||Hedgehog_Signaling_Signature
+NK_CELLS||KIR_Signaling_Signature
+NK_CELLS||Lipid_Metabolism_Signature
+NK_CELLS||Migration_Signature
+NK_CELLS||Mitochondrial_Function_Signature
+NK_CELLS||NCR_Signaling_Signature
+NK_CELLS||NCR_Signature
+NK_CELLS||NK_Cell_Development_Signature
+NK_CELLS||NK_Cell_Exhaustion_Signature
+NK_CELLS||NK_Development_Signature
+NK_CELLS||Notch_Signaling_Signature
+NK_CELLS||PI3K_AKT_Signaling_Signature
+NK_CELLS||TGF_Beta_Signaling_Signature
+NK_CELLS||Tissue_Residency_Signature
+NK_CELLS||Type1_IFN_Response_Signature
+NK_CELLS||Type_I_Interferon_Response_Signature
+NK_CELLS||Wnt_Signaling_Signature
+NK_CELLS||Wound_Healing_Support_Signature
+NK_CELLS||p53_Pathway_Signature
+T_CELLS||Cell_Proliferation_Signature
+T_CELLS||Chemokine_Production_Signature
+T_CELLS||Chronic_Activation_Signature
+T_CELLS||Complement_Activation_Signature
+T_CELLS||Costimulation_Signature
+T_CELLS||Cytotoxic_Function_Signature
+T_CELLS||Fatty_Acid_Oxidation_Signature
+T_CELLS||Hypoxia_Response_Signature
+T_CELLS||Inflammatory_Response_Signature
+T_CELLS||Memory_Formation_Signature
+T_CELLS||Type_I_Interferon_Response_Signature
+T_CELLS||p53_Pathway_Signature

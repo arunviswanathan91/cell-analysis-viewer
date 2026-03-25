@@ -1,0 +1,1523 @@
+# -*- coding: utf-8 -*-
+"""
+Dynamic Analysis Agent - Full Python-Powered Scientific Query Engine
+======================================================================
+
+This agent has FULL access to:
+- ALL signature databases (genes, cell types, signatures)
+- ALL analysis results (categorical, continuous, survival, interactome)
+- Dynamic gene → signature → cell type → analysis tracing
+
+The agent can answer ANY question by executing Python queries against the data.
+NO hardcoded mappings - everything is dynamically discovered from the data.
+
+Key Capabilities:
+1. Gene Tracing: gene → which signatures → which cell types → how changing
+2. Signature Exploration: signature → genes → analysis results across all cell types
+3. Cell Type Integration: Dynamic discovery of related cell types from data
+4. Cross-Analysis Correlation: Link categorical, continuous, survival, interactome
+5. Pathway Analysis: Identify pathway genes and trace through entire analysis
+"""
+
+import os
+import json
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Optional, Tuple, Any, Set
+from dataclasses import dataclass, field
+from collections import defaultdict
+
+# Import data backend for fast querying
+try:
+    from src.data_backend import get_table, query_sql
+    BACKEND_AVAILABLE = True
+except ImportError:
+    BACKEND_AVAILABLE = False
+    print("Warning: data_backend not available, falling back to direct CSV reads")
+
+
+# ================================================================================
+# ========================= CONFIGURATION ========================================
+# ================================================================================
+
+# Use AI-optimized data structure (data2/)
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data2")
+# Legacy data directory for signatures (JSON not restructured)
+LEGACY_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+
+# ================================================================================
+# ========================= DYNAMIC DATA LAYER ===================================
+# ================================================================================
+
+class DynamicDataLayer:
+    """
+    Provides dynamic access to ALL data without hardcoded mappings.
+    Everything is discovered from the actual data files.
+    """
+
+    def __init__(self, data_dir: str = DATA_DIR, legacy_data_dir: str = LEGACY_DATA_DIR):
+        self.data_dir = data_dir
+        self.legacy_data_dir = legacy_data_dir
+        self._signature_db: Dict = {}
+        self._categorical_data: pd.DataFrame = None  # Now a single DataFrame
+        self._continuous_data: pd.DataFrame = None   # Now a single DataFrame
+        self._survival_data: pd.DataFrame = None
+        self._interactome_data: pd.DataFrame = None  # Now a single DataFrame
+        self._cell_type_mappings: pd.DataFrame = None  # Master mapping
+        self._loaded = False
+
+        # Reverse indices for fast lookups
+        self._gene_to_signatures: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
+        self._signature_to_cell_types: Dict[str, List[str]] = defaultdict(list)
+        self._cell_type_to_compartment: Dict[str, str] = {}
+
+    def load_all(self) -> bool:
+        """Load all data sources into memory for fast querying."""
+        if self._loaded:
+            return True
+
+        print("Loading all data sources...")
+
+        # Load signature database
+        self._load_signature_database()
+
+        # Load categorical analysis
+        self._load_categorical_data()
+
+        # Load continuous analysis
+        self._load_continuous_data()
+
+        # Load survival analysis
+        self._load_survival_data()
+
+        # Load interactome
+        self._load_interactome_data()
+
+        # Build reverse indices
+        self._build_indices()
+
+        # Build complete cell type database from all sources
+        self._all_cell_types = self._build_all_cell_types_database()
+
+        self._loaded = True
+        print(f"Data loaded: {len(self._gene_to_signatures)} genes indexed, {len(self._all_cell_types)} cell types discovered")
+        return True
+
+    def _load_signature_database(self):
+        """Load the complete signature database (from legacy data folder - JSON not restructured)."""
+        sig_file = os.path.join(self.legacy_data_dir, "signatures", "ALL_CELL_SIGNATURES_FLAT.json")
+        try:
+            with open(sig_file, 'r') as f:
+                self._signature_db = json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load signatures: {e}")
+            self._signature_db = {}
+
+    def _load_categorical_data(self):
+        """Load categorical (BMI group) analysis data from consolidated AI-friendly file."""
+        # Try data_backend first (fast Parquet/DuckDB), fall back to CSV
+        if BACKEND_AVAILABLE:
+            try:
+                self._categorical_data = get_table("categorical")
+                print(f"  Loaded categorical data: {len(self._categorical_data)} rows (via data_backend)")
+            except Exception as e:
+                print(f"  Warning: data_backend failed ({e}), falling back to CSV")
+                cat_path = os.path.join(self.data_dir, "categorical", "results_all_comparisons.csv")
+                if os.path.exists(cat_path):
+                    self._categorical_data = pd.read_csv(cat_path)
+                    print(f"  Loaded categorical data: {len(self._categorical_data)} rows (CSV fallback)")
+                else:
+                    print(f"  Warning: Categorical data not found at {cat_path}")
+                    self._categorical_data = pd.DataFrame()
+        else:
+            # Direct CSV load if backend not available
+            cat_path = os.path.join(self.data_dir, "categorical", "results_all_comparisons.csv")
+            if os.path.exists(cat_path):
+                self._categorical_data = pd.read_csv(cat_path)
+                print(f"  Loaded categorical data: {len(self._categorical_data)} rows")
+            else:
+                print(f"  Warning: Categorical data not found at {cat_path}")
+                self._categorical_data = pd.DataFrame()
+
+        # Load master cell type mapping
+        if BACKEND_AVAILABLE:
+            try:
+                self._cell_type_mappings = get_table("cell_type_mapping")
+                print(f"  Loaded cell type mappings: {len(self._cell_type_mappings)} cell types (via data_backend)")
+            except Exception:
+                map_path = os.path.join(self.data_dir, "reference", "celltype_mapping_all.csv")
+                if os.path.exists(map_path):
+                    self._cell_type_mappings = pd.read_csv(map_path)
+                    print(f"  Loaded cell type mappings: {len(self._cell_type_mappings)} cell types (CSV fallback)")
+        else:
+            map_path = os.path.join(self.data_dir, "reference", "celltype_mapping_all.csv")
+            if os.path.exists(map_path):
+                self._cell_type_mappings = pd.read_csv(map_path)
+                print(f"  Loaded cell type mappings: {len(self._cell_type_mappings)} cell types")
+
+        # Build cell_type_to_compartment mapping
+        if self._cell_type_mappings is not None and not self._cell_type_mappings.empty:
+            for _, row in self._cell_type_mappings.iterrows():
+                name = str(row['celltype_name'])
+                comp = str(row['compartment'])
+                self._cell_type_to_compartment[name.upper()] = comp
+
+    def _load_continuous_data(self):
+        """Load continuous (BMI slope) analysis data from consolidated AI-friendly file."""
+        # Try data_backend first (fast Parquet/DuckDB), fall back to CSV
+        if BACKEND_AVAILABLE:
+            try:
+                self._continuous_data = get_table("continuous")
+                print(f"  Loaded continuous data: {len(self._continuous_data)} rows (via data_backend)")
+                return
+            except Exception as e:
+                print(f"  Warning: data_backend failed ({e}), falling back to CSV")
+
+        # CSV fallback
+        cont_path = os.path.join(self.data_dir, "continuous", "bmi_slope_results.csv")
+        if os.path.exists(cont_path):
+            self._continuous_data = pd.read_csv(cont_path)
+            print(f"  Loaded continuous data: {len(self._continuous_data)} rows")
+        else:
+            print(f"  Warning: Continuous data not found at {cont_path}")
+            self._continuous_data = pd.DataFrame()
+
+    def _load_survival_data(self):
+        """Load survival analysis data from AI-friendly file."""
+        # Try data_backend first (fast Parquet/DuckDB), fall back to CSV
+        if BACKEND_AVAILABLE:
+            try:
+                self._survival_data = get_table("survival")
+                print(f"  Loaded survival data: {len(self._survival_data)} rows (via data_backend)")
+                return
+            except Exception as e:
+                print(f"  Warning: data_backend failed ({e}), falling back to CSV")
+
+        # CSV fallback
+        path = os.path.join(self.data_dir, "survival", "survival_features.csv")
+        if os.path.exists(path):
+            self._survival_data = pd.read_csv(path)
+            print(f"  Loaded survival data: {len(self._survival_data)} rows")
+        else:
+            print(f"  Warning: Survival data not found at {path}")
+            self._survival_data = pd.DataFrame()
+
+    def _load_interactome_data(self):
+        """Load interactome data from consolidated AI-friendly file."""
+        # Try data_backend first (fast Parquet/DuckDB), fall back to CSV
+        if BACKEND_AVAILABLE:
+            try:
+                self._interactome_data = get_table("interactome")
+                print(f"  Loaded interactome data: {len(self._interactome_data)} rows (via data_backend)")
+                return
+            except Exception as e:
+                print(f"  Warning: data_backend failed ({e}), falling back to CSV")
+
+        # CSV fallback
+        path = os.path.join(self.data_dir, "interactome", "interactions_by_bmi.csv")
+        if os.path.exists(path):
+            self._interactome_data = pd.read_csv(path)
+            print(f"  Loaded interactome data: {len(self._interactome_data)} rows")
+        else:
+            print(f"  Warning: Interactome data not found at {path}")
+            self._interactome_data = pd.DataFrame()
+
+    def _build_indices(self):
+        """Build reverse indices for fast lookups."""
+        # Gene → Signatures index
+        for cell_type, signatures in self._signature_db.items():
+            for sig_name, genes in signatures.items():
+                for gene in genes:
+                    gene_upper = gene.upper()
+                    self._gene_to_signatures[gene_upper].append((cell_type, sig_name))
+                self._signature_to_cell_types[sig_name].append(cell_type)
+
+    def _build_all_cell_types_database(self) -> set:
+        """
+        Build complete database of ALL cell types from all data sources.
+        This ensures comprehensive cell type discovery across:
+        - Cell type mappings
+        - Categorical analysis
+        - Continuous analysis
+        - Interactome (favorable and unfavorable cells)
+        - Survival analysis (parsed from feature column)
+        """
+        all_cells = set()
+
+        # From cell type mappings
+        if self._cell_type_mappings is not None and len(self._cell_type_mappings) > 0:
+            all_cells.update(self._cell_type_mappings['celltype_name'].unique())
+
+        # From categorical analysis
+        if self._categorical_data is not None and len(self._categorical_data) > 0:
+            all_cells.update(self._categorical_data['cell_type'].unique())
+
+        # From continuous analysis
+        if self._continuous_data is not None and len(self._continuous_data) > 0:
+            all_cells.update(self._continuous_data['cell_type'].unique())
+
+        # From interactome (both favorable and unfavorable cells)
+        if self._interactome_data is not None and len(self._interactome_data) > 0:
+            if 'favorable_cell' in self._interactome_data.columns:
+                all_cells.update(self._interactome_data['favorable_cell'].dropna().unique())
+            if 'unfavorable_cell' in self._interactome_data.columns:
+                all_cells.update(self._interactome_data['unfavorable_cell'].dropna().unique())
+
+        # From survival analysis (parse feature column: 'cell_type||signature')
+        if self._survival_data is not None and len(self._survival_data) > 0:
+            if 'feature' in self._survival_data.columns:
+                for feature in self._survival_data['feature']:
+                    if '||' in str(feature):
+                        ct, _ = str(feature).split('||', 1)
+                        all_cells.add(ct.strip())
+
+        return all_cells
+
+
+# ================================================================================
+# ========================= DYNAMIC QUERY ENGINE =================================
+# ================================================================================
+
+class DynamicQueryEngine:
+    """
+    Executes dynamic queries against all data sources.
+    No hardcoded logic - everything discovered from data.
+    """
+
+    def __init__(self, data_dir: str = DATA_DIR, legacy_data_dir: str = LEGACY_DATA_DIR):
+        self.data = DynamicDataLayer(data_dir, legacy_data_dir)
+        self.data.load_all()
+
+    # ========================= GENE QUERIES =================================
+
+    def trace_gene(self, gene_symbol: str) -> Dict:
+        """
+        Trace a gene through the entire analysis:
+        gene → signatures containing it → cell types → analysis results
+
+        This is the KEY function for answering "what is happening with gene X"
+        """
+        gene_upper = gene_symbol.upper()
+        result = {
+            "gene": gene_upper,
+            "found_in_signatures": [],
+            "cell_types_affected": set(),
+            "signature_changes": [],
+            "survival_associations": [],
+            "categorical_effects": [],
+            "continuous_effects": []
+        }
+
+        # Find all signatures containing this gene
+        signature_locations = self.data._gene_to_signatures.get(gene_upper, [])
+
+        if not signature_locations:
+            result["error"] = f"Gene {gene_upper} not found in any signature"
+            return result
+
+        # Group by cell type
+        cell_type_signatures = defaultdict(list)
+        for cell_type, sig_name in signature_locations:
+            cell_type_signatures[cell_type].append(sig_name)
+            result["cell_types_affected"].add(cell_type)
+
+        result["found_in_signatures"] = [
+            {"cell_type": ct, "signature": sig}
+            for ct, sig in signature_locations
+        ]
+
+        # Now trace each signature through the analyses
+        for cell_type, sig_name in signature_locations:
+            # Check continuous analysis for this signature
+            cont_effects = self._get_continuous_for_signature(cell_type, sig_name)
+            result["continuous_effects"].extend(cont_effects)
+
+            # Check survival for this signature
+            surv_effects = self._get_survival_for_signature(cell_type, sig_name)
+            result["survival_associations"].extend(surv_effects)
+
+        # Get categorical effects for affected cell types
+        for cell_type in result["cell_types_affected"]:
+            cat_effects = self._get_categorical_for_cell_type(cell_type)
+            result["categorical_effects"].extend(cat_effects)
+
+        result["cell_types_affected"] = list(result["cell_types_affected"])
+
+        # Build summary of how gene is changing
+        result["summary"] = self._build_gene_summary(result)
+
+        return result
+
+    def get_genes_in_signature(self, signature_name: str,
+                               cell_type: str = None) -> Dict:
+        """
+        Get all genes in a signature, with their functions if known.
+        Can optionally filter by cell type.
+        """
+        result = {
+            "signature_query": signature_name,
+            "cell_type_filter": cell_type,
+            "matches": []
+        }
+
+        sig_lower = signature_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+
+        for ct, signatures in self.data._signature_db.items():
+            # Apply cell type filter if specified
+            if cell_type:
+                ct_normalized = ct.upper().replace("_", " ").replace("-", " ")
+                filter_normalized = cell_type.upper().replace("_", " ").replace("-", " ")
+                if filter_normalized not in ct_normalized and ct_normalized not in filter_normalized:
+                    continue
+
+            for sig_name, genes in signatures.items():
+                sig_normalized = sig_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+                if sig_lower in sig_normalized or sig_normalized in sig_lower:
+                    result["matches"].append({
+                        "cell_type": ct,
+                        "signature_name": sig_name,
+                        "genes": genes,
+                        "gene_count": len(genes)
+                    })
+
+        return result
+
+    # ========================= SIGNATURE QUERIES ============================
+
+    def trace_signature(self, signature_name: str) -> Dict:
+        """
+        Trace a signature through all analyses:
+        signature → which cell types have it → analysis results for each
+        """
+        result = {
+            "signature": signature_name,
+            "cell_types_with_signature": [],
+            "changes_by_cell_type": {},
+            "survival_associations": [],
+            "genes_in_signature": {}
+        }
+
+        sig_lower = signature_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+
+        # Find all cell types with this signature
+        for ct, signatures in self.data._signature_db.items():
+            for sig_name, genes in signatures.items():
+                sig_normalized = sig_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+                if sig_lower in sig_normalized or sig_normalized in sig_lower:
+                    result["cell_types_with_signature"].append(ct)
+                    result["genes_in_signature"][ct] = {
+                        "signature_name": sig_name,
+                        "genes": genes
+                    }
+
+                    # Get analysis results for this cell type + signature
+                    changes = {
+                        "continuous": self._get_continuous_for_signature(ct, sig_name),
+                        "survival": self._get_survival_for_signature(ct, sig_name),
+                        "categorical": self._get_categorical_for_cell_type(ct)
+                    }
+                    result["changes_by_cell_type"][ct] = changes
+
+        return result
+
+    # ========================= CELL TYPE QUERIES ============================
+
+    def get_cell_type_analysis(self, cell_type_query: str,
+                               include_related: bool = True) -> Dict:
+        """
+        Get comprehensive analysis for a cell type.
+        Dynamically discovers related cell types from the data.
+        """
+        result = {
+            "query": cell_type_query,
+            "matched_cell_types": [],
+            "related_cell_types": [],
+            "categorical_effects": [],
+            "continuous_effects": [],
+            "survival_associations": [],
+            "interactome_interactions": [],
+            "available_signatures": []
+        }
+
+        query_normalized = cell_type_query.upper().replace("_", " ").replace("+", "").strip()
+
+        # Find matching cell types from complete database (all data sources)
+        all_cell_types = self.data._all_cell_types if hasattr(self.data, '_all_cell_types') else set()
+
+        matched = []
+        related = []
+
+        for ct in all_cell_types:
+            ct_normalized = ct.upper().replace("_", " ").replace("+", "").strip()
+
+            # Exact match
+            if query_normalized == ct_normalized:
+                matched.append(ct)
+            # Substring match - but only if substantial (avoid matching "T" with "TAM")
+            elif query_normalized in ct_normalized:
+                # Query is in cell type (e.g., "CD8" in "CD8 T CELLS")
+                matched.append(ct)
+            elif ct_normalized in query_normalized and len(ct_normalized) >= 3:
+                # Cell type is in query, but only if cell type is substantial (>= 3 chars)
+                # This prevents "T" from matching "TAM"
+                matched.append(ct)
+            # Related (shares common words)
+            elif include_related:
+                query_words = set(query_normalized.split())
+                ct_words = set(ct_normalized.split())
+                shared_words = query_words & ct_words
+                # Only consider related if shared words are substantial (not just "T")
+                if shared_words and all(len(w) >= 3 for w in shared_words):
+                    related.append(ct)
+
+        result["matched_cell_types"] = matched
+        result["related_cell_types"] = related
+
+        # Get analysis for matched cell types
+        all_relevant = matched + (related if include_related else [])
+
+        for ct in all_relevant:
+            result["categorical_effects"].extend(self._get_categorical_for_cell_type(ct))
+            result["continuous_effects"].extend(self._get_continuous_for_cell_type(ct))
+            result["survival_associations"].extend(self._get_survival_for_cell_type(ct))
+            result["interactome_interactions"].extend(self._get_interactome_for_cell_type(ct))
+
+        # Get available signatures for this cell type
+        for ct in all_relevant:
+            ct_upper = ct.upper().replace(" ", "_")
+            if ct_upper in self.data._signature_db:
+                for sig_name in self.data._signature_db[ct_upper].keys():
+                    result["available_signatures"].append({
+                        "cell_type": ct,
+                        "signature": sig_name
+                    })
+
+        return result
+
+    def discover_cell_type_hierarchy(self, cell_type_query: str) -> Dict:
+        """
+        Dynamically discover cell type hierarchy from the data.
+        Finds parent/child/sibling relationships based on naming patterns.
+        """
+        result = {
+            "query": cell_type_query,
+            "hierarchy": {
+                "parent": None,
+                "siblings": [],
+                "children": [],
+                "related": []
+            }
+        }
+
+        query_upper = cell_type_query.upper().replace("_", " ").replace("+", "").strip()
+
+        # Get all cell types
+        all_cell_types = set()
+        if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+            all_cell_types = set(self.data._cell_type_mappings['celltype_name'].unique())
+
+        # Find relationships
+        for ct in all_cell_types:
+            ct_upper = ct.upper().replace("_", " ").replace("+", "").strip()
+
+            if ct_upper == query_upper:
+                continue
+
+            # Check if ct is more specific (child) - ct contains query but is longer
+            if query_upper in ct_upper and len(ct_upper) > len(query_upper):
+                result["hierarchy"]["children"].append(ct)
+
+            # Check if ct is more general (parent) - query contains ct but query is longer
+            elif ct_upper in query_upper and len(query_upper) > len(ct_upper):
+                result["hierarchy"]["parent"] = ct
+
+            # Check for siblings (share a common word)
+            else:
+                query_words = set(query_upper.split())
+                ct_words = set(ct_upper.split())
+                shared_words = query_words & ct_words
+                # Remove common generic words
+                generic = {"CELLS", "CELL", "T", "B"}
+                meaningful_shared = shared_words - generic
+
+                if meaningful_shared:
+                    result["hierarchy"]["siblings"].append(ct)
+                elif shared_words:
+                    result["hierarchy"]["related"].append(ct)
+
+        return result
+
+    # ========================= PATHWAY QUERIES ==============================
+
+    def analyze_pathway(self, pathway_genes: List[str]) -> Dict:
+        """
+        Analyze a pathway by tracing all its genes.
+        Aggregates results across all genes to show pathway-level changes.
+        """
+        result = {
+            "pathway_genes": pathway_genes,
+            "genes_found": [],
+            "genes_not_found": [],
+            "signatures_involved": set(),
+            "cell_types_involved": set(),
+            "aggregate_continuous_effects": [],
+            "aggregate_survival": [],
+            "aggregate_categorical": []
+        }
+
+        all_continuous = []
+        all_survival = []
+        all_categorical = []
+
+        for gene in pathway_genes:
+            gene_trace = self.trace_gene(gene)
+
+            if "error" in gene_trace:
+                result["genes_not_found"].append(gene)
+            else:
+                result["genes_found"].append(gene)
+
+                for sig in gene_trace.get("found_in_signatures", []):
+                    result["signatures_involved"].add(f"{sig['cell_type']}||{sig['signature']}")
+
+                result["cell_types_involved"].update(gene_trace.get("cell_types_affected", []))
+
+                all_continuous.extend(gene_trace.get("continuous_effects", []))
+                all_survival.extend(gene_trace.get("survival_associations", []))
+                all_categorical.extend(gene_trace.get("categorical_effects", []))
+
+        # Remove duplicates and aggregate
+        result["signatures_involved"] = list(result["signatures_involved"])
+        result["cell_types_involved"] = list(result["cell_types_involved"])
+
+        # Deduplicate by feature
+        seen_features = set()
+        for eff in all_continuous:
+            key = f"{eff.get('feature', '')}_{eff.get('compartment', '')}"
+            if key not in seen_features:
+                seen_features.add(key)
+                result["aggregate_continuous_effects"].append(eff)
+
+        seen_features = set()
+        for eff in all_survival:
+            key = f"{eff.get('feature', '')}"
+            if key not in seen_features:
+                seen_features.add(key)
+                result["aggregate_survival"].append(eff)
+
+        seen_features = set()
+        for eff in all_categorical:
+            key = f"{eff.get('cell_type', '')}_{eff.get('comparison', '')}_{eff.get('compartment', '')}"
+            if key not in seen_features:
+                seen_features.add(key)
+                result["aggregate_categorical"].append(eff)
+
+        return result
+
+    # ========================= CROSS-ANALYSIS QUERIES =======================
+
+    def find_contradictions(self, cell_type: str) -> List[Dict]:
+        """
+        Find contradictions between analyses for a cell type.
+        E.g., categorical expansion but signature functional decline.
+        """
+        contradictions = []
+
+        # Get all analysis results
+        categorical = self._get_categorical_for_cell_type(cell_type)
+        continuous = self._get_continuous_for_cell_type(cell_type)
+
+        # Check for categorical expansion + continuous decline
+        cat_increases = [c for c in categorical if c.get('credible') and c.get('mean', 0) > 0]
+        cont_decreases = [c for c in continuous if c.get('credible') and c.get('slope', 0) < 0]
+
+        if cat_increases and cont_decreases:
+            for cat in cat_increases:
+                for cont in cont_decreases:
+                    contradictions.append({
+                        "type": "expansion_vs_functional_decline",
+                        "categorical": f"{cat.get('cell_type', '')} increases (effect={cat.get('mean', 0):.3f})",
+                        "continuous": f"{cont.get('signature', '')} decreases (slope={cont.get('slope', 0):.3f})",
+                        "interpretation": "Cell population expands but may lose functional capacity"
+                    })
+
+        # Check for categorical decrease + continuous increase
+        cat_decreases = [c for c in categorical if c.get('credible') and c.get('mean', 0) < 0]
+        cont_increases = [c for c in continuous if c.get('credible') and c.get('slope', 0) > 0]
+
+        if cat_decreases and cont_increases:
+            for cat in cat_decreases:
+                for cont in cont_increases:
+                    contradictions.append({
+                        "type": "contraction_vs_functional_enhancement",
+                        "categorical": f"{cat.get('cell_type', '')} decreases (effect={cat.get('mean', 0):.3f})",
+                        "continuous": f"{cont.get('signature', '')} increases (slope={cont.get('slope', 0):.3f})",
+                        "interpretation": "Cell population contracts but remaining cells may be functionally enhanced"
+                    })
+
+        return contradictions
+
+    def get_survival_for_pathway(self, pathway_name: str) -> Dict:
+        """
+        Get survival associations for a pathway.
+        Dynamically finds relevant signatures.
+        """
+        result = {
+            "pathway": pathway_name,
+            "matching_signatures": [],
+            "survival_associations": []
+        }
+
+        # Find signatures matching pathway name
+        pathway_lower = pathway_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+
+        for ct, signatures in self.data._signature_db.items():
+            for sig_name in signatures.keys():
+                sig_normalized = sig_name.lower().replace("_", "").replace("-", "").replace(" ", "")
+                if pathway_lower in sig_normalized:
+                    result["matching_signatures"].append({
+                        "cell_type": ct,
+                        "signature": sig_name
+                    })
+
+                    # Get survival for this signature
+                    surv = self._get_survival_for_signature(ct, sig_name)
+                    result["survival_associations"].extend(surv)
+
+        return result
+
+    # ========================= INTERNAL HELPERS =============================
+
+    def _get_continuous_for_signature(self, cell_type: str, signature_name: str) -> List[Dict]:
+        """Get continuous analysis results for a specific signature."""
+        results = []
+
+        if self.data._continuous_data is None or len(self.data._continuous_data) == 0:
+            return results
+
+        df = self.data._continuous_data
+
+        for _, row in df.iterrows():
+            ct = str(row.get('cell_type', ''))
+            sig = str(row.get('signature', ''))
+
+            ct_match = cell_type.upper().replace(" ", "_") in ct.upper().replace(" ", "_")
+            sig_match = signature_name.lower().replace("_", "") in sig.lower().replace("_", "")
+
+            if ct_match and sig_match:
+                results.append({
+                    "feature": f"{ct}||{sig}",
+                    "cell_type": ct,
+                    "signature": sig,
+                    "compartment": str(row.get('compartment', '')),
+                    "slope": float(row.get('bmi_slope_mean', 0)),
+                    "hdi_low": float(row.get('hdi_lower', 0)),
+                    "hdi_high": float(row.get('hdi_upper', 0)),
+                    "credible": bool(row.get('credible', False)),
+                    "effect_tier": str(row.get('effect_size_category', 'negligible'))
+                })
+
+        return results
+
+    def _get_continuous_for_cell_type(self, cell_type: str) -> List[Dict]:
+        """Get all continuous results for a cell type."""
+        results = []
+        ct_upper = cell_type.upper().replace("_", " ").replace("+", "").strip()
+
+        if self.data._continuous_data is None or len(self.data._continuous_data) == 0:
+            return results
+
+        df = self.data._continuous_data
+
+        for _, row in df.iterrows():
+            ct = str(row.get('cell_type', ''))
+            sig = str(row.get('signature', ''))
+
+            ct_normalized = ct.upper().replace("_", " ").replace("+", "").strip()
+
+            if ct_upper in ct_normalized or ct_normalized in ct_upper:
+                results.append({
+                    "feature": f"{ct}||{sig}",
+                    "cell_type": ct,
+                    "signature": sig,
+                    "compartment": str(row.get('compartment', '')),
+                    "slope": float(row.get('bmi_slope_mean', 0)),
+                    "hdi_low": float(row.get('hdi_lower', 0)),
+                    "hdi_high": float(row.get('hdi_upper', 0)),
+                    "credible": bool(row.get('credible', False)),
+                    "effect_tier": str(row.get('effect_size_category', 'negligible'))
+                })
+
+        return results
+
+    def _get_survival_for_signature(self, cell_type: str, signature_name: str) -> List[Dict]:
+        """Get survival results for a specific signature."""
+        results = []
+
+        if self.data._survival_data is None:
+            return results
+
+        for _, row in self.data._survival_data.iterrows():
+            feature = str(row.get('feature', ''))
+            if '||' in feature:
+                ct, sig = feature.split('||', 1)
+            else:
+                continue
+
+            ct_match = cell_type.upper().replace(" ", "_") in ct.upper().replace(" ", "_")
+            sig_match = signature_name.lower().replace("_", "") in sig.lower().replace("_", "")
+
+            if ct_match and sig_match:
+                results.append({
+                    "feature": feature,
+                    "cell_type": ct,
+                    "signature": sig,
+                    "compartment": str(row.get('compartment', '')),
+                    "comparison": str(row.get('comparison', '')),
+                    "hr": float(row.get('hr', 1.0)),
+                    "hr_p": float(row.get('hr_p', 1.0)),
+                    "hr_ci_low": float(row.get('hr_ci_low', 0)),
+                    "hr_ci_high": float(row.get('hr_ci_high', 0)),
+                    "significant": float(row.get('hr_p', 1.0)) < 0.05
+                })
+
+        return results
+
+    def _get_survival_for_cell_type(self, cell_type: str) -> List[Dict]:
+        """Get all survival results for a cell type."""
+        results = []
+        ct_upper = cell_type.upper().replace("_", " ").replace("+", "").strip()
+
+        if self.data._survival_data is None:
+            return results
+
+        for _, row in self.data._survival_data.iterrows():
+            feature = str(row.get('feature', ''))
+            if '||' in feature:
+                ct, sig = feature.split('||', 1)
+            else:
+                continue
+
+            ct_normalized = ct.upper().replace("_", " ").replace("+", "").strip()
+
+            if ct_upper in ct_normalized or ct_normalized in ct_upper:
+                results.append({
+                    "feature": feature,
+                    "cell_type": ct,
+                    "signature": sig,
+                    "compartment": str(row.get('compartment', '')),
+                    "comparison": str(row.get('comparison', '')),
+                    "hr": float(row.get('hr', 1.0)),
+                    "hr_p": float(row.get('hr_p', 1.0)),
+                    "hr_ci_low": float(row.get('hr_ci_low', 0)),
+                    "hr_ci_high": float(row.get('hr_ci_high', 0)),
+                    "significant": float(row.get('hr_p', 1.0)) < 0.05
+                })
+
+        return results
+
+    def _get_categorical_for_cell_type(self, cell_type: str) -> List[Dict]:
+        """Get categorical results for a cell type from consolidated data."""
+        results = []
+        ct_upper = cell_type.upper().replace("_", " ").replace("+", "").strip()
+
+        if self.data._categorical_data is None or len(self.data._categorical_data) == 0:
+            return results
+
+        df = self.data._categorical_data
+
+        for _, row in df.iterrows():
+            ct_name = str(row.get('cell_type', ''))
+            ct_normalized = ct_name.upper().replace("_", " ").replace("+", "").strip()
+
+            if ct_upper in ct_normalized or ct_normalized in ct_upper:
+                results.append({
+                    "cell_type": ct_name,
+                    "signature": str(row.get('signature', '')),  # CRITICAL: Include signature
+                    "compartment": str(row.get('compartment', '')),
+                    "comparison": str(row.get('comparison', '')),
+                    "mean": float(row.get('effect_mean', 0)),
+                    "hdi_lower": float(row.get('hdi_lower', 0)),
+                    "hdi_upper": float(row.get('hdi_upper', 0)),
+                    "credible": bool(row.get('credible', False)),
+                    "prob_positive": float(row.get('prob_positive', 0)),  # Add for richer output
+                    "evidence_strength": str(row.get('evidence_strength', ''))  # Add for interpretation
+                })
+
+        return results
+
+    def _get_interactome_for_cell_type(self, cell_type: str) -> List[Dict]:
+        """Get interactome results involving a cell type from consolidated data."""
+        results = []
+        ct_upper = cell_type.upper().replace("_", " ").replace("+", "").strip()
+
+        if self.data._interactome_data is None or len(self.data._interactome_data) == 0:
+            return results
+
+        df = self.data._interactome_data
+
+        for _, row in df.iterrows():
+            favorable = str(row.get('favorable_cell', ''))
+            unfavorable = str(row.get('unfavorable_cell', ''))
+
+            fav_normalized = favorable.upper().replace("_", " ")
+            unfav_normalized = unfavorable.upper().replace("_", " ")
+
+            if ct_upper in fav_normalized or ct_upper in unfav_normalized or \
+               fav_normalized in ct_upper or unfav_normalized in ct_upper:
+
+                p_val = row.get('p_value', 1.0)
+                if isinstance(p_val, str):
+                    p_val = float(p_val.replace('E', 'e'))
+                else:
+                    p_val = float(p_val)
+
+                bmi_cat = str(row.get('bmi_category', 'unknown'))
+
+                results.append({
+                    "favorable_cell": favorable,
+                    "unfavorable_cell": unfavorable,
+                    "enrichment_ratio": float(row.get('enrichment_ratio', 0)),
+                    "p_value": p_val,
+                    "significant": p_val < 0.05,
+                    "dataset": bmi_cat,
+                    "condition": "NormalWeight" if bmi_cat == "normal" else "Overweight" if bmi_cat == "overweight" else bmi_cat.title()
+                })
+
+        return results[:30]  # Limit results
+
+    def _build_gene_summary(self, gene_result: Dict) -> str:
+        """Build a summary string for gene tracing results."""
+        parts = []
+
+        gene = gene_result["gene"]
+        n_signatures = len(gene_result["found_in_signatures"])
+        n_cell_types = len(gene_result["cell_types_affected"])
+
+        parts.append(f"{gene} found in {n_signatures} signatures across {n_cell_types} cell types.")
+
+        # Summarize continuous effects
+        credible_cont = [e for e in gene_result["continuous_effects"] if e.get("credible")]
+        if credible_cont:
+            parts.append(f"Credible continuous effects: {len(credible_cont)}")
+            for e in credible_cont[:3]:
+                direction = "increases" if e["slope"] > 0 else "decreases"
+                parts.append(f"  - {e['cell_type']}||{e['signature']} {direction} (slope={e['slope']:.3f})")
+
+        # Summarize survival
+        sig_surv = [e for e in gene_result["survival_associations"] if e.get("significant")]
+        if sig_surv:
+            parts.append(f"Significant survival associations: {len(sig_surv)}")
+            for e in sig_surv[:3]:
+                direction = "worse" if e["hr"] > 1 else "better"
+                parts.append(f"  - {e['cell_type']}||{e['signature']}: HR={e['hr']:.2f} ({direction} prognosis)")
+
+        return "\n".join(parts)
+
+
+# ================================================================================
+# ========================= AGENT INTERFACE ======================================
+# ================================================================================
+
+class DynamicAnalysisAgent:
+    """
+    The main agent interface providing Python-powered scientific analysis.
+
+    This agent can answer ANY question by executing dynamic queries against
+    all data sources. Nothing is hardcoded - everything is discovered.
+    """
+
+    def __init__(self, data_dir: str = DATA_DIR, legacy_data_dir: str = LEGACY_DATA_DIR):
+        self.engine = DynamicQueryEngine(data_dir, legacy_data_dir)
+        self.data = self.engine.data
+        
+        # Initialize Groq Client
+        import streamlit as st
+        try:
+            from groq import Groq
+            api_key = os.environ.get("GROQ_API_KEY")
+            
+            # Check streamlit secrets if not in env
+            if not api_key:
+                try:
+                    api_key = st.secrets["GROQ_API_KEY"]
+                except Exception:
+                    pass
+            
+            if api_key:
+                self.client = Groq(api_key=api_key)
+                self.llm_enabled = True
+            else:
+                print("Warning: GROQ_API_KEY not found. LLM synthesis disabled.")
+                self.client = None
+                self.llm_enabled = False
+                
+        except ImportError:
+            print("Warning: 'groq' package not installed. LLM synthesis disabled.")
+            self.client = None
+            self.llm_enabled = False
+
+    def answer(self, question: str) -> Dict:
+        """
+        Answer any question about the data.
+
+        This is the main entry point. It analyzes the question and
+        executes appropriate queries.
+        """
+        question_lower = question.lower()
+        result = {
+            "question": question,
+            "query_type": "unknown",
+            "results": {},
+            "narrative": [],
+            "follow_up_suggestions": []
+        }
+
+        # Detect question type and route to appropriate handler
+        if self._is_gene_question(question):
+            result["query_type"] = "gene_trace"
+            genes = self._extract_genes(question)
+            for gene in genes[:5]:
+                result["results"][gene] = self.engine.trace_gene(gene)
+
+        elif self._is_signature_question(question):
+            result["query_type"] = "signature_query"
+            sig_name = self._extract_signature_name(question)
+            result["results"]["signature"] = self.engine.trace_signature(sig_name)
+            result["results"]["genes"] = self.engine.get_genes_in_signature(sig_name)
+
+        elif self._is_cell_type_question(question):
+            result["query_type"] = "cell_analysis"
+            cell_types = self._extract_cell_types(question)
+            for ct in cell_types[:3]:
+                result["results"][ct] = self.engine.get_cell_type_analysis(ct)
+                result["results"][f"{ct}_hierarchy"] = self.engine.discover_cell_type_hierarchy(ct)
+                result["results"][f"{ct}_contradictions"] = self.engine.find_contradictions(ct)
+
+        elif self._is_pathway_question(question):
+            result["query_type"] = "pathway_analysis"
+            pathway = self._extract_pathway(question)
+            if "survival" in question_lower:
+                result["results"]["pathway_survival"] = self.engine.get_survival_for_pathway(pathway)
+
+        else:
+            # General query - provide database stats and suggest refinements
+            result["query_type"] = "general"
+            if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+                result["results"]["available_cell_types"] = list(self.data._cell_type_mappings['celltype_name'].unique())
+            else:
+                result["results"]["available_cell_types"] = []
+            result["results"]["signature_cell_types"] = list(self.data._signature_db.keys())
+
+        # Generate narrative using LLM if available
+        if self.llm_enabled:
+            result["narrative"] = [self.generate_llm_response(question, result)]
+        else:
+            # Fallback to old rule-based narrative
+            result["narrative"] = self._build_narrative(result)
+
+        # Suggest follow-ups
+        result["follow_up_suggestions"] = self._suggest_followups(result)
+
+        return result
+
+    def get_all_genes_in_database(self) -> List[str]:
+        """Get list of all genes in the signature database."""
+        return sorted(list(self.data._gene_to_signatures.keys()))
+
+    def get_all_signatures(self) -> List[Dict]:
+        """Get list of all signatures."""
+        signatures = []
+        for ct, sigs in self.data._signature_db.items():
+            for sig_name in sigs.keys():
+                signatures.append({"cell_type": ct, "signature": sig_name})
+        return signatures
+
+    def get_all_cell_types(self) -> List[str]:
+        """Get list of all cell types from analysis data."""
+        if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+            return sorted(list(self.data._cell_type_mappings['celltype_name'].unique()))
+        return []
+
+    def get_database_stats(self) -> Dict:
+        """Get comprehensive database statistics."""
+        analysis_cell_types = 0
+        compartments = []
+
+        if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+            analysis_cell_types = len(self.data._cell_type_mappings['celltype_name'].unique())
+            compartments = list(self.data._cell_type_mappings['compartment'].unique())
+
+        interactome_categories = []
+        if self.data._interactome_data is not None and len(self.data._interactome_data) > 0:
+            interactome_categories = list(self.data._interactome_data['bmi_category'].unique())
+
+        return {
+            "total_genes": len(self.data._gene_to_signatures),
+            "total_signatures": sum(len(sigs) for sigs in self.data._signature_db.values()),
+            "signature_cell_types": len(self.data._signature_db),
+            "analysis_cell_types": analysis_cell_types,
+            "compartments": compartments,
+            "interactome_datasets": interactome_categories
+        }
+
+    # ========================= QUESTION ANALYSIS ============================
+
+    def _is_gene_question(self, question: str) -> bool:
+        """Check if question is about a gene (avoid matching "gene" in "general")."""
+        q = question.lower()
+        # Use word boundary matching to avoid false matches (e.g., "gene" in "general")
+        words = q.split()
+        gene_keywords = ["gene", "genes"]
+        phrase_keywords = ["which signature", "where is"]
+        specific_genes = ["ikbk", "nfkb1", "foxp3", "gzmb", "pdcd1"]
+
+        # Check for specific gene names or phrases
+        if any(kw in q for kw in phrase_keywords + specific_genes):
+            return True
+        # Check for "gene" or "genes" as whole words only
+        if any(word in gene_keywords for word in words):
+            return True
+        return False
+
+    def _is_signature_question(self, question: str) -> bool:
+        """Check if question is about a signature."""
+        q = question.lower()
+        return any(kw in q for kw in ["signature", "genes in", "what genes", "list genes"])
+
+    def _is_cell_type_question(self, question: str) -> bool:
+        """
+        Check if question is about a cell type by looking at actual data.
+        No hardcoding - queries all available cell types dynamically.
+        """
+        q_lower = question.lower()
+
+        # Get all cell types from the actual data
+        all_cell_types = set()
+
+        # From cell type mappings (now a single DataFrame)
+        if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+            all_cell_types.update(self.data._cell_type_mappings['celltype_name'].unique())
+
+        # From signature database
+        all_cell_types.update(self.data._signature_db.keys())
+
+        # Check if any cell type (or partial match) is in the question
+        for cell_type in all_cell_types:
+            cell_type_lower = cell_type.lower()
+            # Full match
+            if cell_type_lower in q_lower:
+                return True
+            # Partial word match (e.g., "acinar" matches "ACINAR")
+            words = cell_type_lower.split()
+            for word in words:
+                if len(word) > 3 and word in q_lower:
+                    return True
+
+        # Also check for general cell biology terms
+        general_terms = ["cell", "cells", "change", "changes in"]
+        if any(term in q_lower for term in general_terms):
+            return True
+
+        return False
+
+    def _is_pathway_question(self, question: str) -> bool:
+        """Check if question is about a pathway."""
+        q = question.lower()
+        pathway_keywords = ["pathway", "nfkb", "nf-kb", "mtor", "jak", "stat",
+                          "tgf", "wnt", "p53", "glycolysis", "hypoxia"]
+        return any(kw in q for kw in pathway_keywords)
+
+    def _extract_genes(self, question: str) -> List[str]:
+        """Extract gene symbols from question."""
+        import re
+        # Find capitalized gene-like patterns
+        genes = re.findall(r'\b([A-Z][A-Z0-9]{1,10})\b', question)
+        # Filter to those in our database
+        valid_genes = [g for g in genes if g in self.data._gene_to_signatures]
+        return valid_genes if valid_genes else genes[:5]
+
+    def _extract_signature_name(self, question: str) -> str:
+        """Extract signature name from question."""
+        import re
+        # Look for explicit signature mentions
+        patterns = [
+            r'(\w+_\w+_signature)',
+            r'(\w+_signature)',
+            r'signature\s+(?:called|named)?\s*["\']?(\w+)',
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, question, re.IGNORECASE)
+            if match:
+                return match.group(1)
+
+        # Look for common pathway names
+        pathways = ["NFkB", "mTOR", "glycolysis", "exhaustion", "EMT", "hypoxia"]
+        q_lower = question.lower()
+        for p in pathways:
+            if p.lower() in q_lower:
+                return p
+
+        return "unknown"
+
+    def _extract_cell_types(self, question: str) -> List[str]:
+        """
+        Extract cell type names from question by matching against actual data.
+        No hardcoding - intelligently matches using specificity ranking.
+        """
+        q_lower = question.lower()
+
+        # Get all cell types from actual data
+        all_cell_types = set()
+
+        # From cell type mappings (now a single DataFrame)
+        if self.data._cell_type_mappings is not None and len(self.data._cell_type_mappings) > 0:
+            all_cell_types.update(self.data._cell_type_mappings['celltype_name'].unique())
+
+        # From signature database
+        all_cell_types.update(self.data._signature_db.keys())
+
+        # Score each cell type by match quality
+        scored_matches = []
+
+        for cell_type in all_cell_types:
+            cell_type_lower = cell_type.lower()
+            score = 0
+
+            # Exact full match (highest priority)
+            if cell_type_lower == q_lower:
+                score = 1000
+
+            # Full cell type name appears in question
+            elif cell_type_lower in q_lower:
+                score = 500
+
+            # Check unique identifying words (not generic like "cells", "t", "b")
+            else:
+                words = [w for w in cell_type_lower.split() if w not in ['cells', 'cell', 't', 'b']]
+                for word in words:
+                    if len(word) > 3 and word in q_lower:
+                        # Longer, more specific words get higher scores
+                        score += len(word) * 10
+
+            # Skip if no match
+            if score == 0:
+                continue
+
+            # Penalty for generic terms that match too broadly
+            generic_penalty = 0
+            if cell_type_lower.endswith(' cells') and score < 500:
+                # Only matched on non-specific word
+                generic_penalty = 50
+
+            final_score = score - generic_penalty
+            if final_score > 0:
+                scored_matches.append((final_score, cell_type))
+
+        # Sort by score descending
+        scored_matches.sort(reverse=True, key=lambda x: x[0])
+
+        # Return top matches
+        result = [ct for score, ct in scored_matches[:5]]
+        return result
+
+    def _extract_pathway(self, question: str) -> str:
+        """Extract pathway name from question."""
+        q_lower = question.lower().replace("-", "").replace("_", "").replace(" ", "")
+        pathways = {
+            "nfkb": "NFkB",
+            "nfκb": "NFkB",
+            "mtor": "mTOR",
+            "jakstat": "JAK-STAT",
+            "tgfb": "TGF-beta",
+            "wnt": "Wnt",
+            "p53": "p53",
+            "glycolysis": "glycolysis",
+            "hypoxia": "hypoxia"
+        }
+
+        for pattern, name in pathways.items():
+            if pattern in q_lower:
+                return name
+
+        return "unknown"
+
+    def _build_context(self, result: Dict) -> str:
+        """
+        Flattens complex analysis results into a text context for the LLM.
+        Does NOT try to write sentences. Just lists facts.
+        """
+        context_lines = []
+        
+        # 1. Handle Gene Tracing
+        if result["query_type"] == "gene_trace":
+            for gene, data in result["results"].items():
+                context_lines.append(f"--- Analysis for Gene: {gene} ---")
+                
+                # Signatures
+                sigs = data.get("found_in_signatures", [])
+                if sigs:
+                    context_lines.append(f"FACT: {gene} is present in {len(sigs)} signatures, including: " + 
+                                       ", ".join([f"{s['signature']} ({s['cell_type']})" for s in sigs[:5]]))
+                
+                # Continuous Effects (The "Why")
+                cont_effects = data.get("continuous_effects", [])
+                credible_cont = [e for e in cont_effects if e.get("credible")]
+                for eff in credible_cont:
+                    direction = "increases" if eff["slope"] > 0 else "decreases"
+                    context_lines.append(f"FACT: Expression {direction} with BMI in {eff['cell_type']} "
+                                       f"(Signature: {eff['signature']}, Slope: {eff['slope']:.3f}).")
+                
+                # Survival
+                surv_assocs = data.get("survival_associations", [])
+                sig_surv = [e for e in surv_assocs if e.get("significant")]
+                for eff in sig_surv:
+                    outcome = "worse" if eff["hr"] > 1 else "better"
+                    context_lines.append(f"FACT: Higher levels associated with {outcome} survival in {eff['cell_type']} "
+                                       f"(HR: {eff['hr']:.2f}, P: {eff['hr_p']:.4f}).")
+
+        # 2. Handle Cell Analysis Results
+        elif result["query_type"] == "cell_analysis":
+            for cell, data in result["results"].items():
+                if "hierarchy" in cell or "contradictions" in cell:
+                    continue 
+                    
+                context_lines.append(f"--- Analysis for Cell Type: {cell} ---")
+                
+                # Add Categorical Changes
+                if "categorical_effects" in data:
+                    cat_effects = data["categorical_effects"]
+                    credible_cat = [e for e in cat_effects if e.get("credible")]
+                    if not credible_cat:
+                         context_lines.append(f"FACT: No credible abundance changes found for {cell} across BMI categories.")
+                    for eff in credible_cat:
+                        context_lines.append(f"FACT: {cell} abundance changes by {eff['mean']:.2f} in {eff['comparison']} conditions (HDI: {eff['hdi_lower']:.2f} to {eff['hdi_upper']:.2f}).")
+                
+                # Add Continuous Slopes
+                if "continuous_effects" in data:
+                    cont_effects = data["continuous_effects"]
+                    credible_cont = [e for e in cont_effects if e.get("credible")]
+                    for sig in credible_cont:
+                        context_lines.append(f"FACT: {sig['signature']} pathway activity changes with BMI (Slope: {sig['slope']:.3f}).")
+
+        # 3. Handle Signature Search Results
+        elif result["query_type"] == "signature_query":
+            sig_data = result["results"].get("signature", {})
+            genes_data = result["results"].get("genes", {})
+            
+            sig_name = sig_data.get("signature", "Unknown")
+            context_lines.append(f"--- Analysis for Signature: {sig_name} ---")
+            
+            # Genes
+            if "matches" in genes_data and genes_data["matches"]:
+                 genes = genes_data["matches"][0].get("genes", [])
+                 context_lines.append(f"FACT: Signature contains {len(genes)} genes, including: {', '.join(genes[:10])}.")
+
+            # Cell Types
+            cell_types = sig_data.get("cell_types_with_signature", [])
+            context_lines.append(f"FACT: Found in cell types: {', '.join(cell_types[:5])}.")
+            
+            # Changes
+            for ct, changes in sig_data.get("changes_by_cell_type", {}).items():
+                cont = changes.get("continuous", [])
+                credible = [c for c in cont if c.get("credible")]
+                for c in credible:
+                     context_lines.append(f"FACT: In {ct}, signature activity changes with BMI (Slope: {c['slope']:.3f}).")
+
+        # 4. Handle Pathway Results
+        elif result["query_type"] == "pathway_analysis":
+             surv_data = result["results"].get("pathway_survival", {})
+             pathway = surv_data.get("pathway", "Unknown")
+             context_lines.append(f"--- Analysis for Pathway: {pathway} ---")
+             
+             assocs = surv_data.get("survival_associations", [])
+             sig_assocs = [a for a in assocs if a.get("significant")]
+             
+             if sig_assocs:
+                 for a in sig_assocs:
+                     outcome = "worse" if a["hr"] > 1 else "better"
+                     context_lines.append(f"FACT: Pathway associated with {outcome} survival in {a['cell_type']} (HR: {a['hr']:.2f}).")
+             else:
+                 context_lines.append("FACT: No significant survival associations found for this pathway.")
+        
+        # 5. Fallbacks
+        else:
+            context_lines.append("FACT: No specific biological data found for this specific query structure.")
+            if "results" in result and "available_cell_types" in result["results"]:
+                 context_lines.append(f"FACT: Database contains {len(result['results']['available_cell_types'])} cell types.")
+
+        return "\n".join(context_lines)
+
+    def _build_narrative(self, result: Dict) -> List[str]:
+        """
+        Build a simple narrative from results when LLM is not available.
+        Fallback method that creates basic summary.
+        """
+        narrative = []
+        query_type = result.get("query_type", "unknown")
+        results = result.get("results", {})
+
+        if query_type == "cell_analysis":
+            for key, data in list(results.items())[:2]:
+                if not isinstance(data, dict) or "_" in key:
+                    continue
+
+                # Count findings
+                cat_count = len([e for e in data.get("categorical_effects", []) if e.get("credible")])
+                cont_count = len([e for e in data.get("continuous_effects", []) if e.get("credible")])
+
+                narrative.append(
+                    f"Analysis of {key}: Found {cat_count} credible categorical effects "
+                    f"and {cont_count} credible continuous BMI dose-response effects."
+                )
+
+        elif query_type == "gene_trace":
+            for gene, data in list(results.items())[:2]:
+                if isinstance(data, dict):
+                    found_in = data.get("found_in_signatures", [])
+                    if found_in:
+                        narrative.append(
+                            f"{gene} found in {len(found_in)} signatures across "
+                            f"{len(data.get('cell_types_affected', []))} cell types."
+                        )
+
+        if not narrative:
+            narrative.append("Data retrieved. See detailed results.")
+
+        return narrative
+
+    def generate_llm_response(self, user_question: str, analysis_result: Dict) -> str:
+        """
+        Sends the data context + user question to the LLM for a natural reply.
+        """
+        if not self.client:
+            return "Error: LLM client not initialized."
+
+        # 1. Get the facts
+        data_context = self._build_context(analysis_result)
+        
+        # 2. Construct the Prompt
+        system_prompt = f"""
+        You are an expert Biologist and Data Scientist. 
+        I will provide you with RAW DATA facts extracted from a single-cell analysis database.
+        
+        YOUR JOB: 
+        Answer the user's question based ONLY on these facts. 
+        - Do not hallucinate biology that isn't in the facts.
+        - Synthesize the trends (e.g., if Apoptosis is up and Abundance is down, mention that link).
+        - Be professional but conversational.
+        - If the facts say "No credible effects", state clearly that no significant changes were observed.
+        
+        DATA CONTEXT:
+        {data_context}
+        """
+        
+        # 3. Call the LLM
+        try:
+            response = self.client.chat.completions.create(
+                model="groq/compound-mini",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_question}
+                ],
+                temperature=0.3, # Keep it low for factual accuracy
+                max_tokens=500
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error generating response: {str(e)}"
+
+    def _suggest_followups(self, result: Dict) -> List[str]:
+        """Suggest follow-up questions."""
+        suggestions = []
+
+        if result["query_type"] == "gene_trace":
+            suggestions.append("Would you like to see survival associations for these gene-containing signatures?")
+            suggestions.append("Would you like to explore how these genes change across BMI categories?")
+
+        elif result["query_type"] == "cell_analysis":
+            suggestions.append("Would you like to see cell-cell interactions for these cell types?")
+            suggestions.append("Would you like to examine specific signatures in more detail?")
+            suggestions.append("Would you like to see survival associations?")
+
+        elif result["query_type"] == "signature_query":
+            suggestions.append("Would you like to see how this signature changes with BMI?")
+            suggestions.append("Would you like to explore survival associations for this signature?")
+
+        return suggestions
+
+
+# ================================================================================
+# ========================= CONVENIENCE FUNCTIONS ================================
+# ================================================================================
+
+def create_agent(data_dir: str = None) -> DynamicAnalysisAgent:
+    """Create a new DynamicAnalysisAgent instance."""
+    return DynamicAnalysisAgent(data_dir or DATA_DIR)
+
+
+def quick_query(question: str) -> Dict:
+    """Quick query - creates agent and answers question."""
+    agent = create_agent()
+    return agent.answer(question)
+
+
+def trace_gene(gene_symbol: str) -> Dict:
+    """Trace a gene through all analyses."""
+    agent = create_agent()
+    return agent.engine.trace_gene(gene_symbol)
+
+
+def analyze_cell_type(cell_type: str) -> Dict:
+    """Get comprehensive analysis for a cell type."""
+    agent = create_agent()
+    return agent.engine.get_cell_type_analysis(cell_type)
+
+
+# ================================================================================
+# ========================= DEMO ================================================
+# ================================================================================
+
+if __name__ == "__main__":
+    print("=" * 80)
+    print("DYNAMIC ANALYSIS AGENT - DEMO")
+    print("=" * 80)
+
+    agent = create_agent()
+
+    print("\n### DATABASE STATS ###")
+    stats = agent.get_database_stats()
+    for key, value in stats.items():
+        print(f"  {key}: {value}")
+
+    print("\n### GENE TRACE: IKBKB ###")
+    result = agent.engine.trace_gene("IKBKB")
+    print(f"  Found in {len(result['found_in_signatures'])} signatures")
+    print(f"  Cell types: {result['cell_types_affected'][:5]}")
+    if result.get("continuous_effects"):
+        cred = [e for e in result["continuous_effects"] if e.get("credible")]
+        print(f"  Credible continuous effects: {len(cred)}")
+
+    print("\n### CELL TYPE ANALYSIS: CD4+ T CELLS ###")
+    result = agent.engine.get_cell_type_analysis("CD4+ T cells")
+    print(f"  Matched: {result['matched_cell_types']}")
+    print(f"  Related: {result['related_cell_types'][:5]}")
+    print(f"  Categorical effects: {len(result['categorical_effects'])}")
+    print(f"  Continuous effects: {len(result['continuous_effects'])}")
+
+    print("\n### HIERARCHY DISCOVERY: CD4+ T CELLS ###")
+    hierarchy = agent.engine.discover_cell_type_hierarchy("CD4+ T cells")
+    print(f"  Children: {hierarchy['hierarchy']['children']}")
+    print(f"  Siblings: {hierarchy['hierarchy']['siblings'][:5]}")
+    print(f"  Related: {hierarchy['hierarchy']['related'][:5]}")
+
+    print("\n### CONTRADICTIONS: CD4+ T CELLS ###")
+    contradictions = agent.engine.find_contradictions("CD4+ T cells")
+    print(f"  Found {len(contradictions)} contradictions")
+    for c in contradictions[:2]:
+        print(f"  - {c['type']}: {c['interpretation']}")
+
+    print("\n" + "=" * 80)
+    print("DEMO COMPLETE")
+    print("=" * 80)

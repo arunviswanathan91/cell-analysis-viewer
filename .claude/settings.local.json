@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c:*)",
+      "Bash(ls:*)",
+      "Bash(du:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''c:\\\\Users\\\\arunv\\\\OneDrive\\\\Documents\\\\GitHub\\\\cell-analysis-viewer\\\\data2'' -Recurse | Measure-Object -Property Length -Sum | Select-Object @{Name=''Size \\(MB\\)'';Expression={$_Sum/1MB}}\")",
+      "Bash(git -C \"c:\\\\Users\\\\arunv\\\\OneDrive\\\\Documents\\\\GitHub\\\\cell-analysis-viewer\" status --short)",
+      "Bash(git -C \"c:\\\\Users\\\\arunv\\\\OneDrive\\\\Documents\\\\GitHub\\\\cell-analysis-viewer\" ls-files)",
+      "Bash(git -C:*)",
+      "Bash(powershell:*)",
+      "Bash(xargs -I {} sh -c 'echo \"\"{}\"\" && ls -lh \"\"{}\"\" | awk \"\"{print \\\\$5}\"\"')",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}

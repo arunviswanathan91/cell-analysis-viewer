@@ -1,0 +1,29 @@
+# Core dependencies
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+plotly>=5.18.0
+scipy>=1.10.0
+
+# Optional visualization
+arviz>=0.16.0
+lifelines>=0.27.0
+statsmodels>=0.14.0
+
+# Data processing
+pyarrow>=14.0.0
+duckdb>=0.9.0
+
+# Fuzzy matching
+rapidfuzz>=3.0.0
+
+# Remote RAG HTTP client (no local indexing needed)
+requests>=2.32.0
+
+# Groq client
+groq>=0.13.0
+python-dotenv>=1.0.0
+
+# Chord diagram rendering
+holoviews>=1.18.0
+bokeh>=3.0.0
