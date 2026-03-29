@@ -7114,18 +7114,57 @@ def main():
 
     st.sidebar.markdown("---")
 
-    with st.sidebar.expander("✉️ Contact the Author", expanded=False):
-        with st.form("contact_form", clear_on_submit=True):
-            sender_name = st.text_input("Your Name")
-            subject = st.text_input("Subject")
-            message = st.text_area("Message", height=120)
-            submitted = st.form_submit_button("Send Message")
-        if submitted:
-            if sender_name.strip() and subject.strip() and message.strip():
-                sent, status = _try_send_contact_email(sender_name.strip(), subject.strip(), message.strip())
-                st.success("✅ Thank you! Your message has been received.")
-            else:
-                st.warning("Please fill in all fields before sending.")
+    with st.sidebar.expander("Contact the Author", expanded=False):
+        components.html("""
+        <style>
+          * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+          label { display: block; margin-bottom: 3px; color: #555; font-size: 12px; }
+          input, textarea {
+            width: 100%; padding: 6px 8px; margin-bottom: 10px;
+            border: 1px solid #d0d0d0; border-radius: 4px; font-size: 13px;
+            background: #fafafa; color: #111;
+          }
+          textarea { height: 72px; resize: vertical; }
+          button {
+            background: #1f6feb; color: white; padding: 7px 0;
+            border: none; border-radius: 4px; cursor: pointer;
+            font-size: 13px; width: 100%;
+          }
+          button:disabled { background: #aaa; cursor: not-allowed; }
+          #st { margin-top: 8px; font-size: 12px; text-align: center; }
+        </style>
+        <form id="cf">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="your@email.com" />
+          <label>Message</label>
+          <textarea name="message" required placeholder="Your message"></textarea>
+          <button type="submit" id="btn">Send</button>
+          <div id="st"></div>
+        </form>
+        <script>
+          document.getElementById('cf').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn');
+            const st  = document.getElementById('st');
+            btn.disabled = true; btn.textContent = 'Sending...';
+            try {
+              const res = await fetch('https://formspree.io/f/xreopraq', {
+                method: 'POST', body: new FormData(this),
+                headers: { 'Accept': 'application/json' }
+              });
+              if (res.ok) {
+                st.style.color = '#2d7d2d';
+                st.textContent = 'Message sent. Thank you.';
+                this.reset();
+              } else { throw new Error(); }
+            } catch(_) {
+              st.style.color = '#c0392b';
+              st.textContent = 'Failed to send. Please try again.';
+            }
+            btn.disabled = false; btn.textContent = 'Send';
+          });
+        </script>
+        """, height=290)
 
     # Spacer div (expands when header becomes fixed)
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
@@ -7140,13 +7179,43 @@ def main():
     # Info box
     st.markdown("""
     <div class="info-box">
-        <h3>📊 Interactive Analysis Platform</h3>
-        <p>Exploring the relationship between BMI, tumor microenvironment, cell types, and transcriptomic changes in pancreatic ductal 
-        adenocarcinoma (PDAC). Modes available 🔍 Signature Explorer, 📊 Statistical Analysis, 🧬 Signature Survival. Select the modes from 
-        sidebar and explore the model. All visualizations powered by Plotly: Hover for details | Zoom with box select | Pan with click-drag | 
-        Reset with double-click</p>
+        <p>
+        This platform accompanies a study characterising obesity-driven remodeling of the tumor microenvironment
+        in pancreatic ductal adenocarcinoma (PDAC). Results are derived from a Bayesian hierarchical model
+        applied to the CPTAC-PAAD cohort (140 samples). Select an analysis module from the sidebar to explore
+        cell-type-resolved BMI effects, dose-response models, cell-cell interaction networks, and survival associations.
+        </p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/arunviswanathan91/cell-analysis-viewer" target="_blank"
+               style="color: #1f6feb; text-decoration: none; margin-right: 20px;">
+               Viewer repository
+            </a>
+            <a href="https://github.com/arunviswanathan91/obese-model" target="_blank"
+               style="color: #1f6feb; text-decoration: none;">
+               Analysis code repository
+            </a>
+        </p>
     </div>
     """, unsafe_allow_html=True)
+
+    # Screenshot gallery
+    _gallery_tabs = st.tabs([
+        "Interactome — Chord Diagram",
+        "Interactome — Network",
+        "Signature Explorer",
+        "Survival Analysis",
+        "Ask the Model",
+    ])
+    _gallery_images = [
+        "images/Screenshot 2026-03-29 230013.png",
+        "images/Screenshot 2026-03-29 230102.png",
+        "images/Screenshot 2026-03-29 230240.png",
+        "images/Screenshot 2026-03-25 195339.png",
+        "images/Screenshot 2026-03-29 232128.png",
+    ]
+    for _tab, _img in zip(_gallery_tabs, _gallery_images):
+        with _tab:
+            st.image(_img, width="stretch")
     
     # Route to appropriate analysis mode
     if analysis_mode == "Signature Explorer":
