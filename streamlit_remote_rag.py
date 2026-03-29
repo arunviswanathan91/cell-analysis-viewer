@@ -49,8 +49,13 @@ def _resolve_space_url() -> str:
 def load_remote_rag() -> RemoteRAG:
     """
     Load and cache the RAG client for the app session.
+    On first load, wakes the HuggingFace Space if it is sleeping.
     """
-    return get_rag_client(_resolve_space_url())
+    rag = get_rag_client(_resolve_space_url())
+    # Attempt a quick health check; if not ready, wait up to 3 minutes
+    if not rag.is_ready():
+        rag.wait_until_ready(max_wait_s=180, poll_s=5)
+    return rag
 
 
 # ──────────────────────────────────────────────
@@ -75,12 +80,20 @@ def render_rag_sidebar_status(rag: Optional[RemoteRAG] = None):
             st.success(f"🧠 RAG ready — {docs:,} docs  |  Groq {groq}")
         elif status == "initializing":
             st.warning("⏳ RAG Space is initializing…")
-        else:
-            err = h.get("error", "unknown error")
-            st.error(f"❌ RAG offline: {err}")
-            if st.button("Retry connection", key="rag_retry"):
+            if st.button("Check again", key="rag_retry_init"):
                 st.cache_resource.clear()
                 st.rerun()
+        else:
+            err = h.get("error", "unknown error")
+            st.warning("⏳ RAG Space is waking up — this may take up to 60 seconds on first use.")
+            if st.button("Wake up Space", key="rag_retry"):
+                with st.spinner("Waking up the AI Space…"):
+                    ready = rag.wait_until_ready(max_wait_s=120, poll_s=5)
+                if ready:
+                    st.cache_resource.clear()
+                    st.rerun()
+                else:
+                    st.error(f"Space did not respond in time. Last error: {err}")
 
 
 # ──────────────────────────────────────────────
