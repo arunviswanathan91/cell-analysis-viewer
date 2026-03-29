@@ -17,6 +17,25 @@ The statistical modeling code and upstream pipeline are maintained in a separate
 
 ---
 
+## Screenshots
+
+**Interactome — Chord Diagram**
+![Interactome chord diagram](images/Screenshot%202026-03-29%20230013.png)
+
+**Interactome — Interaction Network**
+![Interactome network](images/Screenshot%202026-03-29%20230102.png)
+
+**Signature Explorer**
+![Signature explorer](images/Screenshot%202026-03-29%20230240.png)
+
+**Survival Analysis**
+![Survival analysis](images/Screenshot%202026-03-25%20195339.png)
+
+**Ask the Model**
+![Ask the model](images/Screenshot%202026-03-29%20232128.png)
+
+---
+
 ## Analysis Modules
 
 The application provides six analysis interfaces accessible from the sidebar.

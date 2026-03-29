@@ -7198,24 +7198,6 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Screenshot gallery
-    _gallery_tabs = st.tabs([
-        "Interactome — Chord Diagram",
-        "Interactome — Network",
-        "Signature Explorer",
-        "Survival Analysis",
-        "Ask the Model",
-    ])
-    _gallery_images = [
-        "images/Screenshot 2026-03-29 230013.png",
-        "images/Screenshot 2026-03-29 230102.png",
-        "images/Screenshot 2026-03-29 230240.png",
-        "images/Screenshot 2026-03-25 195339.png",
-        "images/Screenshot 2026-03-29 232128.png",
-    ]
-    for _tab, _img in zip(_gallery_tabs, _gallery_images):
-        with _tab:
-            st.image(_img, width="stretch")
     
     # Route to appropriate analysis mode
     if analysis_mode == "Signature Explorer":
