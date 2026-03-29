@@ -1,111 +1,103 @@
-# 🔬 Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis
+# Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis Viewer
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://obese-pdac-model.streamlit.app/)
 
-## 📊 Interactive Analysis Platform
+This repository contains an interactive Streamlit application that accompanies a manuscript investigating obesity-driven remodeling of the tumor microenvironment in pancreatic ductal adenocarcinoma (PDAC). The viewer allows readers to explore cell-type-resolved molecular signatures, BMI-associated effects, and survival-relevant patterns from the published analysis.
 
-This repository accompanies a manuscript investigating **obesity-driven remodeling of the tumor microenvironment in pancreatic ductal adenocarcinoma (PAAD)**. It provides an **interactive Streamlit-based viewer** that allows readers to explore cell-type–resolved molecular signatures, BMI-associated effects, and survival-relevant patterns.
-
-The application is fully web-based and requires no local installation.
+The statistical modeling code and upstream pipeline are maintained in a separate repository: [obese-model](https://github.com/arunviswanathan91/obese-model)
 
 ---
 
-## 📖 About the Analysis
+## Dataset
 
-The interactive viewer enables exploration of relationships between **body mass index (BMI)**, **tumor microenvironment cell types**, and **metabolic and functional gene signatures** in pancreatic cancer.
-
-All visualizations are rendered using **Plotly**, supporting:
-
-* Hover for detailed values
-* Zoom using box selection
-* Pan via click-drag
-* Reset views with double-click
+- **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
+- **Samples:** 140 tumor samples with clinical annotation
+- **Cell types:** Immune and non-immune populations inferred via BayesPrism deconvolution
+- **Signatures:** 30+ metabolic and functional gene signatures per cell type
 
 ---
 
-## 🧬 Data & Methods Overview
+## Analysis Modules
 
-This analysis integrates multiple computational frameworks to characterize obesity-associated tumor microenvironment alterations.
+The application provides six analysis interfaces accessible from the sidebar.
 
-### 🔹 BayesPrism — Cell-Type Deconvolution
+**Signature Explorer** — Browse the gene signature database. View signature definitions and composition across cell types.
 
-BayesPrism is a fully Bayesian framework used to infer tumor microenvironment composition from bulk RNA-seq data. It estimates both **cell-type proportions** and **cell-type–specific gene expression profiles** for each tumor sample.
+**Categorical Analysis** — Compare BMI groups (Normal < 25, Overweight 25-30, Obese >= 30) across cell types and signatures. Displays posterior effect sizes, 95% Highest Density Intervals (HDI), heatmaps, and ridge plots from the Bayesian hierarchical model.
 
-**Reference:** Danko-Lab/BayesPrism
+**Continuous Analysis** — Treats BMI as a continuous variable. Displays the estimated slope (effect per 1 SD increase in BMI) from the dose-response model.
 
----
+**Signature Survival Analysis** — Cox proportional hazards regression linking signature expression and BMI to clinical outcomes. Displays hazard ratios and confidence intervals.
 
-### 🔹 STABL — Stability-Driven Feature Selection
+**Interactome Analysis** — Cell-cell interaction network visualization based on ligand-receptor pair enrichment. Supports chord diagram rendering and comparison between BMI groups.
 
-STABL identifies **robust BMI-associated molecular features** using repeated subsampling and bootstrapping. This approach prioritizes features with consistent effects across resampled datasets, thereby reducing false-positive discoveries.
-
-**Reference:** gregbellan/Stabl
+**Individual Interaction Explorer** — Gene-level drill-down for specific cell-cell pairs with detailed enrichment statistics.
 
 ---
 
-### 🔹 Bayesian Hierarchical Modeling — Effect Size Estimation
+## Ask the Model
 
-A three-group Bayesian hierarchical model is used to compare:
-
-* Normal BMI (< 25)
-* Overweight (25–30)
-* Obese (≥ 30)
-
-The model estimates **cell-type–specific obesity effects** on molecular signatures while accounting for between-sample variability. Posterior distributions are inferred using **Markov Chain Monte Carlo (MCMC)** sampling.
-
-**References:**
-
-* Bayesian hierarchical modeling
-* Markov Chain Monte Carlo
+In addition to the analysis interfaces, the application includes a conversational interface powered by a remote RAG (retrieval-augmented generation) system. It queries a pre-indexed document store of 73,000+ records derived from all analysis outputs. Queries are routed to the relevant analysis type and answered using a Groq-hosted LLM (Llama 3.3-70B).
 
 ---
 
-### 🔹 Diagnostic Metrics
+## Computational Methods
 
-Model validity and convergence are assessed using:
+**BayesPrism** — Bayesian cell-type deconvolution framework applied to bulk RNA-seq data to estimate cell-type proportions and cell-type-specific expression profiles per sample.
 
-* **R-hat** (target < 1.01 for good convergence)
-* **Effective Sample Size (ESS)** (> 400 recommended)
-* **Energy diagnostic** (Hamiltonian Monte Carlo sampling health)
-* **95% Highest Density Intervals (HDI)** as Bayesian credible intervals
+**STABL** — Stability-driven feature selection using repeated subsampling and bootstrapping to identify robust BMI-associated molecular features.
 
----
+**Bayesian Hierarchical Modeling** — MCMC-based three-group model estimating cell-type-specific obesity effects on signature scores while accounting for between-sample variability.
 
-## 📊 Dataset Summary
+**Convergence Diagnostics** — Model validity assessed via R-hat (target < 1.01), Effective Sample Size (> 400), and Hamiltonian Monte Carlo energy diagnostics.
 
-* **Source:** CPTAC Pancreatic Adenocarcinoma (PAAD) cohort
-* **Samples:** 140 tumor samples with clinical annotation
-* **Cell Types:** Immune and non-immune populations inferred via deconvolution
-* **Signatures:** 30+ metabolic and functional gene signatures per cell type
+**Cox Proportional Hazards** — Survival analysis linking BMI group and signature expression to patient outcomes.
 
 ---
 
-## 🎯 Analysis Workflow
+## Local Setup
 
-1. **Deconvolution:** BayesPrism → cell-type proportions
-2. **Expression processing:** TPM normalization → gene expression matrices
-3. **Signature scoring:** Gene aggregation → Z-score–based signature scores
-4. **Feature selection:** STABL → robust BMI-associated features
-5. **Modeling:** Bayesian hierarchical modeling → effect sizes with uncertainty
-6. **Validation:** MCMC diagnostics → convergence assessment
-7. **Survival analysis:** Cox proportional hazards regression → clinical relevance
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app_with_explorer.py
+```
 
----
+The app runs at `http://localhost:8501`.
 
-## 🧭 Interactive Cell Analysis Viewer
+A `.devcontainer/devcontainer.json` is included for VS Code dev container usage with Python 3.11.
 
-The Streamlit application supports:
+### Environment Variables
 
-* Real-time interactive heatmaps and summary plots
-* Cell-type–resolved inspection of BMI effects
-* Exploration of effect sizes, uncertainty estimates, and survival associations
+| Variable | Required | Description |
+| --- | --- | --- |
+| `GROQ_API_KEY` | Yes (for Ask the Model) | API key from console.groq.com |
+| `HF_SPACE_URL` | No | Remote RAG endpoint. Defaults to the hosted HuggingFace Space. |
+| `SEMANTIC_PROFILE` | No | Config preset: `default`, `conservative`, `aggressive`, or `dev` |
 
-🔗 **Launch the interactive viewer:**
-
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://obese-pdac-model.streamlit.app/)
+For Streamlit Cloud deployment, set these in `.streamlit/secrets.toml`.
 
 ---
 
-## 📌 Citation
+## Project Structure
+
+```text
+cell-analysis-viewer/
+├── streamlit_app_with_explorer.py   # Main application entry point
+├── streamlit_remote_rag.py          # RAG UI components
+├── config.py                        # Semantic config and LLM settings
+├── requirements.txt
+├── src/
+│   ├── data_backend.py              # DuckDB and Parquet interface
+│   ├── remote_rag.py                # Remote RAG client
+│   ├── true_rag.py                  # Local RAG with ChromaDB
+│   └── vocabulary.py                # Cell type vocabulary
+├── data/                            # Raw analysis outputs
+└── data2/                           # Parquet and DuckDB views for the app
+    └── agent.db                     # DuckDB database
+```
+
+---
+
+## Citation
 
 Citation details will be provided upon publication of the associated manuscript.
