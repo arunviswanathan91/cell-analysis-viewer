@@ -28,9 +28,6 @@ The statistical modeling code and upstream pipeline are maintained in a separate
 **Signature Explorer**
 ![Signature explorer](images/Screenshot%202026-03-29%20230240.png)
 
-**Survival Analysis**
-![Survival analysis](images/Screenshot%202026-03-25%20195339.png)
-
 **Ask the Model**
 ![Ask the model](images/Screenshot%202026-03-29%20232128.png)
 
