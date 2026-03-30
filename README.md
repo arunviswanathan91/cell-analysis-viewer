@@ -16,14 +16,10 @@ The statistical modeling code and upstream pipeline are maintained in a separate
 - **Signatures:** 30+ metabolic and functional gene signatures per cell type
 
 ---
-
-## Screenshots
-
 | | |
 |:---:|:---:|
 | <img src="images/Screenshot%202026-03-29%20230013.png" width="350" alt="Interactome chord diagram"><br><sub><strong>1. Interactome — Chord Diagram</strong></sub> | <img src="images/Screenshot%202026-03-29%20230102.png" width="350" alt="Interactome network"><br><sub><strong>2. Interactome — Interaction Network</strong></sub> |
 | <img src="images/Screenshot%202026-03-29%20230240.png" width="350" alt="Signature explorer"><br><sub><strong>3. Signature Explorer</strong></sub> | <img src="images/Screenshot%202026-03-29%20232128.png" width="350" alt="Ask the model"><br><sub><strong>4. Ask the Model</strong></sub> |
-
 ---
 
 ## Analysis Modules
