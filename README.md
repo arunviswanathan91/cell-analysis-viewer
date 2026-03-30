@@ -1,6 +1,6 @@
 # Obesity-Driven Pancreatic Cancer: Cell-Signature Analysis Viewer
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://obese-pdac-model.streamlit.app/)
+[![Open in Streamlit](https://img.shields.io/badge/Open%20in%20Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://obese-pdac-model.streamlit.app/)
 
 This repository contains an interactive Streamlit application that accompanies a manuscript investigating obesity-driven remodeling of the tumor microenvironment in pancreatic ductal adenocarcinoma (PDAC). The viewer allows readers to explore cell-type-resolved molecular signatures, BMI-associated effects, and survival-relevant patterns from the published analysis.
 
