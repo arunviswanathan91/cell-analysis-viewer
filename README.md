@@ -20,17 +20,16 @@ The statistical modeling code and upstream pipeline are maintained in a separate
 ## Screenshots
 
 **Interactome — Chord Diagram**
-![Interactome chord diagram](images/Screenshot%202026-03-29%20230013.png)
+<img src="images/Screenshot%202026-03-29%20230013.png" width="550" alt="Interactome chord diagram">
 
 **Interactome — Interaction Network**
-![Interactome network](images/Screenshot%202026-03-29%20230102.png)
+<img src="images/Screenshot%202026-03-29%20230102.png" width="550" alt="Interactome network">
 
 **Signature Explorer**
-![Signature explorer](images/Screenshot%202026-03-29%20230240.png)
+<img src="images/Screenshot%202026-03-29%20230240.png" width="550" alt="Signature explorer">
 
 **Ask the Model**
-![Ask the model](images/Screenshot%202026-03-29%20232128.png)
-
+<img src="images/Screenshot%202026-03-29%20232128.png" width="550" alt="Ask the model">
 ---
 
 ## Analysis Modules
