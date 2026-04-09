@@ -7,6 +7,11 @@ This repository contains an interactive Streamlit application that accompanies a
 
 The statistical modeling code and upstream pipeline are maintained in a separate repository: [obese-model](https://github.com/arunviswanathan91/obese-model)
 
+<p align="center">
+  <img src="images/abstract.svg" width="550" alt="Abstract Image">
+  <br>
+  <sub><strong>Figure 1. </strong> Abstract illustration</sub>
+</p>
 ---
 
 ## Dataset
