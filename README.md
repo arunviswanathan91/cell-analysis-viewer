@@ -6,7 +6,6 @@
 This repository contains an interactive Streamlit application that accompanies a manuscript investigating obesity-driven remodeling of the tumor microenvironment in pancreatic ductal adenocarcinoma (PDAC). The viewer allows readers to explore cell-type-resolved molecular signatures, BMI-associated effects, and survival-relevant patterns from the published analysis.
 
 The statistical modeling code and upstream pipeline are maintained in a separate repository: [obese-model](https://github.com/arunviswanathan91/obese-model)
----
 <p align="center">
   <img src="images/abstract.svg" width="550" alt="Abstract Image">
   <br>
