@@ -1167,7 +1167,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 # JavaScript for scroll header effect
-components.html("""
+st.iframe("""
 <script>
 (function() {
     console.log('🎯 Starting scroll handler...');
@@ -1794,11 +1794,21 @@ def get_available_cells_continuous(compartment):
             if '||' in feat_str:
                 cells_with_results.add(feat_str.split('||')[0].strip().upper())
 
+    # Determine which columns to use for index and name (handle varying CSV schemas)
+    if 'celltype_idx' in celltype_map.columns and 'celltype_name' in celltype_map.columns:
+        idx_col = 'celltype_idx'
+        name_col = 'celltype_name'
+    elif len(celltype_map.columns) >= 2:
+        idx_col = celltype_map.columns[0]
+        name_col = celltype_map.columns[1]
+    else:
+        return []
+
     available_cells = []
     for idx in available_indices:
-        row = celltype_map[celltype_map['celltype_idx'] == idx]
+        row = celltype_map[celltype_map[idx_col] == idx]
         if not row.empty:
-            cell_name = row['celltype_name'].values[0]
+            cell_name = row[name_col].values[0]
             # Only include if there are also continuous_results rows for this cell
             if not cells_with_results or cell_name.upper() in cells_with_results:
                 available_cells.append(cell_name)
@@ -5277,7 +5287,7 @@ def render_signature_explorer():
         
         st.dataframe(
             summary_df[['Signature Name', 'Number of Genes', 'First 5 Genes']],
-            use_container_width=True,
+            width='stretch',
             height=min(600, len(summary_df) * 35 + 38)
         )
         
@@ -5376,7 +5386,7 @@ def render_signature_explorer():
                 hovermode='closest'
             )
             
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         
         st.markdown("---")
         
@@ -5635,7 +5645,7 @@ def render_signature_survival():
                 with cols[j]:
                     fig = fn(patient_data, selected_sig_display)
                     if fig:
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                         with st.expander("What does this plot mean?", expanded=False):
                             st.markdown(PLOT_EXPLANATIONS[name])
 
@@ -5762,7 +5772,7 @@ def render_continuous_analysis():
         with st.spinner("Loading chart..."):
             fig = plot_continuous_cell_heatmap(selected_cell, comp_data_cont)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
     
     # Tab 2: Ridge Plot
     with tabs[1]:
@@ -5780,7 +5790,7 @@ def render_continuous_analysis():
         with st.spinner("Loading chart..."):
             fig = plot_continuous_ridge_plot(selected_cell, comp_data_cont)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
     
     # Tab 3: Diagnostics - 2-Column Layout
     with tabs[2]:
@@ -5805,7 +5815,7 @@ def render_continuous_analysis():
             with st.spinner("Loading chart..."):
                 fig = plot_ess_rhat_continuous(comp_data_cont, selected_cell=selected_cell_display)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         with cont_col2:
             st.markdown("#### Energy")
@@ -5814,7 +5824,7 @@ def render_continuous_analysis():
             with st.spinner("Loading chart..."):
                 fig = plot_energy_diagnostic(comp_data_cont)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         # Row 2: Trace and Rank (side by side)
         cont_col3, cont_col4 = st.columns(2)
@@ -5826,7 +5836,7 @@ def render_continuous_analysis():
             with st.spinner("Loading chart..."):
                 fig = plot_trace_continuous(comp_data_cont, selected_cell_display)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         with cont_col4:
             st.markdown("#### Rank Plot")
@@ -5835,7 +5845,7 @@ def render_continuous_analysis():
             with st.spinner("Loading chart..."):
                 fig = plot_rank_continuous(comp_data_cont, selected_cell_display)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         # Row 3: Autocorrelation (full width)
         st.markdown("#### Autocorrelation")
@@ -5844,7 +5854,7 @@ def render_continuous_analysis():
         with st.spinner("Loading chart..."):
             fig = plot_autocorrelation_continuous(comp_data_cont, selected_cell_display)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
 
     st.markdown("---")
@@ -6305,7 +6315,7 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
     top_interactions['Enrichment.Ratio'] = top_interactions['Enrichment.Ratio'].round(2)
     top_interactions['Permutation.FDR'] = top_interactions['Permutation.FDR'].round(4)
     
-    st.dataframe(top_interactions, use_container_width=True, hide_index=True)
+    st.dataframe(top_interactions, width='stretch', hide_index=True)
     
     # Distribution plots
     st.markdown("---")
@@ -6332,7 +6342,7 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
         
         st.plotly_chart(
             fig,
-            use_container_width=True,
+            width='stretch',
             config={
                 "displaylogo": False,
                 "toImageButtonOptions": {
@@ -6361,7 +6371,7 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
             title_font=dict(size=16, color='#2c3e50', family='Arial Black'),
             font=dict(color='#2c3e50')
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
 
 # ==================================================================================
@@ -6499,7 +6509,7 @@ def render_interactome_analysis():
     
     fig = plot_interactome_sankey(filtered_data, dataset_choice, condition_filter)
     if fig:
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Statistics section
     st.markdown("---")
@@ -7023,7 +7033,7 @@ def render_individual_interaction():
                 )
                 if result_nw is not None:
                     fig_nw, nr_nw = result_nw
-                    components.html(
+                    st.iframe(
                         chord_html_with_hover(fig_nw, nr_nw),
                         height=690, scrolling=False
                     )
@@ -7048,7 +7058,7 @@ def render_individual_interaction():
                 )
                 if result_ow is not None:
                     fig_ow, nr_ow = result_ow
-                    components.html(
+                    st.iframe(
                         chord_html_with_hover(fig_ow, nr_ow),
                         height=690, scrolling=False
                     )
@@ -7115,7 +7125,7 @@ def main():
     st.sidebar.markdown("---")
 
     with st.sidebar.expander("Contact the Author", expanded=False):
-        components.html("""
+        st.iframe("""
         <style>
           * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
           label { display: block; margin-bottom: 3px; color: #555; font-size: 12px; }
@@ -7407,7 +7417,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_stabl_heatmap_interactive(selected_cell, sig_name, comp_data, clinical)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
         
         st.markdown("---")
         
@@ -7432,7 +7442,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
     
     
     # Tab 2: Ridge Plot
@@ -7462,7 +7472,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
             if fig:
-                st.plotly_chart(fig, use_container_width=False)
+                st.plotly_chart(fig, width='content')
             else:
                 st.info("ℹ️ Ridge plot not available for this selection.")
 
@@ -7497,7 +7507,7 @@ def main():
             with st.spinner("Loading chart..."):
                 fig = plot_ess_rhat_categorical(comp_data, selected_cell=selected_cell)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         with diag_col2:
             st.markdown("#### Energy")
@@ -7509,7 +7519,7 @@ def main():
             with st.spinner("Loading chart..."):
                 fig = plot_energy_diagnostic(comp_data)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
 
         # Row 2: Trace Plot (full width — needs space for many chains)
         st.markdown("#### Trace Plot")
@@ -7521,7 +7531,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_trace_diagnostic(comp_data, selected_cell=selected_cell)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         # Row 3: Rank Plot (full width)
         st.markdown("#### Rank Plot")
@@ -7533,7 +7543,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_rank_diagnostic(comp_data, selected_cell=selected_cell)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         # Row 3: Autocorrelation (full width)
         st.markdown("#### Autocorrelation")
@@ -7545,7 +7555,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_autocorrelation(comp_data, selected_cell=selected_cell, max_lag=40)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 
     # Tab 4: Gene BMI
@@ -7555,9 +7565,9 @@ def main():
         with st.spinner("Loading chart..."):
             fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
             if fig1:
-                st.plotly_chart(fig1, use_container_width=True)
+                st.plotly_chart(fig1, width='stretch')
             if fig2:
-                st.plotly_chart(fig2, use_container_width=True)
+                st.plotly_chart(fig2, width='stretch')
     
     # Tab 5: Gene Survival
     with tabs[4]:
@@ -7566,7 +7576,7 @@ def main():
         with st.spinner("Loading chart..."):
             fig = plot_gene_survival_interactive(genes, clinical, tpm)
             if fig:
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
     # Footer
     st.markdown("---")
