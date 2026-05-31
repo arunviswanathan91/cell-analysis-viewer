@@ -1798,17 +1798,24 @@ def get_available_cells_continuous(compartment):
     if 'celltype_idx' in celltype_map.columns and 'celltype_name' in celltype_map.columns:
         idx_col = 'celltype_idx'
         name_col = 'celltype_name'
-    elif len(celltype_map.columns) >= 2:
-        idx_col = celltype_map.columns[0]
-        name_col = celltype_map.columns[1]
     else:
-        return []
+        # Detect by dtype: numeric col = index, string/object col = name
+        numeric_cols = celltype_map.select_dtypes(include='number').columns.tolist()
+        string_cols = celltype_map.select_dtypes(include='object').columns.tolist()
+        if numeric_cols and string_cols:
+            idx_col = numeric_cols[0]
+            name_col = string_cols[0]
+        elif len(celltype_map.columns) >= 2:
+            idx_col = celltype_map.columns[0]
+            name_col = celltype_map.columns[1]
+        else:
+            return []
 
     available_cells = []
     for idx in available_indices:
         row = celltype_map[celltype_map[idx_col] == idx]
         if not row.empty:
-            cell_name = row[name_col].values[0]
+            cell_name = str(row[name_col].values[0])
             # Only include if there are also continuous_results rows for this cell
             if not cells_with_results or cell_name.upper() in cells_with_results:
                 available_cells.append(cell_name)
