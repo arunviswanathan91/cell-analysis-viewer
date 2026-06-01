@@ -1096,32 +1096,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 # JavaScript for scroll header effect
-st.iframe("""
+components.html("""
 <script>
 (function() {
-    console.log('🎯 Starting scroll handler...');
-    
     let ticking = false;
-    
+
     function getDoc() {
-        try {
-            return window.parent.document;
-        } catch (e) {
-            return document;
-        }
+        try { return window.parent.document; } catch (e) { return document; }
     }
-    
+
     function updateHeader() {
         try {
             const doc = getDoc();
             const scrollTop = window.parent.pageYOffset || doc.documentElement.scrollTop;
-            
-            const headers = doc.querySelectorAll('.main-header');
+            const headers  = doc.querySelectorAll('.main-header');
             const infoBoxes = doc.querySelectorAll('.info-box');
-            const spacers = doc.querySelectorAll('.header-spacer');
-            
-            console.log('Scroll:', scrollTop, 'Headers:', headers.length, 'InfoBoxes:', infoBoxes.length);
-            
+            const spacers  = doc.querySelectorAll('.header-spacer');
             if (!ticking) {
                 window.requestAnimationFrame(() => {
                     if (scrollTop > 150) {
@@ -1133,21 +1123,16 @@ st.iframe("""
                         infoBoxes.forEach(b => b.classList.remove('hidden'));
                         spacers.forEach(s => s.classList.remove('active'));
                     }
-                    
                     ticking = false;
                 });
                 ticking = true;
             }
-        } catch(e) {
-            console.error('Error:', e);
-        }
+        } catch(e) {}
     }
-    
+
     window.parent.addEventListener('scroll', updateHeader, { passive: true });
     setTimeout(updateHeader, 100);
     setInterval(updateHeader, 1000);
-    
-    console.log('✅ Scroll handler ready');
 })();
 </script>
 """, height=1)
@@ -6975,7 +6960,7 @@ def render_individual_interaction():
                 )
                 if result_nw is not None:
                     fig_nw, nr_nw = result_nw
-                    st.iframe(
+                    components.html(
                         chord_html_with_hover(fig_nw, nr_nw),
                         height=690, scrolling=False
                     )
@@ -7000,7 +6985,7 @@ def render_individual_interaction():
                 )
                 if result_ow is not None:
                     fig_ow, nr_ow = result_ow
-                    st.iframe(
+                    components.html(
                         chord_html_with_hover(fig_ow, nr_ow),
                         height=690, scrolling=False
                     )
