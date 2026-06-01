@@ -338,65 +338,6 @@ COMPARISON_KEYWORDS = {
 
 
 
-def render_global_ask_model_sidebar():
-    """Sidebar for Ask the Model mode — RemoteRAG version."""
-    st.sidebar.title("Ask the Model")
-
-    st.sidebar.caption("🤖 Model: llama-3.3-70b-versatile (Groq) via HF Space")
-
-    # Show live Space status
-    if REMOTE_RAG_AVAILABLE and _rag_client is not None:
-        render_rag_sidebar_status(_rag_client)
-    else:
-        st.sidebar.error("❌ RemoteRAG unavailable — check src/remote_rag.py is in repo")
-
-    st.sidebar.markdown("---")
-
-    # Source filter (replaces Analysis Domain + old model selector)
-    st.sidebar.markdown("### Optional Filters")
-    st.sidebar.caption("Leave as 'All' for free exploration across all data")
-
-    source_filter = st.sidebar.selectbox(
-        "Data Source:",
-        options=[
-            "All",
-            "bayesian",
-            "bayesian_continuous",
-            "bayesian_csvs",
-            "bayesian_csvs_continuous",
-            "clinical",
-            "interactome",
-            "signatures",
-            "stabl",
-            "survival",
-            "zscores",
-        ],
-        index=0,
-        key="remote_rag_source_filter",
-    )
-
-    compartment = st.sidebar.selectbox(
-        "Compartment context:",
-        options=["Any", "Immune Fine", "Immune Coarse", "Non-Immune"],
-        index=0,
-        key="remote_rag_compartment",
-    )
-
-    n_results = 10  # auto-managed: cell-type queries scan all docs, generic queries use top-10
-
-    st.sidebar.markdown("---")
-    if st.sidebar.button("🗑 Clear Chat", key="clear_remote_rag_chat", type="secondary"):
-        for k in list(st.session_state.keys()):
-            if "rag_global" in k:
-                del st.session_state[k]
-        st.rerun()
-
-    return {
-        "source_filter": None if source_filter == "All" else source_filter,
-        "compartment":   None if compartment == "Any" else compartment,
-        "n_results":     n_results,
-    }
-
 
 def _load_html_doc(filename: str) -> str | None:
     """Load an HTML doc from html_docs/ next to this script. Returns None if missing."""
@@ -442,49 +383,6 @@ def render_bayesian_explained():
     components.html(html, height=920, scrolling=True)
 
 
-def render_global_ask_model():
-    """Full-page Ask the Model interface — powered by RemoteRAG HF Space."""
-
-    st.markdown("""
-    <h1 class="main-header">Ask the Model</h1>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="info-box">
-        <h3>🧠 Remote RAG — Ask ANY Question</h3>
-        <p>Powered by a pre-indexed HuggingFace Space with <strong>73,108 documents</strong>
-        from the full CPTAC PAAD dataset. No local indexing. Answers in seconds.</p>
-        <p><strong>What's indexed:</strong> Bayesian BMI effects · STABL features ·
-        Cell-cell interactions · Survival associations · Z-score signatures ·
-        Clinical data · Gene expression · Cell type maps</p>
-        <p style="font-size:0.85em; color:#666;">
-        <em>Try: "Which cell types show the strongest BMI effect?" ·
-        "What signatures are associated with worse survival?" ·
-        "Compare CD8 T cells between obese and normal weight groups"</em></p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Sidebar controls
-    scope = render_global_ask_model_sidebar()
-
-    # Build context prefix from compartment selection
-    ctx = f"Compartment context: {scope['compartment']} |" if scope["compartment"] else ""
-
-    # Render the full chat UI
-    if REMOTE_RAG_AVAILABLE and _rag_client is not None:
-        render_rag_chat(
-            rag            = _rag_client,
-            context_prefix = ctx,
-            session_key    = "rag_global",
-            title          = "",          # header already shown above
-            n_results      = scope["n_results"],
-            source_filter  = scope["source_filter"],
-        )
-    else:
-        st.error("RemoteRAG not available. Check that `streamlit_remote_rag.py` and "
-                 "`src/remote_rag.py` are present in the repo.")
-        st.info("Space URL: https://arunviswanathan91-cell-analysis-rag-api.hf.space")
-
 
 # ==================================================================================
 # ============================= PAGE CONFIGURATION =================================
@@ -497,11 +395,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── Load RemoteRAG client (cached for session) ────────────────
-if REMOTE_RAG_AVAILABLE:
-    _rag_client = load_remote_rag()
-else:
-    _rag_client = None
 
 # Custom CSS - Advanced Material Design 3 + Creative Modern UI
 st.markdown("""
@@ -7132,24 +7025,7 @@ def render_individual_interaction():
 
 
 def main():
-    # Top-level MODE selector (Analysis vs Ask the Model)
-    st.sidebar.title("MODE")
-
-    app_mode = st.sidebar.radio(
-        "Select Mode:",
-        options=["Analysis", "Ask the Model"],
-        index=0,
-        key="top_level_mode"
-    )
-
-    # Route based on top-level mode
-    if app_mode == "Ask the Model":
-        # Full-page Ask the Model interface
-        render_global_ask_model()
-        return
-
-    # Analysis Mode - show analysis type selector
-    st.sidebar.markdown("---")
+    # Analysis type selector
     st.sidebar.title("Analysis Type")
 
     analysis_mode = st.sidebar.radio(
@@ -7186,58 +7062,6 @@ def main():
         st.sidebar.info("Drill into gene-level interactions for a specific cell pair")
 
     st.sidebar.markdown("---")
-
-    with st.sidebar.expander("Contact the Author", expanded=False):
-        st.iframe("""
-        <style>
-          * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-          label { display: block; margin-bottom: 3px; color: #555; font-size: 12px; }
-          input, textarea {
-            width: 100%; padding: 6px 8px; margin-bottom: 10px;
-            border: 1px solid #d0d0d0; border-radius: 4px; font-size: 13px;
-            background: #fafafa; color: #111;
-          }
-          textarea { height: 72px; resize: vertical; }
-          button {
-            background: #1f6feb; color: white; padding: 7px 0;
-            border: none; border-radius: 4px; cursor: pointer;
-            font-size: 13px; width: 100%;
-          }
-          button:disabled { background: #aaa; cursor: not-allowed; }
-          #st { margin-top: 8px; font-size: 12px; text-align: center; }
-        </style>
-        <form id="cf">
-          <label>Email</label>
-          <input type="email" name="email" required placeholder="your@email.com" />
-          <label>Message</label>
-          <textarea name="message" required placeholder="Your message"></textarea>
-          <button type="submit" id="btn">Send</button>
-          <div id="st"></div>
-        </form>
-        <script>
-          document.getElementById('cf').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btn');
-            const st  = document.getElementById('st');
-            btn.disabled = true; btn.textContent = 'Sending...';
-            try {
-              const res = await fetch('https://formspree.io/f/xreopraq', {
-                method: 'POST', body: new FormData(this),
-                headers: { 'Accept': 'application/json' }
-              });
-              if (res.ok) {
-                st.style.color = '#2d7d2d';
-                st.textContent = 'Message sent. Thank you.';
-                this.reset();
-              } else { throw new Error(); }
-            } catch(_) {
-              st.style.color = '#c0392b';
-              st.textContent = 'Failed to send. Please try again.';
-            }
-            btn.disabled = false; btn.textContent = 'Send';
-          });
-        </script>
-        """, height=290)
 
     # Spacer div (expands when header becomes fixed)
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
