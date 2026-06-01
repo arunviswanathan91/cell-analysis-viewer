@@ -3068,6 +3068,45 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
     return fig
 
 
+def get_continuous_celltype_index_map(comp_data):
+    """
+    Build a mapping from UPPER-CASE cell type name → integer index for continuous analysis.
+
+    The celltype_mapping.csv in the continuous data folder only contains integer-to-integer
+    mappings (not actual names). The true name→index mapping is determined by the order
+    cell types first appear in continuous_results: the first N unique cell types
+    (where N = number of posterior columns in posterior_bmi_slope.csv) map to indices 0..N-1.
+
+    Returns:
+        dict: {UPPER_CASE_NAME: int_index}  e.g. {'ICAF': 3, 'ACINAR': 0, ...}
+    """
+    continuous_results = comp_data.get('continuous_results')
+    if continuous_results is None or 'cell_type' not in continuous_results.columns:
+        return {}
+
+    # Determine N = number of posterior cell types
+    posterior = comp_data.get('posterior_bmi_slope')
+    if posterior is not None:
+        n_celltypes = len([c for c in posterior.columns if c.startswith('celltype_')])
+    else:
+        credible = comp_data.get('credible_intervals')
+        n_celltypes = len(credible) if credible is not None else None
+
+    # Build first-appearance order from continuous_results
+    seen = []
+    for ct in continuous_results['cell_type'].dropna():
+        ct_str = str(ct)
+        if ct_str not in seen:
+            seen.append(ct_str)
+
+    # Only the first n_celltypes have posterior estimates
+    if n_celltypes is not None:
+        seen = seen[:n_celltypes]
+
+    # Return upper-case keyed dict for case-insensitive lookup
+    return {name.upper(): idx for idx, name in enumerate(seen)}
+
+
 def plot_ess_rhat_continuous(comp_data, selected_cell=None):
     """ESS & R-hat for CONTINUOUS analysis - single cell or all cells"""
     if comp_data['diagnostics'] is None:
@@ -3097,37 +3136,27 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
         st.warning("❌ No BMI slope diagnostics found")
         return None
     
-    # Load celltype mapping
-    celltype_map = comp_data.get('celltype_map', None)
-    celltype_names = {}
-    
-    if celltype_map is not None and len(celltype_map) > 0:
-        if 'celltype_idx' in celltype_map.columns and 'celltype_name' in celltype_map.columns:
-            celltype_names = dict(zip(
-                celltype_map['celltype_idx'].astype(int),
-                celltype_map['celltype_name']
-            ))
-        elif len(celltype_map.columns) >= 2:
-            celltype_names = dict(zip(
-                celltype_map.iloc[:, 0].astype(int),
-                celltype_map.iloc[:, 1]
-            ))
-    
+    # Build index→name mapping from continuous_results first-appearance order
+    # (celltype_map in the continuous folder only has integer indices, not names)
+    name_to_idx = get_continuous_celltype_index_map(comp_data)
+    idx_to_name = {v: k for k, v in name_to_idx.items()}  # int → UPPER_CASE name
+
     # Map indices to names and filter if specific cell selected
     labels = []
     indices_to_keep = []
-    
-    for i, idx in enumerate(diag_filtered.index):
+
+    for i, param_name in enumerate(diag_filtered.index):
         import re
-        match = re.search(r'\[(\d+)\]', idx)
+        match = re.search(r'\[(\d+)\]', param_name)
         if match:
             cell_idx = int(match.group(1))
-            if cell_idx in celltype_names:
-                cell_name = str(celltype_names[cell_idx]).replace('_', ' ').title()
-                
-                # Filter by selected cell if provided
-                if selected_cell is None or cell_name.lower() == selected_cell.lower():
-                    labels.append(cell_name)
+            if cell_idx in idx_to_name:
+                cell_name_upper = idx_to_name[cell_idx]
+                cell_name_display = cell_name_upper.replace('_', ' ').title()
+
+                # Filter by selected cell if provided (case-insensitive)
+                if selected_cell is None or cell_name_upper == selected_cell.upper():
+                    labels.append(cell_name_display)
                     indices_to_keep.append(i)
             else:
                 if selected_cell is None:
@@ -3135,7 +3164,7 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
                     indices_to_keep.append(i)
         else:
             if selected_cell is None:
-                labels.append(idx.replace('_', ' ').title())
+                labels.append(param_name.replace('_', ' ').title())
                 indices_to_keep.append(i)
     
     if len(indices_to_keep) == 0:
@@ -4577,21 +4606,14 @@ def plot_trace_continuous(comp_data, selected_cell):
     if comp_data['posterior_bmi_slope'] is None:
         st.info("❌ Posterior data not available")
         return None
-    
+
     df_slope = comp_data['posterior_bmi_slope']
-    
-    # Find cell index
-    celltype_map = comp_data.get('celltype_map', None)
-    if celltype_map is None:
-        st.warning("❌ Cell type mapping not found")
-        return None
-    
-    cell_idx = None
-    for idx, row in celltype_map.iterrows():
-        if 'celltype_name' in row and str(row['celltype_name']).replace('_', ' ').title() == selected_cell:
-            cell_idx = int(row.get('celltype_idx', idx))
-            break
-    
+
+    # Find cell index using first-appearance order in continuous_results
+    # (celltype_map in the continuous folder only has integer indices, not names)
+    name_to_idx = get_continuous_celltype_index_map(comp_data)
+    cell_idx = name_to_idx.get(selected_cell.upper())
+
     if cell_idx is None:
         st.warning(f"❌ Cell index not found for {selected_cell}")
         return None
@@ -4641,20 +4663,13 @@ def plot_rank_continuous(comp_data, selected_cell):
     if comp_data['posterior_bmi_slope'] is None:
         st.info("❌ Posterior data not available")
         return None
-    
+
     df_slope = comp_data['posterior_bmi_slope']
-    
-    celltype_map = comp_data.get('celltype_map', None)
-    if celltype_map is None:
-        st.warning("❌ Cell type mapping not found")
-        return None
-    
-    cell_idx = None
-    for idx, row in celltype_map.iterrows():
-        if 'celltype_name' in row and str(row['celltype_name']).replace('_', ' ').title() == selected_cell:
-            cell_idx = int(row.get('celltype_idx', idx))
-            break
-    
+
+    # Find cell index using first-appearance order in continuous_results
+    name_to_idx = get_continuous_celltype_index_map(comp_data)
+    cell_idx = name_to_idx.get(selected_cell.upper())
+
     if cell_idx is None:
         st.warning(f"❌ Cell index not found for {selected_cell}")
         return None
@@ -4706,20 +4721,13 @@ def plot_autocorrelation_continuous(comp_data, selected_cell, max_lag=40):
     if comp_data['posterior_bmi_slope'] is None:
         st.info("❌ Posterior data not available")
         return None
-    
+
     df_slope = comp_data['posterior_bmi_slope']
-    
-    celltype_map = comp_data.get('celltype_map', None)
-    if celltype_map is None:
-        st.warning("❌ Cell type mapping not found")
-        return None
-    
-    cell_idx = None
-    for idx, row in celltype_map.iterrows():
-        if 'celltype_name' in row and str(row['celltype_name']).replace('_', ' ').title() == selected_cell:
-            cell_idx = int(row.get('celltype_idx', idx))
-            break
-    
+
+    # Find cell index using first-appearance order in continuous_results
+    name_to_idx = get_continuous_celltype_index_map(comp_data)
+    cell_idx = name_to_idx.get(selected_cell.upper())
+
     if cell_idx is None:
         st.warning(f"❌ Cell index not found for {selected_cell}")
         return None
@@ -4786,21 +4794,12 @@ def plot_continuous_ridge_plot(selected_cell, comp_data):
     
     try:
         df_slope = comp_data['posterior_bmi_slope']
-        ct_map = comp_data.get('celltype_map', None)
-        
-        if ct_map is None:
-            st.warning("❌ Cell type mapping not found")
-            return None
-        
-        # Find the cell index for selected cell
-        cell_idx = None
-        for idx, row in ct_map.iterrows():
-            if 'celltype_name' in row:
-                cell_name = str(row['celltype_name']).replace('_', ' ').title()
-                if cell_name == selected_cell:
-                    cell_idx = int(row.get('celltype_idx', idx))
-                    break
-        
+
+        # Find the cell index using first-appearance order in continuous_results
+        # (celltype_map in the continuous folder only has integer indices, not names)
+        name_to_idx = get_continuous_celltype_index_map(comp_data)
+        cell_idx = name_to_idx.get(selected_cell.upper())
+
         if cell_idx is None:
             st.warning(f"❌ Could not find index for {selected_cell}")
             return None
