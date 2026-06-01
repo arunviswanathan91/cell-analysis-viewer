@@ -398,6 +398,50 @@ def render_global_ask_model_sidebar():
     }
 
 
+def _load_html_doc(filename: str) -> str | None:
+    """Load an HTML doc from html_docs/ next to this script. Returns None if missing."""
+    base = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base, "html_docs", filename)
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return fh.read()
+    except FileNotFoundError:
+        return None
+
+
+def render_study_methodology():
+    """Render the full Study Methodology HTML inside an iframe-like component."""
+    st.markdown(
+        '<h1 class="main-header">📖 Study Methodology</h1>',
+        unsafe_allow_html=True,
+    )
+    html = _load_html_doc("methodology.html")
+    if html is None:
+        st.error(
+            "❌ `html_docs/methodology.html` not found. "
+            "Make sure it exists next to `streamlit_app_with_explorer.py`."
+        )
+        return
+    # Render with generous height so the sticky nav and canvas work correctly
+    components.html(html, height=920, scrolling=True)
+
+
+def render_bayesian_explained():
+    """Render the Bayesian Model Explained HTML inside an iframe-like component."""
+    st.markdown(
+        '<h1 class="main-header">🧮 Bayesian Model — Explained</h1>',
+        unsafe_allow_html=True,
+    )
+    html = _load_html_doc("bayesian_model.html")
+    if html is None:
+        st.error(
+            "❌ `html_docs/bayesian_model.html` not found. "
+            "Make sure it exists next to `streamlit_app_with_explorer.py`."
+        )
+        return
+    components.html(html, height=920, scrolling=True)
+
+
 def render_global_ask_model():
     """Full-page Ask the Model interface — powered by RemoteRAG HF Space."""
 
@@ -7116,7 +7160,9 @@ def main():
             "Continuous Analysis",
             "Signature Survival",
             "Interactome Analysis",
-            "Explore Individual Interaction"
+            "Explore Individual Interaction",
+            "📖 Study Methodology",
+            "🧮 Bayesian Model Explained",
         ],
         index=1,
         key="analysis_mode_selector"
@@ -7132,6 +7178,10 @@ def main():
         st.sidebar.warning("Survival analysis stratified by BMI")
     elif analysis_mode == "Interactome Analysis":
         st.sidebar.info("Explore cell-cell interaction networks")
+    elif analysis_mode == "📖 Study Methodology":
+        st.sidebar.info("Full walkthrough of every analytical step")
+    elif analysis_mode == "🧮 Bayesian Model Explained":
+        st.sidebar.info("Deep-dive into the Bayesian hierarchical model")
     else:
         st.sidebar.info("Drill into gene-level interactions for a specific cell pair")
 
@@ -7241,6 +7291,14 @@ def main():
 
     elif analysis_mode == "Explore Individual Interaction":
         render_individual_interaction()
+        return
+
+    elif analysis_mode == "📖 Study Methodology":
+        render_study_methodology()
+        return
+
+    elif analysis_mode == "🧮 Bayesian Model Explained":
+        render_bayesian_explained()
         return
 
     # Continue with Statistical Analysis mode

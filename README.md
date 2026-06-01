@@ -1,6 +1,5 @@
 # Obesity-Driven Pancreatic Cancer: A Machine Learning Based Bayesian Model and Interactome analysis
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://obese-pdac-model.streamlit.app/)
-[![Dataset on HF](https://huggingface.co/datasets/huggingface/badges/resolve/main/dataset-on-hf-md-dark.svg)](https://huggingface.co/datasets/arunviswanathan91/cell-analysis-vectors)[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md-dark.svg)](https://huggingface.co/spaces/arunviswanathan91/cell-analysis-rag-api)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://obese-pdac-model.streamlit.app/)[![Dataset on HF](https://huggingface.co/datasets/huggingface/badges/resolve/main/dataset-on-hf-md-dark.svg)](https://huggingface.co/datasets/arunviswanathan91/cell-analysis-vectors)[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md-dark.svg)](https://huggingface.co/spaces/arunviswanathan91/cell-analysis-rag-api)
 
 *Citation details will be provided upon publication of the associated manuscript. Interim DOI to cite the repo is* [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19386459.svg)](https://doi.org/10.5281/zenodo.19386459)
 
@@ -63,30 +62,7 @@ In addition to the analysis interfaces, the application includes a conversationa
 
 **Cox Proportional Hazards** — Survival analysis linking BMI group and signature expression to patient outcomes.
 
----
 
-## Local Setup
-
-```bash
-pip install -r requirements.txt
-streamlit run streamlit_app_with_explorer.py
-```
-
-The app runs at `http://localhost:8501`.
-
-A `.devcontainer/devcontainer.json` is included for VS Code dev container usage with Python 3.11.
-
-### Environment Variables
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `GROQ_API_KEY` | Yes (for Ask the Model) | API key from console.groq.com |
-| `HF_SPACE_URL` | No | Remote RAG endpoint. Defaults to the hosted HuggingFace Space. |
-| `SEMANTIC_PROFILE` | No | Config preset: `default`, `conservative`, `aggressive`, or `dev` |
-
-For Streamlit Cloud deployment, set these in `.streamlit/secrets.toml`.
-
----
 
 ## Project Structure
 
