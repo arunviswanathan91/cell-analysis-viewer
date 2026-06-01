@@ -1761,8 +1761,9 @@ def get_available_cells_continuous(compartment):
     """
     Get ONLY cell types with posterior data for continuous analysis.
 
-    Uses credible_intervals.csv as the source of truth for which cell types
-    have sufficient data for reliable Bayesian modeling.
+    Uses continuous_results as the primary source of truth for cell type names,
+    since the celltype_mapping CSVs in the continuous directory only contain
+    integer-to-integer mappings (no actual cell type name strings).
 
     Args:
         compartment: 'Immune Fine', 'Immune Coarse', or 'Non-Immune'
@@ -1772,34 +1773,42 @@ def get_available_cells_continuous(compartment):
     """
     comp_data = load_compartment_data_continuous(compartment)
 
-    # Use credible_intervals as source of truth for which cells have posterior data
+    # Primary source: continuous_results already has a 'cell_type' column with
+    # actual string names (e.g. 'BASOPHILS', 'B CELLS', 'CD4+ T CELLS')
+    continuous_results = comp_data.get('continuous_results')
+    if continuous_results is not None and len(continuous_results) > 0:
+        # Use cell_type column if it contains string values
+        if 'cell_type' in continuous_results.columns:
+            ct_vals = continuous_results['cell_type'].dropna()
+            string_mask = ct_vals.apply(lambda x: isinstance(x, str))
+            if string_mask.any():
+                return sorted(ct_vals[string_mask].unique().tolist())
+
+        # Fallback: parse cell type names from the feature column (CELL_TYPE||gene format)
+        if 'feature' in continuous_results.columns:
+            cells = set()
+            for feat in continuous_results['feature'].dropna():
+                feat_str = str(feat)
+                if '||' in feat_str:
+                    cells.add(feat_str.split('||')[0].strip())
+            if cells:
+                return sorted(cells)
+
+    # Final fallback: use credible_intervals + celltype_mapping
+    # (only works when celltype_mapping contains actual string names)
     credible = comp_data.get('credible_intervals')
     if credible is None or len(credible) == 0:
         return []
 
-    # Get indices that have credible intervals (= have posterior data)
     available_indices = sorted(credible['celltype_index'].unique())
-
-    # Map indices to names using celltype_mapping
     celltype_map = comp_data.get('celltype_map')
     if celltype_map is None or len(celltype_map) == 0:
         return []
 
-    # Also cross-check against continuous_results (heatmap data source)
-    continuous_results = comp_data.get('continuous_results')
-    cells_with_results = set()
-    if continuous_results is not None and len(continuous_results) > 0 and 'feature' in continuous_results.columns:
-        for feat in continuous_results['feature']:
-            feat_str = str(feat)
-            if '||' in feat_str:
-                cells_with_results.add(feat_str.split('||')[0].strip().upper())
-
-    # Determine which columns to use for index and name (handle varying CSV schemas)
     if 'celltype_idx' in celltype_map.columns and 'celltype_name' in celltype_map.columns:
         idx_col = 'celltype_idx'
         name_col = 'celltype_name'
     else:
-        # Detect by dtype: numeric col = index, string/object col = name
         numeric_cols = celltype_map.select_dtypes(include='number').columns.tolist()
         string_cols = celltype_map.select_dtypes(include='object').columns.tolist()
         if numeric_cols and string_cols:
@@ -1816,9 +1825,7 @@ def get_available_cells_continuous(compartment):
         row = celltype_map[celltype_map[idx_col] == idx]
         if not row.empty:
             cell_name = str(row[name_col].values[0])
-            # Only include if there are also continuous_results rows for this cell
-            if not cells_with_results or cell_name.upper() in cells_with_results:
-                available_cells.append(cell_name)
+            available_cells.append(cell_name)
 
     return sorted(available_cells)
 
