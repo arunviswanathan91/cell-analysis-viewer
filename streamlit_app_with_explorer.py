@@ -7040,6 +7040,58 @@ def main():
 
     st.sidebar.markdown("---")
 
+    with st.sidebar.expander("Contact the Author", expanded=False):
+        components.html("""
+        <style>
+          * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+          label { display: block; margin-bottom: 3px; color: #555; font-size: 12px; }
+          input, textarea {
+            width: 100%; padding: 6px 8px; margin-bottom: 10px;
+            border: 1px solid #d0d0d0; border-radius: 4px; font-size: 13px;
+            background: #fafafa; color: #111;
+          }
+          textarea { height: 72px; resize: vertical; }
+          button {
+            background: #1f6feb; color: white; padding: 7px 0;
+            border: none; border-radius: 4px; cursor: pointer;
+            font-size: 13px; width: 100%;
+          }
+          button:disabled { background: #aaa; cursor: not-allowed; }
+          #msg { margin-top: 8px; font-size: 12px; text-align: center; }
+        </style>
+        <form id="cf">
+          <label>Email</label>
+          <input type="email" name="email" required placeholder="your@email.com" />
+          <label>Message</label>
+          <textarea name="message" required placeholder="Your message"></textarea>
+          <button type="submit" id="btn">Send</button>
+          <div id="msg"></div>
+        </form>
+        <script>
+          document.getElementById('cf').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn');
+            const msg = document.getElementById('msg');
+            btn.disabled = true; btn.textContent = 'Sending...';
+            try {
+              const res = await fetch('https://formspree.io/f/xreopraq', {
+                method: 'POST', body: new FormData(this),
+                headers: { 'Accept': 'application/json' }
+              });
+              if (res.ok) {
+                msg.style.color = '#2d7d2d';
+                msg.textContent = 'Message sent. Thank you.';
+                this.reset();
+              } else { throw new Error(); }
+            } catch(_) {
+              msg.style.color = '#c0392b';
+              msg.textContent = 'Failed to send. Please try again.';
+            }
+            btn.disabled = false; btn.textContent = 'Send';
+          });
+        </script>
+        """, height=290)
+
     # ── Full-page HTML doc views: exit BEFORE any Streamlit header is rendered ──
     if analysis_mode == "📖 Study Methodology":
         render_study_methodology()
