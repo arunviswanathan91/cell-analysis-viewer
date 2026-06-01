@@ -50,7 +50,9 @@ body {
 /* —— STICKY NAV —————————————————————————————————————————————— */
 .snav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(250,249,247,0.96); backdrop-filter: blur(14px);
+  background: rgba(250,249,247,0.96);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 2px solid var(--warm); padding: 9px 18px;
   display: flex; gap: 5px; flex-wrap: wrap;
   box-shadow: 0 2px 14px rgba(0,0,0,0.09);
@@ -801,6 +803,21 @@ Pixel subsampling: max 5,000 pixels per marker (fixed random seed)</div>
 </div>
 
 </div><!-- end content -->
+
+<!-- ——— STICKY NAV SCROLL JS ——— -->
+<script>
+// window.scrollTo keeps scroll inside the iframe — avoids leaking to Streamlit parent
+document.querySelectorAll('.snav a').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (!el) return;
+    var navH = (document.querySelector('.snav') || {}).offsetHeight || 48;
+    window.scrollTo({ top: el.offsetTop - navH, behavior: 'smooth' });
+  });
+});
+</script>
 
 <!-- ——— PIPELINE CANVAS JS ——— -->
 <script>

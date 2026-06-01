@@ -352,10 +352,6 @@ def _load_html_doc(filename: str) -> str | None:
 
 def render_study_methodology():
     """Render the full Study Methodology HTML inside an iframe-like component."""
-    st.markdown(
-        '<h1 class="main-header">📖 Study Methodology</h1>',
-        unsafe_allow_html=True,
-    )
     html = _load_html_doc("methodology.html")
     if html is None:
         st.error(
@@ -369,10 +365,6 @@ def render_study_methodology():
 
 def render_bayesian_explained():
     """Render the Bayesian Model Explained HTML inside an iframe-like component."""
-    st.markdown(
-        '<h1 class="main-header">🧮 Bayesian Model — Explained</h1>',
-        unsafe_allow_html=True,
-    )
     html = _load_html_doc("bayesian_model.html")
     if html is None:
         st.error(
@@ -7063,16 +7055,24 @@ def main():
 
     st.sidebar.markdown("---")
 
+    # ── Full-page HTML doc views: exit BEFORE any Streamlit header is rendered ──
+    if analysis_mode == "📖 Study Methodology":
+        render_study_methodology()
+        return
+    elif analysis_mode == "🧮 Bayesian Model Explained":
+        render_bayesian_explained()
+        return
+
     # Spacer div (expands when header becomes fixed)
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
-    
+
     # Main header
     st.markdown('''
     <h1 class="main-header">
         Obesity-Driven Pancreatic Ductal Adenocarcinoma: An ML driven bayesian model
     </h1>
     ''', unsafe_allow_html=True)
-    
+
     # Info box
     st.markdown("""
     <div class="info-box">
@@ -7095,7 +7095,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    
+
     # Route to appropriate analysis mode
     if analysis_mode == "Signature Explorer":
         render_signature_explorer()
@@ -7115,14 +7115,6 @@ def main():
 
     elif analysis_mode == "Explore Individual Interaction":
         render_individual_interaction()
-        return
-
-    elif analysis_mode == "📖 Study Methodology":
-        render_study_methodology()
-        return
-
-    elif analysis_mode == "🧮 Bayesian Model Explained":
-        render_bayesian_explained()
         return
 
     # Continue with Statistical Analysis mode

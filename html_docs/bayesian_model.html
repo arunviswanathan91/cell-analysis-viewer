@@ -921,13 +921,15 @@ function labelBox(ctx, x, y, w, h, r, fillC, strokeC, lines, colors, sizes) {
   });
 })();
 
-// —— Smooth scroll offset for sticky nav ————————————————
+// —— Smooth scroll: window.scrollTo keeps scroll inside the iframe ————————
 document.querySelectorAll('.sticky-nav a').forEach(a => {
   a.addEventListener('click', e => {
     e.preventDefault();
     const id = a.getAttribute('href').slice(1);
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!el) return;
+    const navH = (document.querySelector('.sticky-nav') || {}).offsetHeight || 52;
+    window.scrollTo({ top: el.offsetTop - navH, behavior: 'smooth' });
   });
 });
 </script>
