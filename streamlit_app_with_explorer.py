@@ -401,7 +401,11 @@ _AUTORESIZE_JS = """
 (function () {
     'use strict';
 
-    /* ── Helper: locate this document's own iframe in the parent ─────── */
+    /* ════════════════════════════════════════════════════════════════════
+       SHARED HELPERS
+       ════════════════════════════════════════════════════════════════════ */
+
+    /* Return this document's own <iframe> element in the parent. */
     function findOwnIframe() {
         try {
             var frames = window.parent.document.querySelectorAll('iframe');
@@ -413,9 +417,43 @@ _AUTORESIZE_JS = """
         return null;
     }
 
-    /* ── 1. Resize iframe to full content height ─────────────────────── */
-    /* The iframe grows to match its document so the STREAMLIT PAGE scrolls,
-       not the iframe.  No frame edge, no blank space at the bottom.       */
+    /* Streamlit scrolls its stAppViewContainer div, NOT window.
+       Always prefer that element; fall back to window for other hosts. */
+    function getScrollEl() {
+        try {
+            return window.parent.document.querySelector(
+                '[data-testid="stAppViewContainer"]'
+            ) || window.parent;
+        } catch (_) { return null; }
+    }
+
+    /* Current scroll offset, compatible with element- or window-scroll. */
+    function getScrollTop() {
+        try {
+            var el = window.parent.document.querySelector(
+                '[data-testid="stAppViewContainer"]'
+            );
+            if (el) return el.scrollTop;
+            return window.parent.scrollY || window.parent.pageYOffset || 0;
+        } catch (_) { return 0; }
+    }
+
+    /* Scroll the parent container smoothly to an absolute y position. */
+    function parentScrollTo(y) {
+        try {
+            var el = window.parent.document.querySelector(
+                '[data-testid="stAppViewContainer"]'
+            );
+            if (el) { el.scrollTo({ top: y, behavior: 'smooth' }); return; }
+            window.parent.scrollTo({ top: y, behavior: 'smooth' });
+        } catch (_) {}
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       1. RESIZE IFRAME TO FULL CONTENT HEIGHT
+       The iframe expands to its document height so the Streamlit page
+       scrolls naturally — no inner scroll bar, no blank space at bottom.
+       ════════════════════════════════════════════════════════════════════ */
     function syncHeight() {
         var h = Math.max(
             document.body            ? document.body.scrollHeight            : 0,
@@ -429,27 +467,22 @@ _AUTORESIZE_JS = """
     document.addEventListener('DOMContentLoaded', syncHeight);
     window.addEventListener('load', syncHeight);
     window.addEventListener('resize', syncHeight);
-    setTimeout(syncHeight, 200);
-    setTimeout(syncHeight, 800);
-    setTimeout(syncHeight, 2000);   /* catch late Google-Font layout shifts */
+    [200, 800, 2000].forEach(function (t) { setTimeout(syncHeight, t); });
 
-    /* ── 2. Sticky-nav polyfill via parent-window scroll tracking ────── */
-    /*
-     * position:sticky inside a non-scrolling iframe cannot track the PARENT
-     * window's scroll.  We replicate it with translateY:
-     *
-     *   nav visible y in parent viewport
-     *     = (iframeAbsTop + nav.offsetTop + translateY) − parentScrollY = 0
-     *   ⟹ translateY = parentScrollY − iframeAbsTop − nav.offsetTop
-     *
-     * nav.offsetTop is a layout value, unaffected by CSS transforms, so
-     * re-reading it on every scroll event automatically handles late
-     * font-load height shifts in the hero section above the nav.
-     *
-     * translateY is purely visual — the element keeps its layout footprint
-     * so nothing below it shifts.
-     */
-    var navInited = false;   /* guard against double-initialisation */
+    /* ════════════════════════════════════════════════════════════════════
+       2. STICKY-NAV POLYFILL
+       position:sticky cannot track a parent-element scroll from inside an
+       iframe.  We replicate it with translateY driven by the parent's
+       stAppViewContainer scroll event.
+
+         nav y in viewport = iframeAbsTop + nav.offsetTop + translateY - scrollTop
+         set = 0  ⟹  translateY = scrollTop - iframeAbsTop - nav.offsetTop
+
+       nav.offsetTop is layout-only (unaffected by transforms), so re-reading
+       it on every event automatically picks up any post-font-load shifts.
+       translateY is visual-only — the nav keeps its layout space.
+       ════════════════════════════════════════════════════════════════════ */
+    var navInited = false;
 
     function initStickyNav() {
         if (navInited) return;
@@ -458,32 +491,28 @@ _AUTORESIZE_JS = """
         var nav = document.querySelector('.snav, .sticky-nav');
         if (!nav) return;
 
-        /* Disable CSS sticky — it cannot respond to the parent scroll. */
+        /* Disable CSS sticky — it can only see the iframe's own scroll. */
         nav.style.position = 'relative';
         nav.style.top      = 'auto';
 
-        /* Cache iframe's absolute top in the parent document.
-           Reset on resize so we recalculate if Streamlit shifts things.  */
         var iframeAbsTop = null;
 
         function getIframeAbsTop() {
             var f = findOwnIframe();
             if (!f) return 0;
-            var r = f.getBoundingClientRect();
-            return r.top + (window.parent.scrollY || window.parent.pageYOffset || 0);
+            /* getBoundingClientRect().top = distance from iframe to viewport top.
+               Adding scrollTop converts to absolute position in the scroll doc. */
+            return f.getBoundingClientRect().top + getScrollTop();
         }
 
-        function onParentScroll() {
+        function onScroll() {
             try {
                 if (iframeAbsTop === null) iframeAbsTop = getIframeAbsTop();
-
-                /* nav.offsetTop: distance from nav to its offsetParent (body).
-                   Re-read each call so font-load layout changes are picked up. */
                 var navAbsTop = iframeAbsTop + nav.offsetTop;
-                var pScroll   = window.parent.scrollY || window.parent.pageYOffset || 0;
+                var scrollTop = getScrollTop();
 
-                if (pScroll >= navAbsTop) {
-                    nav.style.transform = 'translateY(' + (pScroll - navAbsTop) + 'px)';
+                if (scrollTop >= navAbsTop) {
+                    nav.style.transform = 'translateY(' + (scrollTop - navAbsTop) + 'px)';
                     nav.style.zIndex    = '9999';
                 } else {
                     nav.style.transform = '';
@@ -492,36 +521,82 @@ _AUTORESIZE_JS = """
             } catch (_) {}
         }
 
+        /* Listen on stAppViewContainer AND window — covers all Streamlit versions. */
         try {
-            window.parent.addEventListener('scroll', onParentScroll, { passive: true });
+            var sc = getScrollEl();
+            if (sc) sc.addEventListener('scroll', onScroll, { passive: true });
+            if (sc !== window.parent) {
+                window.parent.addEventListener('scroll', onScroll, { passive: true });
+            }
             window.parent.addEventListener('resize', function () {
                 iframeAbsTop = null;
-                onParentScroll();
+                onScroll();
             });
         } catch (_) {}
 
-        onParentScroll();
+        onScroll();
     }
 
-    /* Initialise AFTER fonts are fully loaded — Google Fonts change the
-       hero section height, which shifts nav.offsetTop.  document.fonts.ready
-       is a Promise that resolves once every in-use font is downloaded.    */
-    function scheduleInit() {
+    /* Init after Google Fonts load — they shift the hero height (and thus
+       nav.offsetTop).  document.fonts.ready resolves once all fonts are done. */
+    var navScheduled = false;
+    function scheduleNavInit() {
+        if (navScheduled) return;
+        navScheduled = true;
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(function () { setTimeout(initStickyNav, 150); });
         } else {
-            /* Fallback: browsers without document.fonts API               */
             setTimeout(initStickyNav, 800);
         }
     }
-
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', scheduleInit);
+        document.addEventListener('DOMContentLoaded', scheduleNavInit);
     } else {
-        scheduleInit();
+        scheduleNavInit();
     }
-    /* Hard fallback: if fonts.ready never fires (e.g. offline), init anyway. */
-    setTimeout(initStickyNav, 3000);
+    setTimeout(initStickyNav, 3000);   /* hard fallback */
+
+    /* ════════════════════════════════════════════════════════════════════
+       3. ANCHOR-LINK POLYFILL
+       Clicking href="#section" in a full-height (non-scrolling) iframe
+       tries to scroll the iframe's own viewport — which has nothing to
+       scroll.  We intercept every internal anchor click and forward it as
+       a smooth scroll on the parent's stAppViewContainer.
+       ════════════════════════════════════════════════════════════════════ */
+    var linksInited = false;
+
+    function initAnchorLinks() {
+        if (linksInited) return;
+        linksInited = true;
+
+        document.querySelectorAll('a[href^="#"]').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                var href = link.getAttribute('href');
+                if (!href || href === '#') return;
+                var target = document.querySelector(href);
+                if (!target) return;
+                e.preventDefault();
+
+                /* target.getBoundingClientRect().top is relative to viewport.
+                   Since the iframe has no internal scroll, this equals the
+                   target's y offset from the top of the iframe document.    */
+                var targetY   = target.getBoundingClientRect().top;
+                var f         = findOwnIframe();
+                var iframeTop = f ? f.getBoundingClientRect().top + getScrollTop() : 0;
+
+                parentScrollTo(iframeTop + targetY);
+            });
+        });
+    }
+
+    /* Anchor links don't need fonts — init as early as possible. */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAnchorLinks);
+    } else {
+        initAnchorLinks();
+    }
+    window.addEventListener('load', initAnchorLinks);   /* re-run is safe (guarded) */
+
 })();
 </script>
 """
