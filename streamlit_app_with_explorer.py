@@ -401,19 +401,21 @@ _AUTORESIZE_JS = """
 (function () {
     'use strict';
 
-    /* ── 1. Resize iframe to full content height ──────────────────────── */
+    /* ── Helper: locate this document's own iframe in the parent ─────── */
     function findOwnIframe() {
         try {
             var frames = window.parent.document.querySelectorAll('iframe');
             for (var i = 0; i < frames.length; i++) {
-                try {
-                    if (frames[i].contentDocument === document) return frames[i];
-                } catch (_) {}
+                try { if (frames[i].contentDocument === document) return frames[i]; }
+                catch (_) {}
             }
         } catch (_) {}
         return null;
     }
 
+    /* ── 1. Resize iframe to full content height ─────────────────────── */
+    /* The iframe grows to match its document so the STREAMLIT PAGE scrolls,
+       not the iframe.  No frame edge, no blank space at the bottom.       */
     function syncHeight() {
         var h = Math.max(
             document.body            ? document.body.scrollHeight            : 0,
@@ -427,49 +429,58 @@ _AUTORESIZE_JS = """
     document.addEventListener('DOMContentLoaded', syncHeight);
     window.addEventListener('load', syncHeight);
     window.addEventListener('resize', syncHeight);
-    setTimeout(syncHeight, 150);
-    setTimeout(syncHeight, 700);
-    setTimeout(syncHeight, 1800);  // catch late-loading Google Fonts
+    setTimeout(syncHeight, 200);
+    setTimeout(syncHeight, 800);
+    setTimeout(syncHeight, 2000);   /* catch late Google-Font layout shifts */
 
-    /* ── 2. Sticky-nav polyfill via parent-scroll tracking ───────────── */
+    /* ── 2. Sticky-nav polyfill via parent-window scroll tracking ────── */
     /*
-     * When the parent scrolls, we translate the nav down by the same amount
-     * it would need to travel to appear at y=0 in the parent viewport.
+     * position:sticky inside a non-scrolling iframe cannot track the PARENT
+     * window's scroll.  We replicate it with translateY:
      *
-     *   nav visual y in parent viewport
-     *     = (iframeAbsTop + navNaturalTop + translateY) - parentScrollY
-     *     = 0  (we want it pinned at top)
-     *   → translateY = parentScrollY - iframeAbsTop - navNaturalTop
+     *   nav visible y in parent viewport
+     *     = (iframeAbsTop + nav.offsetTop + translateY) − parentScrollY = 0
+     *   ⟹ translateY = parentScrollY − iframeAbsTop − nav.offsetTop
      *
-     * Using translateY (not top/left) keeps the element in document flow
-     * so the content below never shifts.
+     * nav.offsetTop is a layout value, unaffected by CSS transforms, so
+     * re-reading it on every scroll event automatically handles late
+     * font-load height shifts in the hero section above the nav.
+     *
+     * translateY is purely visual — the element keeps its layout footprint
+     * so nothing below it shifts.
      */
+    var navInited = false;   /* guard against double-initialisation */
+
     function initStickyNav() {
+        if (navInited) return;
+        navInited = true;
+
         var nav = document.querySelector('.snav, .sticky-nav');
         if (!nav) return;
 
-        /* Switch CSS sticky → relative so transform works without z-fighting. */
+        /* Disable CSS sticky — it cannot respond to the parent scroll. */
         nav.style.position = 'relative';
-        nav.style.top = 'auto';
+        nav.style.top      = 'auto';
 
-        /* Nav's fixed distance from the top of the iframe document. */
-        var navNaturalTop = nav.offsetTop;
-
-        /* Iframe's absolute top in the parent document (lazy, reset on resize). */
+        /* Cache iframe's absolute top in the parent document.
+           Reset on resize so we recalculate if Streamlit shifts things.  */
         var iframeAbsTop = null;
 
         function getIframeAbsTop() {
             var f = findOwnIframe();
             if (!f) return 0;
-            var rect = f.getBoundingClientRect();
-            return rect.top + (window.parent.scrollY || window.parent.pageYOffset || 0);
+            var r = f.getBoundingClientRect();
+            return r.top + (window.parent.scrollY || window.parent.pageYOffset || 0);
         }
 
         function onParentScroll() {
             try {
                 if (iframeAbsTop === null) iframeAbsTop = getIframeAbsTop();
-                var navAbsTop = iframeAbsTop + navNaturalTop;
-                var pScroll  = window.parent.scrollY || window.parent.pageYOffset || 0;
+
+                /* nav.offsetTop: distance from nav to its offsetParent (body).
+                   Re-read each call so font-load layout changes are picked up. */
+                var navAbsTop = iframeAbsTop + nav.offsetTop;
+                var pScroll   = window.parent.scrollY || window.parent.pageYOffset || 0;
 
                 if (pScroll >= navAbsTop) {
                     nav.style.transform = 'translateY(' + (pScroll - navAbsTop) + 'px)';
@@ -484,7 +495,7 @@ _AUTORESIZE_JS = """
         try {
             window.parent.addEventListener('scroll', onParentScroll, { passive: true });
             window.parent.addEventListener('resize', function () {
-                iframeAbsTop = null;   // recalculate after layout change
+                iframeAbsTop = null;
                 onParentScroll();
             });
         } catch (_) {}
@@ -492,14 +503,25 @@ _AUTORESIZE_JS = """
         onParentScroll();
     }
 
-    /* Init sticky nav after fonts/layout settle (offsetTop must be stable). */
-    function scheduleNavInit() { setTimeout(initStickyNav, 300); }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', scheduleNavInit);
-    } else {
-        scheduleNavInit();
+    /* Initialise AFTER fonts are fully loaded — Google Fonts change the
+       hero section height, which shifts nav.offsetTop.  document.fonts.ready
+       is a Promise that resolves once every in-use font is downloaded.    */
+    function scheduleInit() {
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(function () { setTimeout(initStickyNav, 150); });
+        } else {
+            /* Fallback: browsers without document.fonts API               */
+            setTimeout(initStickyNav, 800);
+        }
     }
-    window.addEventListener('load', scheduleNavInit);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', scheduleInit);
+    } else {
+        scheduleInit();
+    }
+    /* Hard fallback: if fonts.ready never fires (e.g. offline), init anyway. */
+    setTimeout(initStickyNav, 3000);
 })();
 </script>
 """

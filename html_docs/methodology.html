@@ -225,7 +225,7 @@ p { margin-bottom: 11px; }
   <!-- Pipeline Canvas -->
   <div class="pipeline-wrap">
     <h3>Analysis Pipeline at a Glance</h3>
-    <canvas id="c-pipeline" width="860" height="320" style="display:block; margin:0 auto; max-width:100%;"></canvas>
+    <canvas id="c-pipeline" width="1100" height="320" style="display:block; margin:0 auto; max-width:100%;"></canvas>
   </div>
 </div>
 
@@ -825,8 +825,7 @@ document.querySelectorAll('.snav a').forEach(function(a) {
   const canvas = document.getElementById('c-pipeline');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = 860, H = 320;
-
+  const W = 1100, H = 320;
   ctx.fillStyle = '#1c2b3a'; ctx.fillRect(0, 0, W, H);
 
   const stageColors = [
