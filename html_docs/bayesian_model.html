@@ -210,8 +210,8 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
     <div class="formula">Posterior  ∝  Prior  ×  Likelihood</div>
     <div style="margin-top:10px">
       <div class="fe-row"><div class="fe-sym">Posterior</div><div class="fe-def">Your updated belief <em>after</em> seeing the data. A probability distribution — not a single number. This is what the model produces for every effect size.</div></div>
-      <div class="fe-row"><div class="fe-sym">Prior</div><div class="fe-def">Your belief <em>before</em> seeing the data. In your paper, encoded as sigma values (0.18–1.5) controlling how wide each level of the model is allowed to vary.</div></div>
-      <div class="fe-row"><div class="fe-sym">Likelihood</div><div class="fe-def">How well different effect sizes actually explain the data you collected from 140 PDAC patients.</div></div>
+      <div class="fe-row"><div class="fe-sym">Prior</div><div class="fe-def">Your belief <em>before</em> seeing the data. In this study, encoded as sigma values (0.18–1.5) controlling how wide each level of the model is allowed to vary.</div></div>
+      <div class="fe-row"><div class="fe-sym">Likelihood</div><div class="fe-def">How well different effect sizes actually explain the data collected from 140 PDAC patients.</div></div>
       <div class="fe-row"><div class="fe-sym">∝</div><div class="fe-def">"Is proportional to" — the right side determines the shape of the posterior. The model finds the posterior that best balances prior and data.</div></div>
     </div>
   </div>
@@ -247,11 +247,11 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
   <div class="sec-tag">Section 02</div>
   <h2>What Makes it "Hierarchical"?</h2>
 
-  <p>Your data has a natural <strong>nested structure</strong>. Signatures live inside cell types. Cell types live inside compartments. And all of this lives inside patients. Treating every comparison as fully independent ignores this structure and wastes information. Hierarchical modeling exploits the structure through <strong>partial pooling</strong> — related things share information with each other.</p>
+  <p>The data has a natural <strong>nested structure</strong>. Signatures live inside cell types. Cell types live inside compartments. And all of this lives inside patients. Treating every comparison as fully independent ignores this structure and wastes information. Hierarchical modeling exploits the structure through <strong>partial pooling</strong> — related things share information with each other.</p>
 
   <div class="analogy">
     <div class="lbl">🔥 Multi-Centre Drug Trial Analogy</div>
-    <p>Testing a drug across 10 hospitals. Hospital A has 5 patients, Hospital B has 50. Analyzing Hospital A alone gives unreliable results. Pooling everyone ignores real hospital differences. <strong>Hierarchical modeling does both at once</strong>: hospitals are distinct but related — Hospital A borrows statistical strength from the overall pattern. In your paper, the 18 obese patients aren't analyzed in isolation — they benefit from the pattern seen across all 140 patients and all cell types in the same compartment.</p>
+    <p>Testing a drug across 10 hospitals. Hospital A has 5 patients, Hospital B has 50. Analyzing Hospital A alone gives unreliable results. Pooling everyone ignores real hospital differences. <strong>Hierarchical modeling does both at once</strong>: hospitals are distinct but related — Hospital A borrows statistical strength from the overall pattern. In this study, the 18 obese patients aren't analyzed in isolation — they benefit from the pattern seen across all 140 patients and all cell types in the same compartment.</p>
   </div>
 
   <!-- FIGURE 2: Hierarchical Nesting (SVG) -->
@@ -341,7 +341,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
     <div style="text-align:center; font-size:9pt; color:var(--muted); margin:5px 0 10px; font-style:italic;">Expected Score = Baseline + Patient Offset + Overweight Effect + Obese Effect</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">μ_ij</div><div class="fe-def"><strong>The predicted signature score</strong> for patient <em>i</em> in cell type <em>j</em>. The whole formula tries to predict this number for every patient × signature × cell type.</div></div>
-      <div class="fe-row"><div class="fe-sym">α_j</div><div class="fe-def"><strong>Alpha — Baseline.</strong> Expected score in normal-weight patients for cell type <em>j</em>. Think of this as your control group value. Prior: Normal(0, 1.5) — wide prior because we don't know the baseline in advance.</div></div>
+      <div class="fe-row"><div class="fe-sym">α_j</div><div class="fe-def"><strong>Alpha — Baseline.</strong> Expected score in normal-weight patients for cell type <em>j</em>. Think of this as the control group reference value. Prior: Normal(0, 1.5) — wide prior because we don't know the baseline in advance.</div></div>
       <div class="fe-row"><div class="fe-sym">γ_p[i]</div><div class="fe-def"><strong>Gamma — Patient Offset.</strong> Each patient's unique biology unrelated to BMI. Patient 7 might just naturally express everything 0.4 Z-scores higher. Without this term, that would get incorrectly attributed to their BMI group.</div></div>
       <div class="fe-row"><div class="fe-sym">β_OW_kj</div><div class="fe-def"><strong>Beta OW — The Main Finding.</strong> How much does signature <em>k</em> in cell type <em>j</em> change in overweight vs normal? Positive = upregulated. Negative = downregulated. Near zero = no change. This is what the paper reports.</div></div>
       <div class="fe-row"><div class="fe-sym">β_OB_kj</div><div class="fe-def"><strong>Beta OB — The Obese Finding.</strong> Same but for obese vs normal. Together β_OW and β_OB reveal non-linear patterns — e.g., NK cells activated in OW (positive β) then collapsed in OB (near-zero β).</div></div>
@@ -363,7 +363,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
   <div class="analogy">
     <div class="lbl">🔬 qPCR Analogy — Categorical vs Continuous</div>
     <p>The <strong>categorical model</strong> is like a Western blot with three lanes — Normal, Overweight, Obese — you compare band intensities between groups. But you can't see what happens between the groups, or whether the change is truly gradual.</p>
-    <p style="margin-top:8px">The <strong>continuous model</strong> is like a dose-response curve — you titrate BMI from low to high and measure the response at each level. This is how your paper detected that oncogenic KRAS signatures in Tumor Classical cells accumulate continuously with BMI — the categorical model grouped patients into bins and missed this gradual accumulation entirely.</p>
+    <p style="margin-top:8px">The <strong>continuous model</strong> is like a dose-response curve — you titrate BMI from low to high and measure the response at each level. This is how this study detected that oncogenic KRAS signatures in Tumor Classical cells accumulate continuously with BMI — the categorical model grouped patients into bins and missed this gradual accumulation entirely.</p>
   </div>
 
   <div class="formula-box">
@@ -388,7 +388,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
   <div class="analogy">
     <div class="lbl">🗺 Mapping a Hilly Landscape Blindfolded</div>
     <p>You're blindfolded on a hilly landscape and must map where the peaks and valleys are. You can only feel the ground under your feet. Strategy: <strong>wander randomly for thousands of steps</strong>. You naturally spend more time near peaks (the terrain holds you there). After enough steps, your record of "places I visited" builds a map — places visited most frequently are the highest probability regions.</p>
-    <p style="margin-top:8px">In your paper, the <strong>landscape</strong> is the space of all possible effect sizes for all 2,143 signatures. The <strong>peaks</strong> are where the most probable effect sizes live. The <strong>map of visited locations</strong> becomes your posterior distribution.</p>
+    <p style="margin-top:8px">In this study, the <strong>landscape</strong> is the space of all possible effect sizes for all 2,143 signatures. The <strong>peaks</strong> are where the most probable effect sizes live. The <strong>map of visited locations</strong> becomes the posterior distribution.</p>
   </div>
 
   <!-- FIGURE 3: MCMC Chain Convergence -->
@@ -404,7 +404,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
       <p style="font-size:10pt">Takes random steps in random directions. Often doubles back and revisits areas already mapped. Very slow to explore the full landscape. Can get stuck in narrow probability valleys for thousands of steps.</p>
     </div>
     <div class="note-box" style="margin:0">
-      <div class="lbl">NUTS — Used in Your Paper</div>
+      <div class="lbl">NUTS — Used in This Study</div>
       <p style="font-size:10pt">Uses the gradient (slope) of the probability landscape to take larger, more purposeful steps. <strong>Automatically stops before making a U-turn</strong> — because retracing adds no new information. Target acceptance rate: 99%. Far more efficient.</p>
     </div>
   </div>
@@ -433,7 +433,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
     <div class="lbl">📐 R-hat Conceptual Formula</div>
     <div class="formula">R-hat = Variation BETWEEN chains ÷ Variation WITHIN chains</div>
     <table style="margin-top:10px">
-      <tr><th>R-hat</th><th>Meaning</th><th>In Your Paper</th></tr>
+      <tr><th>R-hat</th><th>Meaning</th><th>In This Study</th></tr>
       <tr><td>= 1.000</td><td>Chains perfectly identical</td><td>Ideal</td></tr>
       <tr><td>≤ 1.010</td><td>Excellent — Primary status</td><td>Most OB vs N comparisons ✅</td></tr>
       <tr><td>1.010–1.020</td><td>Marginal — interpret with caution</td><td>OW vs N non-immune: 1.012 ⚠️</td></tr>
@@ -458,7 +458,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
   <div class="formula-box">
     <div class="lbl">📐 E-BFMI Threshold</div>
     <div class="formula">E-BFMI &gt; 0.3  →  Sampler explored adequately ✅</div>
-    <p style="margin-top:8px; font-size:10pt; color:#444"><strong>Biology analogy:</strong> Checks whether your MCMC walkers had their feet stuck in mud and couldn't explore freely. E-BFMI below 0.3 means the sampler was getting trapped. <strong>Your paper: 0.787–0.981 across all chains — all well above threshold. Walkers moved freely throughout.</strong></p>
+    <p style="margin-top:8px; font-size:10pt; color:#444"><strong>Biology analogy:</strong> Checks whether the MCMC walkers had their feet stuck in mud and couldn't explore freely. E-BFMI below 0.3 means the sampler was getting trapped. <strong>This study: 0.787–0.981 across all chains — all well above threshold. Walkers moved freely throughout.</strong></p>
   </div>
 </div>
 
@@ -471,7 +471,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
 
   <!-- FIGURE 4: HDI and ROPE scenarios -->
   <div class="fig-wrap">
-    <div class="fig-num">Figure 4 — Three Possible Scenarios for Your Posterior Distribution</div>
+    <div class="fig-num">Figure 4 — Three Possible Scenarios for the Posterior Distribution</div>
     <canvas id="c-hdi" width="800" height="220" style="background:#f8fafc; border-radius:8px;"></canvas>
     <div class="fig-cap">Scenario 1 (green, left): HDI entirely outside the ROPE — effect is both statistically real AND biologically meaningful — annotated ★★. Scenario 2 (amber, center): HDI excludes zero but overlaps the ROPE — statistically credible but may be too small to matter — annotated ★. Scenario 3 (red, right): HDI includes zero — might just be noise — not annotated.</div>
   </div>
@@ -489,7 +489,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
   </div>
 
   <div class="formula-box">
-    <div class="lbl">📐 Annotation System in Your Paper</div>
+    <div class="lbl">📐 Annotation System in This Study</div>
     <table style="margin-top:5px">
       <tr><th>Symbol</th><th>Criterion</th><th>Meaning</th></tr>
       <tr><td>★</td><td>95% HDI excludes zero</td><td>Statistically credible — real, not noise. But might be small.</td></tr>
@@ -617,7 +617,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
     <div class="sc-row"><div class="sc-term">Prior</div><div class="sc-def">Your belief about effect size BEFORE seeing data. Encoded as sigma values. Controls the "leash length" at each hierarchical level.</div></div>
     <div class="sc-row"><div class="sc-term">Posterior</div><div class="sc-def">Updated belief AFTER combining prior with data. A probability distribution — not a single number. This is what the model produces.</div></div>
     <div class="sc-row"><div class="sc-term">Hierarchical</div><div class="sc-def">Model accounts for nested structure: signatures → cell types → patients. Related measurements share information via partial pooling.</div></div>
-    <div class="sc-row"><div class="sc-term">α (alpha)</div><div class="sc-def">Baseline signature score in normal-weight patients. Your control group reference point. Prior: Normal(0, 1.5).</div></div>
+    <div class="sc-row"><div class="sc-term">α (alpha)</div><div class="sc-def">Baseline signature score in normal-weight patients. The control group reference point. Prior: Normal(0, 1.5).</div></div>
     <div class="sc-row"><div class="sc-term">β (beta)</div><div class="sc-def">THE MAIN RESULT. How much each signature changes with BMI. Positive = up, Negative = down. Reported per cell type per comparison.</div></div>
     <div class="sc-row"><div class="sc-term">γ (gamma)</div><div class="sc-def">Patient-specific offset. Captures each individual's unique biology unrelated to BMI. Prevents pseudoreplication.</div></div>
     <div class="sc-row"><div class="sc-term">σ (sigma)</div><div class="sc-def">Controls variation allowed at each level. Smaller = tighter leash = more regularization against overclaiming.</div></div>
@@ -626,7 +626,7 @@ td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--navy-mid
     <div class="sc-row"><div class="sc-term">Chains (×4)</div><div class="sc-def">Four independent MCMC runs from different start points. Like biological replicates — all must agree before you trust the result.</div></div>
     <div class="sc-row"><div class="sc-term">R-hat</div><div class="sc-def">Agreement between chains. Must be ≤ 1.01 for Primary status. > 1.02 = Exploratory only.</div></div>
     <div class="sc-row"><div class="sc-term">ESS</div><div class="sc-def">Effective independent samples. Must be > 400. Low ESS = unreliable estimates even if R-hat looks okay.</div></div>
-    <div class="sc-row"><div class="sc-term">E-BFMI</div><div class="sc-def">Checks if sampler got stuck. Must be > 0.3. Your paper: 0.787–0.981 — all good.</div></div>
+    <div class="sc-row"><div class="sc-term">E-BFMI</div><div class="sc-def">Checks if sampler got stuck. Must be > 0.3. This study: 0.787–0.981 — all good.</div></div>
     <div class="sc-row"><div class="sc-term">HDI</div><div class="sc-def">95% probability range for the true effect size. If HDI excludes zero → effect is credible → annotated ★.</div></div>
     <div class="sc-row"><div class="sc-term">ROPE</div><div class="sc-def">Minimum biologically meaningful effect threshold. If entire HDI lies outside ROPE → practically significant → ★★ or ★★★.</div></div>
     <div class="sc-row"><div class="sc-term">Stabl</div><div class="sc-def">Pre-screening tool. 500 bootstrap iterations to find signatures consistently associated with BMI. Reduces 2,143 → manageable set.</div></div>
