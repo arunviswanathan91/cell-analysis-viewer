@@ -350,8 +350,88 @@ def _load_html_doc(filename: str) -> str | None:
         return None
 
 
+# CSS injected before full-page HTML doc views to strip all Streamlit whitespace
+_FULL_PAGE_CSS = """
+<style>
+    /* ── Full-page HTML doc: remove Streamlit chrome whitespace ────────── */
+
+    /* Strip all padding from the block-container.
+       stAppViewContainer already sits below the fixed toolbar via margin-top,
+       so padding-top: 0 places content flush against the visible top edge.
+       Selectors cover both classic (.main) and modern (stMain) Streamlit. */
+    .main .block-container,
+    section[data-testid="stMain"] .block-container,
+    section[data-testid="stMain"] > div > .block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+    }
+
+    /* Kill the fadeIn animation so there is no "loading" flash */
+    .main .element-container,
+    section[data-testid="stMain"] .element-container {
+        animation: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* No border / outline on the component iframes */
+    .main .element-container iframe,
+    section[data-testid="stMain"] .element-container iframe {
+        display: block !important;
+        border: none !important;
+        outline: none !important;
+    }
+</style>
+"""
+
+# JS injected into the HTML body so the iframe resizes itself to its full
+# content height. This lets the Streamlit page scroll instead of an inner
+# iframe scroll-bar, giving a true full-page feel.
+_AUTORESIZE_JS = """
+<script>
+(function () {
+    'use strict';
+    function syncHeight() {
+        var h = Math.max(
+            document.body       ? document.body.scrollHeight       : 0,
+            document.documentElement ? document.documentElement.scrollHeight : 0
+        );
+        if (h < 200) return;   // sanity: ignore before layout is ready
+        try {
+            var frames = window.parent.document.querySelectorAll('iframe');
+            for (var i = 0; i < frames.length; i++) {
+                try {
+                    if (frames[i].contentDocument === document) {
+                        frames[i].style.setProperty('height', h + 'px', 'important');
+                        break;
+                    }
+                } catch (_) {}
+            }
+        } catch (_) {}
+    }
+    // Fire at DOMContentLoaded, after full load, and again for late-loading
+    // fonts / images (Google Fonts can shift layout height noticeably).
+    document.addEventListener('DOMContentLoaded', syncHeight);
+    window.addEventListener('load', syncHeight);
+    window.addEventListener('resize', syncHeight);
+    setTimeout(syncHeight, 150);
+    setTimeout(syncHeight, 600);
+    setTimeout(syncHeight, 1500);
+})();
+</script>
+"""
+
+
+def _prepare_html_doc(html: str) -> str:
+    """Inject the auto-resize script into an HTML doc before rendering."""
+    if '</body>' in html:
+        return html.replace('</body>', _AUTORESIZE_JS + '\n</body>', 1)
+    return html + _AUTORESIZE_JS
+
+
 def render_study_methodology():
-    """Render the full Study Methodology HTML inside an iframe-like component."""
+    """Render the full Study Methodology HTML as a seamless full-page view."""
     html = _load_html_doc("methodology.html")
     if html is None:
         st.error(
@@ -359,12 +439,15 @@ def render_study_methodology():
             "Make sure it exists next to `streamlit_app_with_explorer.py`."
         )
         return
-    # Render with generous height so the sticky nav and canvas work correctly
-    components.html(html, height=920, scrolling=True)
+    # Remove Streamlit padding, then render the HTML.
+    # The injected JS resizes the iframe to its full content height so the
+    # Streamlit page scrolls naturally — no inner iframe scrollbar needed.
+    st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
+    components.html(_prepare_html_doc(html), height=900, scrolling=True)
 
 
 def render_bayesian_explained():
-    """Render the Bayesian Model Explained HTML inside an iframe-like component."""
+    """Render the Bayesian Model Explained HTML as a seamless full-page view."""
     html = _load_html_doc("bayesian_model.html")
     if html is None:
         st.error(
@@ -372,7 +455,8 @@ def render_bayesian_explained():
             "Make sure it exists next to `streamlit_app_with_explorer.py`."
         )
         return
-    components.html(html, height=920, scrolling=True)
+    st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
+    components.html(_prepare_html_doc(html), height=900, scrolling=True)
 
 
 
