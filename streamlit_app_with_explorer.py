@@ -1817,7 +1817,8 @@ def get_available_cells_continuous(compartment):
             for feat in continuous_results['feature'].dropna():
                 feat_str = str(feat)
                 if '||' in feat_str:
-                    cells.add(feat_str.split('||')[0].strip())
+                    # Normalize underscores → spaces to match the cell_type column format
+                    cells.add(feat_str.split('||')[0].strip().replace('_', ' '))
             if cells:
                 return sorted(cells)
 
@@ -4505,11 +4506,12 @@ def plot_continuous_cell_heatmap(selected_cell, comp_data):
     
     results = comp_data['continuous_results'].copy()
     
-    # Parse features
+    # Parse features — normalise underscores→spaces in cell type so the parsed
+    # value matches the cell_type column (e.g. TUMOR_EPITHELIAL → TUMOR EPITHELIAL)
     def parse_feature(feature):
         if "||" in str(feature):
             cell_type, signature = str(feature).split("||", 1)
-            return cell_type.strip(), signature.strip()
+            return cell_type.strip().replace('_', ' '), signature.strip()
         return "Unknown", str(feature)
     
     results['cell_type_parsed'], results['signature'] = zip(*results['feature'].apply(parse_feature))
@@ -4904,11 +4906,11 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
     
     results = comp_data['continuous_results'].copy()
     
-    # Parse feature to get cell type and signature
+    # Parse feature to get cell type and signature — normalise underscores→spaces
     def parse_feature(feature):
         if "||" in str(feature):
             cell_type, signature = str(feature).split("||", 1)
-            return cell_type.strip(), signature.strip()
+            return cell_type.strip().replace('_', ' '), signature.strip()
         return "Unknown", str(feature)
     
     results['cell_type_parsed'], results['signature'] = zip(*results['feature'].apply(parse_feature))
@@ -5765,7 +5767,7 @@ def render_continuous_analysis():
 
         # Filter for selected cell
         results['cell_type_parsed'] = results['feature'].apply(
-            lambda x: str(x).split('||')[0].strip() if '||' in str(x) else "Unknown"
+            lambda x: str(x).split('||')[0].strip().replace('_', ' ') if '||' in str(x) else "Unknown"
         )
 
         cell_results = results[results['cell_type_parsed'].str.upper() == selected_cell.upper()]
