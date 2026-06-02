@@ -3164,36 +3164,51 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
         st.warning("❌ No BMI slope diagnostics found")
         return None
     
-    # Build index→name mapping from continuous_results first-appearance order
-    # (celltype_map in the continuous folder only has integer indices, not names)
+    # Build integer→name mapping as fallback for old-format diagnostics
     name_to_idx = get_continuous_celltype_index_map(comp_data)
     idx_to_name = {v: k for k, v in name_to_idx.items()}  # int → UPPER_CASE name
 
-    # Map indices to names and filter if specific cell selected
+    # Normalise the selected_cell for comparison (upper, underscores→spaces)
+    sel_upper = selected_cell.upper().replace('_', ' ') if selected_cell else None
+
+    # Map parameter names to cell type labels and filter if a specific cell is selected.
+    # Supports TWO diagnostics formats:
+    #   NEW: celltype_bmi_slope[ACINAR]  or  feature_bmi_slope[TUMOR_EPITHELIAL||sig]
+    #   OLD: celltype_bmi_slope[0]  (integer index → looked up via idx_to_name)
+    import re
     labels = []
     indices_to_keep = []
 
     for i, param_name in enumerate(diag_filtered.index):
-        import re
-        match = re.search(r'\[(\d+)\]', param_name)
-        if match:
-            cell_idx = int(match.group(1))
-            if cell_idx in idx_to_name:
-                cell_name_upper = idx_to_name[cell_idx]
-                cell_name_display = cell_name_upper.replace('_', ' ').title()
-
-                # Filter by selected cell if provided (case-insensitive)
-                if selected_cell is None or cell_name_upper == selected_cell.upper():
-                    labels.append(cell_name_display)
-                    indices_to_keep.append(i)
-            else:
-                if selected_cell is None:
-                    labels.append(f"Cell {cell_idx}")
-                    indices_to_keep.append(i)
-        else:
-            if selected_cell is None:
+        match = re.search(r'\[([^\]]+)\]', param_name)   # match anything in [ ]
+        if not match:
+            if sel_upper is None:
                 labels.append(param_name.replace('_', ' ').title())
                 indices_to_keep.append(i)
+            continue
+
+        content = match.group(1)
+
+        if content.isdigit():
+            # ── OLD FORMAT: integer index ─────────────────────────────────
+            cell_idx = int(content)
+            if cell_idx in idx_to_name:
+                cell_name_upper = idx_to_name[cell_idx].replace('_', ' ')
+                cell_name_display = cell_name_upper.title()
+            else:
+                cell_name_upper = None
+                cell_name_display = f"Cell {cell_idx}"
+        else:
+            # ── NEW FORMAT: name (or name||signature) in brackets ─────────
+            # e.g. 'ACINAR', 'TUMOR EPITHELIAL', 'TUMOR_CLASSICAL||sig_name'
+            cell_part = content.split('||')[0].strip().replace('_', ' ')
+            cell_name_upper = cell_part.upper()
+            cell_name_display = cell_part.title()
+
+        # Apply cell filter
+        if sel_upper is None or (cell_name_upper and cell_name_upper == sel_upper):
+            labels.append(cell_name_display)
+            indices_to_keep.append(i)
     
     if len(indices_to_keep) == 0:
         st.warning(f"❌ No diagnostics found for {selected_cell if selected_cell else 'any cell'}")
@@ -5847,11 +5862,27 @@ def render_continuous_analysis():
             **Autocorrelation:** Rapid decay = independent samples.
             """)
 
-        # Check whether the selected cell was included in the MCMC model run.
-        # The continuous model was run for a subset of cell types; the others
-        # have summary statistics (heatmap) but no posterior chains.
-        _name_to_idx = get_continuous_celltype_index_map(comp_data_cont)
-        _cell_in_model = selected_cell.upper() in _name_to_idx
+        # Check whether the selected cell has MCMC posterior data.
+        # Primary check: look for celltype_bmi_slope[CELL_NAME] in diagnostics index
+        # (works for new name-based format). Fallback: use integer index mapping.
+        _diag = comp_data_cont.get('diagnostics')
+        _cell_upper = selected_cell.upper().replace('_', ' ')
+        if _diag is not None:
+            _diag_idx = _diag.index.astype(str)
+            # Match both "CELL NAME" (spaces) and "CELL_NAME" (underscores)
+            _cell_in_model = (
+                _diag_idx.str.contains(
+                    r'celltype_bmi_slope\[' + _cell_upper.replace(' ', '[_ ]') + r'\]',
+                    regex=True, case=False, na=False
+                ).any()
+                or _diag_idx.str.contains(
+                    r'celltype_bmi_slope\[' + _cell_upper.replace(' ', '_') + r'\]',
+                    regex=True, case=False, na=False
+                ).any()
+            )
+        else:
+            _name_to_idx = get_continuous_celltype_index_map(comp_data_cont)
+            _cell_in_model = _cell_upper in _name_to_idx
 
         if not _cell_in_model:
             # Cells with full MCMC posteriors for this compartment
