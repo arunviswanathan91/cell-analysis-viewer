@@ -385,39 +385,40 @@ _FULL_PAGE_CSS = """
 </style>
 """
 
-# JS injected into the HTML body so the iframe resizes itself to its full
-# content height. This lets the Streamlit page scroll instead of an inner
-# iframe scroll-bar, giving a true full-page feel.
+# JS injected into the HTML body to set the iframe height to the visible
+# viewport area (parent window height minus the Streamlit toolbar).
+# Keeping the iframe at screen height — rather than full content height —
+# means the content scrolls INSIDE the iframe, which is essential for
+# position:sticky nav bars to work correctly.
 _AUTORESIZE_JS = """
 <script>
 (function () {
     'use strict';
+    // Streamlit's fixed toolbar is approximately 60px tall.
+    var TOOLBAR_H = 60;
+
     function syncHeight() {
-        var h = Math.max(
-            document.body       ? document.body.scrollHeight       : 0,
-            document.documentElement ? document.documentElement.scrollHeight : 0
-        );
-        if (h < 200) return;   // sanity: ignore before layout is ready
         try {
+            var parentH = window.parent ? window.parent.innerHeight : 900;
+            var targetH = Math.max(parentH - TOOLBAR_H, 600);
             var frames = window.parent.document.querySelectorAll('iframe');
             for (var i = 0; i < frames.length; i++) {
                 try {
                     if (frames[i].contentDocument === document) {
-                        frames[i].style.setProperty('height', h + 'px', 'important');
+                        frames[i].style.setProperty('height', targetH + 'px', 'important');
                         break;
                     }
                 } catch (_) {}
             }
         } catch (_) {}
     }
-    // Fire at DOMContentLoaded, after full load, and again for late-loading
-    // fonts / images (Google Fonts can shift layout height noticeably).
+
+    // Run on load and on every parent-window resize.
     document.addEventListener('DOMContentLoaded', syncHeight);
     window.addEventListener('load', syncHeight);
-    window.addEventListener('resize', syncHeight);
-    setTimeout(syncHeight, 150);
-    setTimeout(syncHeight, 600);
-    setTimeout(syncHeight, 1500);
+    try { window.parent.addEventListener('resize', syncHeight); } catch (_) {}
+    setTimeout(syncHeight, 100);
+    setTimeout(syncHeight, 500);
 })();
 </script>
 """
@@ -440,8 +441,8 @@ def render_study_methodology():
         )
         return
     # Remove Streamlit padding, then render the HTML.
-    # The injected JS resizes the iframe to its full content height so the
-    # Streamlit page scrolls naturally — no inner iframe scrollbar needed.
+    # The injected JS sizes the iframe to the visible viewport area so content
+    # scrolls inside the iframe — keeping the sticky nav bar fixed correctly.
     st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
     components.html(_prepare_html_doc(html), height=900, scrolling=True)
 
