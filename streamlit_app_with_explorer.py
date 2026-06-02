@@ -3154,10 +3154,18 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
     
     diag.index = diag.index.astype(str)
     
-    # Filter for bmi_slope parameters
+    # Filter for CELL-TYPE-LEVEL bmi_slope parameters only.
+    # We exclude feature_bmi_slope (signature-level) because that produces
+    # one bar per signature per cell — dozens of bars that make the chart
+    # unreadably wide.  The cell-type-level parameter is the key convergence
+    # diagnostic: one bar per cell type shows whether the overall BMI slope
+    # for that cell type has converged.
     diag_filtered = diag[
-        diag.index.str.contains('bmi_slope', na=False, case=False) |
-        diag.index.str.contains('feature_bmi_slope', na=False, case=False)
+        diag.index.str.startswith('celltype_bmi_slope', na=False)
+        | (
+            diag.index.str.contains('bmi_slope', na=False, case=False)
+            & ~diag.index.str.startswith('feature_bmi_slope', na=False)
+        )
     ]
     
     if len(diag_filtered) == 0:
