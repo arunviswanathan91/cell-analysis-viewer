@@ -575,6 +575,20 @@ st.markdown("""
         z-index: 0;
     }
     
+    /* ========== BLOCK CONTAINER — Reduce default Streamlit whitespace ========== */
+    /* Streamlit's block-container defaults to ~6 rem top, 10 rem bottom, and 1 rem
+       sides — creating the large blank gutters visible around every page.
+       The methodology/bayesian views override this further to 0 via _FULL_PAGE_CSS. */
+
+    .main .block-container,
+    section[data-testid="stMain"] .block-container {
+        padding-top: 1.5rem !important;      /* Just enough to clear the fixed toolbar */
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-bottom: 2rem !important;     /* Down from Streamlit's default 10 rem  */
+        max-width: 100% !important;
+    }
+
     /* ========== HEADERS - Gradient Text with Depth ========== */
     
     .main-header {
