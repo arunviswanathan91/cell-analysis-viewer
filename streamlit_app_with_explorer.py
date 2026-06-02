@@ -5847,56 +5847,79 @@ def render_continuous_analysis():
             **Autocorrelation:** Rapid decay = independent samples.
             """)
 
-        # Row 1: ESS/R-hat and Energy (side by side)
-        cont_col1, cont_col2 = st.columns(2)
+        # Check whether the selected cell was included in the MCMC model run.
+        # The continuous model was run for a subset of cell types; the others
+        # have summary statistics (heatmap) but no posterior chains.
+        _name_to_idx = get_continuous_celltype_index_map(comp_data_cont)
+        _cell_in_model = selected_cell.upper() in _name_to_idx
 
-        with cont_col1:
-            st.markdown("#### ESS & R-hat")
+        if not _cell_in_model:
+            # Cells with full MCMC posteriors for this compartment
+            _modeled_cells = sorted(
+                k.replace('_', ' ').title() for k in _name_to_idx.keys()
+            )
+            st.info(
+                f"ℹ️ **Full MCMC diagnostics are not available for {selected_cell_display}.**\n\n"
+                f"The continuous Bayesian model ran full posterior sampling for "
+                f"{len(_modeled_cells)} of the {len(available_cells)} cell types in this "
+                f"compartment. **{selected_cell_display}** has slope estimates (visible in the "
+                f"Heatmap tab) derived from a separate model pass, but its posterior chains "
+                f"were not stored, so ESS, R-hat, trace, rank, and autocorrelation plots "
+                f"cannot be generated.\n\n"
+                f"**Cells with full diagnostics available:** "
+                f"{', '.join(_modeled_cells)}"
+            )
+        if _cell_in_model:
+            # Row 1: ESS/R-hat and Energy (side by side)
+            cont_col1, cont_col2 = st.columns(2)
+
+            with cont_col1:
+                st.markdown("#### ESS & R-hat")
+                with st.expander("What does this show?", expanded=False):
+                    st.markdown("**ESS:** Independent samples (target > 400). **R-hat:** Chain agreement (< 1.01).")
+                with st.spinner("Loading chart..."):
+                    fig = plot_ess_rhat_continuous(comp_data_cont, selected_cell=selected_cell_display)
+                    if fig:
+                        st.plotly_chart(fig, width='stretch')
+
+            with cont_col2:
+                st.markdown("#### Energy")
+                with st.expander("What does this show?", expanded=False):
+                    st.markdown("**Energy:** HMC sampling quality. Smooth transitions = good mixing.")
+                with st.spinner("Loading chart..."):
+                    fig = plot_energy_diagnostic(comp_data_cont)
+                    if fig:
+                        st.plotly_chart(fig, width='stretch')
+
+            # Row 2: Trace and Rank (side by side)
+            cont_col3, cont_col4 = st.columns(2)
+
+            with cont_col3:
+                st.markdown("#### Trace Plot")
+                with st.expander("What does this show?", expanded=False):
+                    st.markdown("**Good:** 'Hairy caterpillar' with overlapping chains. **Bad:** Trends or stuck chains.")
+                with st.spinner("Loading chart..."):
+                    fig = plot_trace_continuous(comp_data_cont, selected_cell_display)
+                    if fig:
+                        st.plotly_chart(fig, width='stretch')
+
+            with cont_col4:
+                st.markdown("#### Rank Plot")
+                with st.expander("What does this show?", expanded=False):
+                    st.markdown("**Good:** Uniform distributions. **Bad:** Non-uniform = exploring different regions.")
+                with st.spinner("Loading chart..."):
+                    fig = plot_rank_continuous(comp_data_cont, selected_cell_display)
+                    if fig:
+                        st.plotly_chart(fig, width='stretch')
+
+            # Row 3: Autocorrelation (full width)
+            st.markdown("#### Autocorrelation")
             with st.expander("What does this show?", expanded=False):
-                st.markdown("**ESS:** Independent samples (target > 400). **R-hat:** Chain agreement (< 1.01).")
+                st.markdown("**Good:** Rapid decay to zero. **Bad:** Slow decay = high autocorrelation.")
             with st.spinner("Loading chart..."):
-                fig = plot_ess_rhat_continuous(comp_data_cont, selected_cell=selected_cell_display)
+                fig = plot_autocorrelation_continuous(comp_data_cont, selected_cell_display)
                 if fig:
                     st.plotly_chart(fig, width='stretch')
-
-        with cont_col2:
-            st.markdown("#### Energy")
-            with st.expander("What does this show?", expanded=False):
-                st.markdown("**Energy:** HMC sampling quality. Smooth transitions = good mixing.")
-            with st.spinner("Loading chart..."):
-                fig = plot_energy_diagnostic(comp_data_cont)
-                if fig:
-                    st.plotly_chart(fig, width='stretch')
-
-        # Row 2: Trace and Rank (side by side)
-        cont_col3, cont_col4 = st.columns(2)
-
-        with cont_col3:
-            st.markdown("#### Trace Plot")
-            with st.expander("What does this show?", expanded=False):
-                st.markdown("**Good:** 'Hairy caterpillar' with overlapping chains. **Bad:** Trends or stuck chains.")
-            with st.spinner("Loading chart..."):
-                fig = plot_trace_continuous(comp_data_cont, selected_cell_display)
-                if fig:
-                    st.plotly_chart(fig, width='stretch')
-
-        with cont_col4:
-            st.markdown("#### Rank Plot")
-            with st.expander("What does this show?", expanded=False):
-                st.markdown("**Good:** Uniform distributions. **Bad:** Non-uniform = exploring different regions.")
-            with st.spinner("Loading chart..."):
-                fig = plot_rank_continuous(comp_data_cont, selected_cell_display)
-                if fig:
-                    st.plotly_chart(fig, width='stretch')
-
-        # Row 3: Autocorrelation (full width)
-        st.markdown("#### Autocorrelation")
-        with st.expander("What does this show?", expanded=False):
-            st.markdown("**Good:** Rapid decay to zero. **Bad:** Slow decay = high autocorrelation.")
-        with st.spinner("Loading chart..."):
-            fig = plot_autocorrelation_continuous(comp_data_cont, selected_cell_display)
-            if fig:
-                st.plotly_chart(fig, width='stretch')
 
 
     st.markdown("---")
