@@ -385,40 +385,121 @@ _FULL_PAGE_CSS = """
 </style>
 """
 
-# JS injected into the HTML body to set the iframe height to the visible
-# viewport area (parent window height minus the Streamlit toolbar).
-# Keeping the iframe at screen height — rather than full content height —
-# means the content scrolls INSIDE the iframe, which is essential for
-# position:sticky nav bars to work correctly.
+# JS injected into the HTML body.  Two responsibilities:
+#
+# 1. RESIZE: Grow the iframe to its full content height so the STREAMLIT PAGE
+#    scrolls (not the iframe).  This eliminates the "frame with blank space
+#    below" appearance — the document flows naturally to its end.
+#
+# 2. STICKY-NAV POLYFILL: position:sticky inside a non-scrolling iframe cannot
+#    track the parent window's scroll.  We disable CSS sticky on the nav and
+#    replicate it with translateY driven by the parent scroll event, keeping
+#    the nav bar visually pinned to the top of the visible viewport without
+#    disturbing the document layout below it.
 _AUTORESIZE_JS = """
 <script>
 (function () {
     'use strict';
-    // Streamlit's fixed toolbar is approximately 60px tall.
-    var TOOLBAR_H = 60;
 
-    function syncHeight() {
+    /* ── 1. Resize iframe to full content height ──────────────────────── */
+    function findOwnIframe() {
         try {
-            var parentH = window.parent ? window.parent.innerHeight : 900;
-            var targetH = Math.max(parentH - TOOLBAR_H, 600);
             var frames = window.parent.document.querySelectorAll('iframe');
             for (var i = 0; i < frames.length; i++) {
                 try {
-                    if (frames[i].contentDocument === document) {
-                        frames[i].style.setProperty('height', targetH + 'px', 'important');
-                        break;
-                    }
+                    if (frames[i].contentDocument === document) return frames[i];
                 } catch (_) {}
             }
         } catch (_) {}
+        return null;
     }
 
-    // Run on load and on every parent-window resize.
+    function syncHeight() {
+        var h = Math.max(
+            document.body            ? document.body.scrollHeight            : 0,
+            document.documentElement ? document.documentElement.scrollHeight : 0
+        );
+        if (h < 200) return;
+        var f = findOwnIframe();
+        if (f) f.style.setProperty('height', h + 'px', 'important');
+    }
+
     document.addEventListener('DOMContentLoaded', syncHeight);
     window.addEventListener('load', syncHeight);
-    try { window.parent.addEventListener('resize', syncHeight); } catch (_) {}
-    setTimeout(syncHeight, 100);
-    setTimeout(syncHeight, 500);
+    window.addEventListener('resize', syncHeight);
+    setTimeout(syncHeight, 150);
+    setTimeout(syncHeight, 700);
+    setTimeout(syncHeight, 1800);  // catch late-loading Google Fonts
+
+    /* ── 2. Sticky-nav polyfill via parent-scroll tracking ───────────── */
+    /*
+     * When the parent scrolls, we translate the nav down by the same amount
+     * it would need to travel to appear at y=0 in the parent viewport.
+     *
+     *   nav visual y in parent viewport
+     *     = (iframeAbsTop + navNaturalTop + translateY) - parentScrollY
+     *     = 0  (we want it pinned at top)
+     *   → translateY = parentScrollY - iframeAbsTop - navNaturalTop
+     *
+     * Using translateY (not top/left) keeps the element in document flow
+     * so the content below never shifts.
+     */
+    function initStickyNav() {
+        var nav = document.querySelector('.snav, .sticky-nav');
+        if (!nav) return;
+
+        /* Switch CSS sticky → relative so transform works without z-fighting. */
+        nav.style.position = 'relative';
+        nav.style.top = 'auto';
+
+        /* Nav's fixed distance from the top of the iframe document. */
+        var navNaturalTop = nav.offsetTop;
+
+        /* Iframe's absolute top in the parent document (lazy, reset on resize). */
+        var iframeAbsTop = null;
+
+        function getIframeAbsTop() {
+            var f = findOwnIframe();
+            if (!f) return 0;
+            var rect = f.getBoundingClientRect();
+            return rect.top + (window.parent.scrollY || window.parent.pageYOffset || 0);
+        }
+
+        function onParentScroll() {
+            try {
+                if (iframeAbsTop === null) iframeAbsTop = getIframeAbsTop();
+                var navAbsTop = iframeAbsTop + navNaturalTop;
+                var pScroll  = window.parent.scrollY || window.parent.pageYOffset || 0;
+
+                if (pScroll >= navAbsTop) {
+                    nav.style.transform = 'translateY(' + (pScroll - navAbsTop) + 'px)';
+                    nav.style.zIndex    = '9999';
+                } else {
+                    nav.style.transform = '';
+                    nav.style.zIndex    = '';
+                }
+            } catch (_) {}
+        }
+
+        try {
+            window.parent.addEventListener('scroll', onParentScroll, { passive: true });
+            window.parent.addEventListener('resize', function () {
+                iframeAbsTop = null;   // recalculate after layout change
+                onParentScroll();
+            });
+        } catch (_) {}
+
+        onParentScroll();
+    }
+
+    /* Init sticky nav after fonts/layout settle (offsetTop must be stable). */
+    function scheduleNavInit() { setTimeout(initStickyNav, 300); }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', scheduleNavInit);
+    } else {
+        scheduleNavInit();
+    }
+    window.addEventListener('load', scheduleNavInit);
 })();
 </script>
 """
@@ -441,8 +522,9 @@ def render_study_methodology():
         )
         return
     # Remove Streamlit padding, then render the HTML.
-    # The injected JS sizes the iframe to the visible viewport area so content
-    # scrolls inside the iframe — keeping the sticky nav bar fixed correctly.
+    # _AUTORESIZE_JS (1) expands the iframe to full content height so the
+    # Streamlit page scrolls — no frame edge, no blank space below — and
+    # (2) polyfills the sticky nav so it tracks the parent-window scroll.
     st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
     components.html(_prepare_html_doc(html), height=900, scrolling=True)
 
