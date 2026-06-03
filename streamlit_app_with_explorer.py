@@ -400,13 +400,44 @@ _AUTORESIZE_JS = """
 <script>
 (function () {
     'use strict';
-    /* Set the iframe height to the visible viewport area so the content
-       scrolls INSIDE the iframe.  This means:
-         - CSS position:sticky on the nav works natively (no polyfill needed)
-         - href="#section" anchor links scroll natively inside the iframe
-         - No cross-frame JS that can break or freeze the page
-       The Streamlit toolbar is ~60px; subtract it so the iframe fills the
-       remaining screen exactly.                                            */
+
+    /* ── Locate the Streamlit scroll container ──────────────────────── */
+    /* Streamlit scrolls its stAppViewContainer div, not the window.     */
+    function getScrollContainer() {
+        try {
+            return window.parent.document.querySelector(
+                '[data-testid="stAppViewContainer"]'
+            ) || window.parent;
+        } catch (_) { return null; }
+    }
+
+    /* ── Scroll the parent page to the top ─────────────────────────── */
+    /* BUG FIX: When the user was scrolled far down on a previous page
+       (e.g. Categorical Analysis) and then switches to the HTML doc
+       view, Streamlit re-renders but the browser retains the old scroll
+       position.  The iframe is placed at y=0 in the document, but the
+       viewport is still at y=5000 → the user sees a white patch below
+       the iframe.  Scrolling to the top immediately reveals the iframe. */
+    function scrollParentToTop() {
+        try {
+            var sc = getScrollContainer();
+            if (sc && sc.scrollTo) {
+                sc.scrollTo({ top: 0, behavior: 'instant' });
+            } else if (sc) {
+                sc.scrollTop = 0;
+            }
+        } catch (_) {}
+    }
+
+    /* Run immediately — before any layout paint — so the jump is invisible. */
+    scrollParentToTop();
+
+    /* ── Set iframe height to the visible viewport area ────────────── */
+    /* Content scrolls INSIDE the iframe so:
+         - CSS position:sticky on the nav works natively
+         - href="#section" anchor links work natively
+       The Streamlit toolbar is ~60px; subtract it so the iframe fills
+       the remaining screen height exactly.                             */
     function findOwnIframe() {
         try {
             var frames = window.parent.document.querySelectorAll('iframe');
