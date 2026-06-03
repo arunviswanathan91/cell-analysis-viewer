@@ -398,10 +398,19 @@ def _render_new_tab_page(url: str, title: str, subtitle: str,
     )
 
 
+# jsDelivr CDN serves files directly from GitHub with the correct text/html
+# MIME type so the browser renders them as proper HTML pages.
+# URL format: https://cdn.jsdelivr.net/gh/{user}/{repo}@{branch}/{path}
+_JSDELIVR_BASE = (
+    "https://cdn.jsdelivr.net/gh/"
+    "arunviswanathan91/cell-analysis-viewer@main/html_docs"
+)
+
+
 def render_study_methodology():
-    """Open Study Methodology in a new browser tab when selected."""
+    """Open Study Methodology in a new browser tab (served via jsDelivr CDN)."""
     _render_new_tab_page(
-        url="/app/static/methodology.html",
+        url=f"{_JSDELIVR_BASE}/methodology.html",
         title="Study Methodology",
         subtitle=(
             "A full walkthrough of every analytical step — "
@@ -413,9 +422,9 @@ def render_study_methodology():
 
 
 def render_bayesian_explained():
-    """Open Bayesian Model Explained in a new browser tab when selected."""
+    """Open Bayesian Model Explained in a new browser tab (served via jsDelivr CDN)."""
     _render_new_tab_page(
-        url="/app/static/bayesian_model.html",
+        url=f"{_JSDELIVR_BASE}/bayesian_model.html",
         title="The Bayesian Model — Explained",
         subtitle=(
             "Everything you need to understand the hierarchical Bayesian approach — "
