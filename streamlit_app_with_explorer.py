@@ -398,20 +398,20 @@ def _render_new_tab_page(url: str, title: str, subtitle: str,
     )
 
 
-# raw.githack.com serves GitHub files with the correct Content-Type headers
-# (text/html for .html files) so browsers render them as full web pages.
-# jsDelivr serves .html as text/plain (security policy) — githack does not.
-# URL format: https://raw.githack.com/{user}/{repo}/{branch}/{path}
-_GITHACK_BASE = (
-    "https://raw.githack.com/"
-    "arunviswanathan91/cell-analysis-viewer/main/html_docs"
+# GitHub Pages serves the repo's files as a proper static website with
+# correct Content-Type headers (text/html for .html files).
+# Enable via: repo Settings → Pages → Deploy from branch → main / (root)
+# URL format: https://{user}.github.io/{repo}/{path}
+_GHPAGES_BASE = (
+    "https://arunviswanathan91.github.io/"
+    "cell-analysis-viewer/html_docs"
 )
 
 
 def render_study_methodology():
     """Open Study Methodology in a new browser tab (served via jsDelivr CDN)."""
     _render_new_tab_page(
-        url=f"{_GITHACK_BASE}/methodology.html",
+        url=f"{_GHPAGES_BASE}/methodology.html",
         title="Study Methodology",
         subtitle=(
             "A full walkthrough of every analytical step — "
@@ -425,7 +425,7 @@ def render_study_methodology():
 def render_bayesian_explained():
     """Open Bayesian Model Explained in a new browser tab (served via jsDelivr CDN)."""
     _render_new_tab_page(
-        url=f"{_GITHACK_BASE}/bayesian_model.html",
+        url=f"{_GHPAGES_BASE}/bayesian_model.html",
         title="The Bayesian Model — Explained",
         subtitle=(
             "Everything you need to understand the hierarchical Bayesian approach — "
