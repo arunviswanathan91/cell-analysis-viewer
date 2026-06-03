@@ -339,110 +339,91 @@ COMPARISON_KEYWORDS = {
 
 
 
-# CSS injected before full-page HTML doc views to strip all Streamlit whitespace
-_FULL_PAGE_CSS = """
-<style>
-    /* ── Full-page HTML doc: remove Streamlit chrome whitespace ────────── */
 
-    /* Strip all padding from the block-container.
-       stAppViewContainer already sits below the fixed toolbar via margin-top,
-       so padding-top: 0 places content flush against the visible top edge.
-       Selectors cover both classic (.main) and modern (stMain) Streamlit. */
-    .main .block-container,
-    section[data-testid="stMain"] .block-container,
-    section[data-testid="stMain"] > div > .block-container {
-        padding: 0 !important;
-        max-width: 100% !important;
-        min-height: 0 !important;
-    }
 
-    /* Kill the fadeIn animation so there is no "loading" flash */
-    .main .element-container,
-    section[data-testid="stMain"] .element-container {
-        animation: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
+def _render_new_tab_page(url: str, title: str, subtitle: str,
+                         hero_color: str, icon: str) -> None:
+    """Auto-open a static HTML doc in a new browser tab.
 
-    /* Size the embedded iframe to fill the visible viewport.
-       3.75 rem ≈ the Streamlit fixed toolbar height.
-       The iframe content scrolls internally so CSS position:sticky
-       and href="#section" anchor links both work natively —
-       no JavaScript polyfills required.                               */
-    .main .element-container iframe,
-    section[data-testid="stMain"] .element-container iframe {
-        display: block !important;
-        border: none !important;
-        outline: none !important;
-        height: calc(100vh - 3.75rem) !important;
-        width: 100% !important;
-    }
-</style>
-"""
+    When the user clicks the radio button, this function fires.  It
+    immediately tries to open `url` in a new tab via window.open().
+    Most browsers allow this because the click on the radio button counts
+    as a user gesture.  A prominent manual button is always shown as a
+    fallback in case the browser blocks the popup.
 
-# Tiny scroll-to-top script injected via a 1 px components.html call
-# immediately before the st.iframe.  When the user was scrolled far down
-# on a previous page (e.g. Categorical Analysis) and switches to the HTML
-# doc view, Streamlit re-renders but the browser retains the old scroll
-# position.  The iframe is at y=0 in the document; the viewport is still
-# at y=5000 → user sees a white patch.  Snapping to top before rendering
-# makes the iframe immediately visible.
-_SCROLL_TO_TOP = """<script>
-(function () {
-    try {
-        var sc = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
-        if (sc) { sc.scrollTop = 0; }
-        else { window.parent.scrollTo(0, 0); }
-    } catch (_) {}
-})();
-</script>"""
+    No iframe is rendered — the HTML page lives in its own tab where
+    CSS position:sticky, anchor links, canvas, and scroll all work
+    natively with zero polyfills.
+    """
+    # Auto-open the new tab immediately on page render.
+    # The script runs inside a tiny 1 px components.html iframe so that
+    # it can call window.open on the parent tab's behalf.
+    components.html(
+        f"""<script>
+        (function () {{
+            try {{
+                window.open('{url}', '_blank');
+            }} catch (_) {{}}
+        }})();
+        </script>""",
+        height=1,
+    )
+
+    # Clean landing card shown in the main Streamlit area after the tab opens.
+    st.markdown(
+        f"""
+        <div style="
+            display:flex; flex-direction:column; align-items:center;
+            justify-content:center; min-height:60vh; text-align:center;
+            padding:2rem;
+        ">
+          <div style="font-size:3.5rem; margin-bottom:1rem;">{icon}</div>
+          <h2 style="margin:0 0 0.5rem; font-size:1.6rem; color:#1a1a1a;">{title}</h2>
+          <p style="color:#555; margin-bottom:2rem; max-width:480px;">{subtitle}</p>
+          <a href="{url}" target="_blank"
+             style="
+               display:inline-block; padding:0.65rem 1.6rem;
+               background:{hero_color}; color:#fff; border-radius:8px;
+               text-decoration:none; font-size:1rem; font-weight:700;
+               letter-spacing:0.02em; box-shadow:0 2px 8px rgba(0,0,0,0.18);
+             ">
+            Open page ↗
+          </a>
+          <p style="margin-top:1.25rem; font-size:0.8rem; color:#888;">
+            The page opened in a new tab. Click the button above if it was blocked.
+          </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_study_methodology():
-    """Render Study Methodology via static file serving + st.iframe.
-
-    Uses Streamlit's static file server (enableStaticServing = true in
-    .streamlit/config.toml) so the HTML is served as a proper URL.
-    This replaces the deprecated st.components.v1.html approach and
-    eliminates the need for any JS polyfills — CSS sticky and anchor
-    links work natively inside the iframe.
-
-    An 'Open full page' button lets users open the document in a new
-    browser tab where scroll, sticky nav, and canvas all work perfectly.
-    """
-    # 1. Snap to top — fixes white-patch bug from retained scroll position
-    components.html(_SCROLL_TO_TOP, height=1)
-    # 2. Remove block-container padding; CSS overrides iframe to viewport height
-    st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
-    # 3. New-tab button — zero iframe limitations, perfect native behaviour
-    st.markdown(
-        '<a href="/app/static/methodology.html" target="_blank" '
-        'style="display:inline-block; margin-bottom:0.5rem; padding:0.4rem 1rem; '
-        'background:#1a6b7a; color:#fff; border-radius:6px; text-decoration:none; '
-        'font-size:0.85rem; font-weight:600; letter-spacing:0.02em;">'
-        '📖 Open full page ↗</a>',
-        unsafe_allow_html=True,
+    """Open Study Methodology in a new browser tab when selected."""
+    _render_new_tab_page(
+        url="/app/static/methodology.html",
+        title="Study Methodology",
+        subtitle=(
+            "A full walkthrough of every analytical step — "
+            "cohort design, deconvolution, signatures, Bayesian modelling, and more."
+        ),
+        hero_color="#1a6b7a",
+        icon="📖",
     )
-    # 4. Embedded preview (st.iframe replaces deprecated components.html)
-    st.iframe("/app/static/methodology.html", height=900, scrolling=True)
 
 
 def render_bayesian_explained():
-    """Render Bayesian Model Explained via static file serving + st.iframe.
-
-    Same pattern as render_study_methodology().
-    """
-    components.html(_SCROLL_TO_TOP, height=1)
-    st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
-    st.markdown(
-        '<a href="/app/static/bayesian_model.html" target="_blank" '
-        'style="display:inline-block; margin-bottom:0.5rem; padding:0.4rem 1rem; '
-        'background:#0b1f3a; color:#fff; border-radius:6px; text-decoration:none; '
-        'font-size:0.85rem; font-weight:600; letter-spacing:0.02em;">'
-        '🧮 Open full page ↗</a>',
-        unsafe_allow_html=True,
+    """Open Bayesian Model Explained in a new browser tab when selected."""
+    _render_new_tab_page(
+        url="/app/static/bayesian_model.html",
+        title="The Bayesian Model — Explained",
+        subtitle=(
+            "Everything you need to understand the hierarchical Bayesian approach — "
+            "with analogies, formulas, and figures."
+        ),
+        hero_color="#0b1f3a",
+        icon="🧮",
     )
-    st.iframe("/app/static/bayesian_model.html", height=900, scrolling=True)
 
 
 
@@ -562,8 +543,7 @@ st.markdown("""
     
     /* ========== BLOCK CONTAINER — Reduce default Streamlit whitespace ========== */
     /* Streamlit's block-container defaults to ~6 rem top, 10 rem bottom, and 1 rem
-       sides — creating the large blank gutters visible around every page.
-       The methodology/bayesian views override this further to 0 via _FULL_PAGE_CSS. */
+       sides — creating the large blank gutters visible around every page. */
 
     .main .block-container,
     section[data-testid="stMain"] .block-container {
