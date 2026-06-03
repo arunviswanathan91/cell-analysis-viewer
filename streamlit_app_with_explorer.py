@@ -339,17 +339,6 @@ COMPARISON_KEYWORDS = {
 
 
 
-def _load_html_doc(filename: str) -> str | None:
-    """Load an HTML doc from html_docs/ next to this script. Returns None if missing."""
-    base = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base, "html_docs", filename)
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            return fh.read()
-    except FileNotFoundError:
-        return None
-
-
 # CSS injected before full-page HTML doc views to strip all Streamlit whitespace
 _FULL_PAGE_CSS = """
 <style>
@@ -375,134 +364,85 @@ _FULL_PAGE_CSS = """
         padding: 0 !important;
     }
 
-    /* No border / outline on the component iframes */
+    /* Size the embedded iframe to fill the visible viewport.
+       3.75 rem ≈ the Streamlit fixed toolbar height.
+       The iframe content scrolls internally so CSS position:sticky
+       and href="#section" anchor links both work natively —
+       no JavaScript polyfills required.                               */
     .main .element-container iframe,
     section[data-testid="stMain"] .element-container iframe {
         display: block !important;
         border: none !important;
         outline: none !important;
+        height: calc(100vh - 3.75rem) !important;
+        width: 100% !important;
     }
 </style>
 """
 
-# JS injected into the HTML body.  Two responsibilities:
-#
-# 1. RESIZE: Grow the iframe to its full content height so the STREAMLIT PAGE
-#    scrolls (not the iframe).  This eliminates the "frame with blank space
-#    below" appearance — the document flows naturally to its end.
-#
-# 2. STICKY-NAV POLYFILL: position:sticky inside a non-scrolling iframe cannot
-#    track the parent window's scroll.  We disable CSS sticky on the nav and
-#    replicate it with translateY driven by the parent scroll event, keeping
-#    the nav bar visually pinned to the top of the visible viewport without
-#    disturbing the document layout below it.
-_AUTORESIZE_JS = """
-<script>
+# Tiny scroll-to-top script injected via a 1 px components.html call
+# immediately before the st.iframe.  When the user was scrolled far down
+# on a previous page (e.g. Categorical Analysis) and switches to the HTML
+# doc view, Streamlit re-renders but the browser retains the old scroll
+# position.  The iframe is at y=0 in the document; the viewport is still
+# at y=5000 → user sees a white patch.  Snapping to top before rendering
+# makes the iframe immediately visible.
+_SCROLL_TO_TOP = """<script>
 (function () {
-    'use strict';
-
-    /* ── Locate the Streamlit scroll container ──────────────────────── */
-    /* Streamlit scrolls its stAppViewContainer div, not the window.     */
-    function getScrollContainer() {
-        try {
-            return window.parent.document.querySelector(
-                '[data-testid="stAppViewContainer"]'
-            ) || window.parent;
-        } catch (_) { return null; }
-    }
-
-    /* ── Scroll the parent page to the top ─────────────────────────── */
-    /* BUG FIX: When the user was scrolled far down on a previous page
-       (e.g. Categorical Analysis) and then switches to the HTML doc
-       view, Streamlit re-renders but the browser retains the old scroll
-       position.  The iframe is placed at y=0 in the document, but the
-       viewport is still at y=5000 → the user sees a white patch below
-       the iframe.  Scrolling to the top immediately reveals the iframe. */
-    function scrollParentToTop() {
-        try {
-            var sc = getScrollContainer();
-            if (sc && sc.scrollTo) {
-                sc.scrollTo({ top: 0, behavior: 'instant' });
-            } else if (sc) {
-                sc.scrollTop = 0;
-            }
-        } catch (_) {}
-    }
-
-    /* Run immediately — before any layout paint — so the jump is invisible. */
-    scrollParentToTop();
-
-    /* ── Set iframe height to the visible viewport area ────────────── */
-    /* Content scrolls INSIDE the iframe so:
-         - CSS position:sticky on the nav works natively
-         - href="#section" anchor links work natively
-       The Streamlit toolbar is ~60px; subtract it so the iframe fills
-       the remaining screen height exactly.                             */
-    function findOwnIframe() {
-        try {
-            var frames = window.parent.document.querySelectorAll('iframe');
-            for (var i = 0; i < frames.length; i++) {
-                try {
-                    if (frames[i].contentDocument === document) return frames[i];
-                } catch (_) {}
-            }
-        } catch (_) {}
-        return null;
-    }
-
-    function syncHeight() {
-        try {
-            var parentH = window.parent.innerHeight || 900;
-            var h = Math.max(parentH - 60, 500);
-            var f = findOwnIframe();
-            if (f) f.style.setProperty('height', h + 'px', 'important');
-        } catch (_) {}
-    }
-
-    document.addEventListener('DOMContentLoaded', syncHeight);
-    window.addEventListener('load', syncHeight);
-    try { window.parent.addEventListener('resize', syncHeight); } catch (_) {}
-    setTimeout(syncHeight, 100);
-    setTimeout(syncHeight, 500);
+    try {
+        var sc = window.parent.document.querySelector('[data-testid="stAppViewContainer"]');
+        if (sc) { sc.scrollTop = 0; }
+        else { window.parent.scrollTo(0, 0); }
+    } catch (_) {}
 })();
-</script>
-"""
-
-
-def _prepare_html_doc(html: str) -> str:
-    """Inject the auto-resize script into an HTML doc before rendering."""
-    if '</body>' in html:
-        return html.replace('</body>', _AUTORESIZE_JS + '\n</body>', 1)
-    return html + _AUTORESIZE_JS
+</script>"""
 
 
 def render_study_methodology():
-    """Render the full Study Methodology HTML as a seamless full-page view."""
-    html = _load_html_doc("methodology.html")
-    if html is None:
-        st.error(
-            "❌ `html_docs/methodology.html` not found. "
-            "Make sure it exists next to `streamlit_app_with_explorer.py`."
-        )
-        return
-    # Remove Streamlit padding, then render the HTML.
-    # The injected JS sizes the iframe to the visible viewport area so content
-    # scrolls INSIDE the iframe — CSS sticky and anchor links work natively.
+    """Render Study Methodology via static file serving + st.iframe.
+
+    Uses Streamlit's static file server (enableStaticServing = true in
+    .streamlit/config.toml) so the HTML is served as a proper URL.
+    This replaces the deprecated st.components.v1.html approach and
+    eliminates the need for any JS polyfills — CSS sticky and anchor
+    links work natively inside the iframe.
+
+    An 'Open full page' button lets users open the document in a new
+    browser tab where scroll, sticky nav, and canvas all work perfectly.
+    """
+    # 1. Snap to top — fixes white-patch bug from retained scroll position
+    components.html(_SCROLL_TO_TOP, height=1)
+    # 2. Remove block-container padding; CSS overrides iframe to viewport height
     st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
-    components.html(_prepare_html_doc(html), height=900, scrolling=True)
+    # 3. New-tab button — zero iframe limitations, perfect native behaviour
+    st.markdown(
+        '<a href="/app/static/methodology.html" target="_blank" '
+        'style="display:inline-block; margin-bottom:0.5rem; padding:0.4rem 1rem; '
+        'background:#1a6b7a; color:#fff; border-radius:6px; text-decoration:none; '
+        'font-size:0.85rem; font-weight:600; letter-spacing:0.02em;">'
+        '📖 Open full page ↗</a>',
+        unsafe_allow_html=True,
+    )
+    # 4. Embedded preview (st.iframe replaces deprecated components.html)
+    st.iframe("/app/static/methodology.html", height=900, scrolling=True)
 
 
 def render_bayesian_explained():
-    """Render the Bayesian Model Explained HTML as a seamless full-page view."""
-    html = _load_html_doc("bayesian_model.html")
-    if html is None:
-        st.error(
-            "❌ `html_docs/bayesian_model.html` not found. "
-            "Make sure it exists next to `streamlit_app_with_explorer.py`."
-        )
-        return
+    """Render Bayesian Model Explained via static file serving + st.iframe.
+
+    Same pattern as render_study_methodology().
+    """
+    components.html(_SCROLL_TO_TOP, height=1)
     st.markdown(_FULL_PAGE_CSS, unsafe_allow_html=True)
-    components.html(_prepare_html_doc(html), height=900, scrolling=True)
+    st.markdown(
+        '<a href="/app/static/bayesian_model.html" target="_blank" '
+        'style="display:inline-block; margin-bottom:0.5rem; padding:0.4rem 1rem; '
+        'background:#0b1f3a; color:#fff; border-radius:6px; text-decoration:none; '
+        'font-size:0.85rem; font-weight:600; letter-spacing:0.02em;">'
+        '🧮 Open full page ↗</a>',
+        unsafe_allow_html=True,
+    )
+    st.iframe("/app/static/bayesian_model.html", height=900, scrolling=True)
 
 
 

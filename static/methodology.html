@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methodology — PDAC BMI Study</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:    #0b3d45; --teal-mid: #1a6b7a; --teal-l: #2a9db5;
+  --amber:   #9a5c00; --amber-l: #d4820a; --amber-pale: #fff8ee;
+  --emerald: #1a4f38; --emerald-l: #2e7d56;
+  --slate:   #1c2b3a; --slate-mid: #334e68;
+  --rose:    #7a1f35; --rose-l: #b5294e;
+  --cream:   #faf9f7; --warm:   #ece8e0;
+  --text:    #1a1a1a; --muted: #555;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 11.5pt; line-height: 1.85;
+  color: var(--text); background: var(--cream);
+  max-width: 100%;
+}
+
+/* —— HERO ——————————————————————————————————————————————————— */
+.hero {
+  background: linear-gradient(150deg, #0b3d45 0%, #1a6b7a 45%, #1a4f38 100%);
+  color: #fff; padding: 58px 50px 48px; position: relative; overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 90% 10%, rgba(212,130,10,0.2) 0%, transparent 50%),
+              radial-gradient(ellipse at 10% 90%, rgba(42,157,181,0.25) 0%, transparent 45%);
+}
+.hero > * { position: relative; z-index: 1; }
+.hero-tag { font-family: 'Fira Code', monospace; font-size: 8pt;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--amber-l); margin-bottom: 16px; }
+.hero h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 32pt;
+  line-height: 1.1; margin-bottom: 14px; }
+.hero p { color: rgba(255,255,255,0.72); font-size: 11.5pt; font-style: italic;
+  max-width: 540px; margin-bottom: 28px; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px; padding: 4px 14px; font-family: 'Fira Code', monospace;
+  font-size: 7.5pt; color: rgba(255,255,255,0.8); }
+
+/* —— STICKY NAV —————————————————————————————————————————————— */
+.snav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(250,249,247,0.96);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 2px solid var(--warm); padding: 9px 18px;
+  display: flex; gap: 5px; flex-wrap: wrap;
+  box-shadow: 0 2px 14px rgba(0,0,0,0.09);
+}
+.snav a { font-family: 'Fira Code', monospace; font-size: 7pt;
+  letter-spacing: 0.8px; text-transform: uppercase; color: var(--teal-mid);
+  text-decoration: none; padding: 4px 9px; border-radius: 10px;
+  transition: background 0.2s, color 0.2s; white-space: nowrap; }
+.snav a:hover { background: var(--teal); color: #fff; }
+
+/* —— LAYOUT ————————————————————————————————————————————————— */
+.content { background: #fff; padding: 0 46px 60px; }
+
+/* —— TIMELINE STRIP ————————————————————————————————————————— */
+.timeline {
+  position: relative; margin: 30px 0 10px;
+  padding-left: 32px;
+}
+.timeline::before {
+  content: ''; position: absolute; left: 11px; top: 0; bottom: 0;
+  width: 3px; background: linear-gradient(to bottom, var(--teal-l), var(--emerald-l), var(--amber-l));
+  border-radius: 3px;
+}
+
+/* —— METHOD CARD ——————————————————————————————————————————————— */
+.method-card {
+  position: relative; margin-bottom: 42px; padding: 24px 26px;
+  background: #fff; border: 1.5px solid #ddd; border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: box-shadow 0.25s, border-color 0.25s;
+}
+.method-card:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.12); border-color: var(--teal-l); }
+.method-card::before {
+  content: ''; position: absolute; left: -26px; top: 28px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--teal-l); border: 3px solid #fff;
+  box-shadow: 0 0 0 2px var(--teal-l);
+}
+.step-num { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--teal-l);
+  margin-bottom: 4px; }
+.method-card h3 { font-family: 'DM Serif Display', Georgia, serif; font-size: 16pt;
+  color: var(--slate); margin-bottom: 10px; line-height: 1.2; }
+.method-tag { display: inline-block; font-family: 'Fira Code', monospace; font-size: 7pt;
+  letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 10px;
+  margin-bottom: 14px; }
+.tag-r { background: rgba(11,61,69,0.1); color: var(--teal); }
+.tag-s { background: rgba(154,92,0,0.1); color: var(--amber); }
+.tag-a { background: rgba(26,79,56,0.1); color: var(--emerald); }
+.tag-v { background: rgba(122,31,53,0.1); color: var(--rose); }
+
+/* —— CALLOUT BOXES ————————————————————————————————————————— */
+.why-box { background: #e8f7f9; border: 1px solid #9dd4dd;
+  border-left: 5px solid var(--teal-l); border-radius: 0 6px 6px 0;
+  padding: 13px 17px; margin: 14px 0; }
+.why-box .lbl { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--teal-mid); margin-bottom: 7px; }
+.analogy { background: var(--amber-pale); border: 1px solid #e8c88a;
+  border-left: 5px solid var(--amber-l); border-radius: 0 6px 6px 0;
+  padding: 13px 17px; margin: 14px 0; }
+.analogy .lbl { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 7px; }
+.params { background: #f2f8f4; border: 1px solid #a8d4b8;
+  border-left: 5px solid var(--emerald-l); border-radius: 0 6px 6px 0;
+  padding: 13px 17px; margin: 14px 0; }
+.params .lbl { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--emerald); margin-bottom: 7px; }
+.caution { background: #fff4f6; border: 1px solid #f0b0be;
+  border-left: 5px solid var(--rose-l); border-radius: 0 6px 6px 0;
+  padding: 13px 17px; margin: 14px 0; }
+.caution .lbl { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--rose); margin-bottom: 7px; }
+
+/* —— FORMULA ——————————————————————————————————————————————————— */
+.code { font-family: 'Fira Code', monospace; font-size: 10pt;
+  background: #f0f6f8; border: 1px solid #c0d8e0; border-radius: 4px;
+  padding: 10px 14px; margin: 10px 0; color: var(--teal); }
+
+/* —— TABLE ————————————————————————————————————————————————— */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 10pt; }
+th { background: var(--teal); color: #fff; padding: 9px 12px; text-align: left;
+  font-family: 'Fira Code', monospace; font-size: 8pt; letter-spacing: 0.5px; }
+td { padding: 8px 12px; border-bottom: 1px solid #e0e0e0; vertical-align: top; line-height: 1.5; }
+tr:nth-child(even) td { background: #f8f9f8; }
+
+/* —— PIPELINE SVG SECTION ————————————————————————————————— */
+.pipeline-wrap { background: var(--slate); border-radius: 12px; padding: 26px 20px;
+  margin: 28px 0; overflow-x: auto; }
+.pipeline-wrap h3 { font-family: 'DM Serif Display', Georgia, serif; font-size: 14pt;
+  color: #fff; text-align: center; margin-bottom: 18px; }
+
+/* —— STAT CARDS ——————————————————————————————————————————————— */
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
+.stat-card { background: var(--teal); color: #fff; padding: 18px 16px; border-radius: 8px;
+  text-align: center; }
+.stat-num { font-family: 'DM Serif Display', serif; font-size: 26pt; color: var(--amber-l); }
+.stat-lbl { font-family: 'Fira Code', monospace; font-size: 8pt; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(255,255,255,0.75); margin-top: 4px; }
+
+/* —— SECTION HEADER ————————————————————————————————————————— */
+.section { padding-top: 36px; }
+.sec-tag { font-family: 'Fira Code', monospace; font-size: 7.5pt;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--rose-l); margin-bottom: 4px; }
+.section h2 { font-family: 'DM Serif Display', Georgia, serif; font-size: 21pt;
+  color: var(--slate); margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--warm); line-height: 1.2; }
+
+.sep { height: 1px; background: linear-gradient(to right, transparent, var(--warm), transparent);
+  margin: 24px 0; }
+p { margin-bottom: 11px; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Complete Analysis Methodology · PDAC BMI Study</div>
+  <h1>How the Study<br>Was Done</h1>
+  <p>Every analytical step explained — what it is, why we chose it, what it gives us, and how it connects to the next step.</p>
+  <div class="hero-chips">
+    <span class="chip">Cohort &amp; Design</span>
+    <span class="chip">DESeq2 + GSEA</span>
+    <span class="chip">scRNA-seq References</span>
+    <span class="chip">BayesPrism</span>
+    <span class="chip">2,143 Signatures</span>
+    <span class="chip">LLM Refinement</span>
+    <span class="chip">Stabl ML</span>
+    <span class="chip">Bayesian Hierarchical</span>
+    <span class="chip">TimiGP Interactome</span>
+    <span class="chip">GigaTIME mIF</span>
+  </div>
+</div>
+
+<!-- STICKY NAV -->
+<div class="snav">
+  <a href="#s0">Overview</a>
+  <a href="#s1">Cohort</a>
+  <a href="#s2">Bulk RNA</a>
+  <a href="#s3">scRNA Ref</a>
+  <a href="#s4">QC</a>
+  <a href="#s5">Annotation</a>
+  <a href="#s6">BayesPrism</a>
+  <a href="#s7">Signatures</a>
+  <a href="#s8">LLM</a>
+  <a href="#s9">Z-scores</a>
+  <a href="#s10">Stabl</a>
+  <a href="#s11">Bayesian</a>
+  <a href="#s12">TimiGP</a>
+  <a href="#s13">GigaTIME</a>
+  <a href="#s14">Stats</a>
+</div>
+
+<div class="content">
+
+<!-- ——— SECTION 0: OVERVIEW PIPELINE ——— -->
+<div class="section" id="s0">
+  <div class="sec-tag">Overview</div>
+  <h2>The Full Analysis Pipeline</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-num">140</div><div class="stat-lbl">PDAC Patients</div></div>
+    <div class="stat-card"><div class="stat-num">2,143</div><div class="stat-lbl">Gene Signatures</div></div>
+    <div class="stat-card"><div class="stat-num">65</div><div class="stat-lbl">Cell Types</div></div>
+  </div>
+
+  <!-- Pipeline Canvas -->
+  <div class="pipeline-wrap">
+    <h3>Analysis Pipeline at a Glance</h3>
+    <canvas id="c-pipeline" width="1100" height="320" style="display:block; margin:0 auto; max-width:100%;"></canvas>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 1: COHORT ——— -->
+<div class="section" id="s1">
+  <div class="sec-tag">Step 01</div>
+  <h2>Patient Cohort and Study Design</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 01 — Cohort</div>
+      <h3>CPTAC-3 PDAC Dataset</h3>
+      <span class="method-tag tag-r">Data Source</span>
+
+      <p><strong>What it is:</strong> The Clinical Proteomic Tumor Analysis Consortium (CPTAC) is a National Cancer Institute program that performs deep molecular profiling of cancer tissues. The CPTAC-3 pancreatic ductal adenocarcinoma dataset contains bulk RNA-seq data from 140 primary tumor samples along with comprehensive clinical data including BMI.</p>
+      <p><strong>Data accessed via:</strong> The Genomic Data Commons (GDC) using the TCGAbiolinks R package. Raw STAR count matrices were downloaded for all 140 patients with available BMI information.</p>
+
+      <div class="why-box">
+        <div class="lbl">💡 Why CPTAC-3 Specifically?</div>
+        <p>CPTAC-3 is one of the largest comprehensively characterized PDAC cohorts with matched BMI data. Other PDAC datasets exist (TCGA-PAAD) but have smaller sample sizes and less complete clinical annotation for metabolic parameters. CPTAC also provides matched proteomic data (not used here but available for future validation).</p>
+      </div>
+
+      <div class="params">
+        <div class="lbl">⚙️ BMI Classification (WHO Standards)</div>
+        <table>
+          <tr><th>Group</th><th>BMI Range</th><th>n</th><th>Role</th></tr>
+          <tr><td>Normal Weight (N)</td><td>18.5–24.9 kg/m²</td><td>51</td><td>Reference group for all comparisons</td></tr>
+          <tr><td>Overweight (OW)</td><td>25.0–29.9 kg/m²</td><td>58</td><td>Primary transition state — largest group</td></tr>
+          <tr><td>Obese (OB)</td><td>≥30.0 kg/m²</td><td>18</td><td>Smallest group — Bayesian regularization critical here</td></tr>
+        </table>
+      </div>
+
+      <div class="analogy">
+        <div class="lbl">🍽️ Why Three Groups and Not Two?</div>
+        <p>Most obesity studies compare "obese vs non-obese" — like only comparing a restaurant with excellent reviews to one with terrible reviews and ignoring the many-starred restaurants in between. This study explicitly studies the <strong>overweight intermediate</strong>, which turns out to be the most scientifically interesting group — the tipping point where most microenvironmental reprogramming begins.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 2: BULK RNA ——— -->
+<div class="section" id="s2">
+  <div class="sec-tag">Step 02</div>
+  <h2>Bulk Transcriptomic Analysis</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 02a — Differential Expression</div>
+      <h3>DESeq2 — Group Comparisons</h3>
+      <span class="method-tag tag-r">R Package</span>
+      <p><strong>What it does:</strong> DESeq2 normalizes raw RNA-seq count data and tests whether individual genes are statistically different between two groups using a negative binomial model. Applied to compare N vs OW, N vs OB, and OW vs OB.</p>
+      <div class="why-box">
+        <div class="lbl">💡 Why DESeq2 and Not EdgeR or Limma?</div>
+        <p>All three are valid. DESeq2 uses shrinkage estimators for dispersion, which is particularly beneficial for smaller sample sizes. With n=18 in the obese group, this shrinkage is important. DESeq2 also provides log2 fold changes as output, which are directly usable for KEGG Pathview visualization.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🔬 The Mass Spectrometry Analogy</div>
+        <p>DESeq2 is like a mass spectrometer — it measures transcript abundance, accounts for total RNA amounts (normalization), and tells you which measurements are significantly different between groups.</p>
+      </div>
+    </div>
+
+    <div class="method-card">
+      <div class="step-num">Step 02b — Pathway Analysis</div>
+      <h3>GSEA — Gene Set Enrichment Analysis</h3>
+      <span class="method-tag tag-r">clusterProfiler</span>
+      <p><strong>What it does:</strong> Instead of asking "which individual genes changed?" GSEA asks "which biological pathways are systematically shifted?" It ranks all genes by their DESeq2 test statistics and tests whether genes belonging to a given pathway tend to cluster at the top or bottom of this ranked list.</p>
+      <p><strong>Databases used:</strong> Gene Ontology (GO) biological processes, KEGG pathways, and Reactome pathways. Significance threshold: FDR-adjusted p-value &lt; 0.05. Gene set sizes: 10–500 genes.</p>
+      <div class="why-box">
+        <div class="lbl">💡 Why GSEA Instead of Simple Pathway ORA?</div>
+        <p>Over-Representation Analysis (ORA) only looks at genes that passed a significance threshold. GSEA uses the full ranked list — including genes with subtle consistent trends. With BMI being a gradual exposure, the true biological signal is spread across many genes with small effects. GSEA captures this diffuse signal that ORA would miss.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🎯 The Sports Team Analogy</div>
+        <p>ORA asks: "Are the top 50 players disproportionately from Team A?" GSEA asks: "Do Team A's players tend to cluster at the top of the overall ranking, even if none of them individually tops the list?" GSEA is more sensitive because even a team of moderately high performers can be systematically better than average.</p>
+      </div>
+    </div>
+
+    <div class="method-card">
+      <div class="step-num">Step 02c — Continuous BMI Correlation</div>
+      <h3>LinkedOmics — BMI as Continuous Variable</h3>
+      <span class="method-tag tag-s">Web Platform</span>
+      <p><strong>What it does:</strong> LinkedOmics systematically correlates BMI (as a continuous number from 18 to 50+) with every gene's expression across all 140 samples using Pearson correlation. This identifies genes whose expression tracks linearly with BMI — different from DESeq2 which compares discrete groups.</p>
+      <p><strong>Dataset:</strong> CPTAC-3 pancreatic adenocarcinoma (ID-132290), RSEM upper-quantile-normalized log2 tumor expression data. 28,057 gene features tested. Significance: p-value &lt; 0.05.</p>
+      <div class="why-box">
+        <div class="lbl">💡 Why Add This On Top of DESeq2?</div>
+        <p>DESeq2 misses gradual dose-response patterns within groups. LinkedOmics treats BMI as what it actually is: a continuous spectrum from 18 to 50+. The key finding from this step was that the <strong>Primary Immunodeficiency pathway</strong> showed the strongest continuous BMI correlation.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">📈 The Blood Pressure Analogy</div>
+        <p>If you want to know whether blood pressure affects cardiac risk, you could divide people into "low BP" and "high BP" groups and compare — that's DESeq2. Or you could treat blood pressure as a continuous number and correlate directly — that's LinkedOmics. The continuous approach captures graded relationships that category cutoffs obscure.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 3: scRNA REFERENCES ——— -->
+<div class="section" id="s3">
+  <div class="sec-tag">Step 03</div>
+  <h2>Single-Cell RNA-seq Reference Construction</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 03 — scRNA References</div>
+      <h3>Two Custom References Built from GEO</h3>
+      <span class="method-tag tag-r">GEO Datasets</span>
+      <p><strong>Why build custom references?</strong> BayesPrism needs a reference that reflects the actual cell types present in PDAC tumors. Generic immune or cancer references built from other cancer types would misidentify cell proportions. Two specialized references were built:</p>
+      <table>
+        <tr><th>Reference</th><th>Source</th><th>Cells</th><th>Purpose</th></tr>
+        <tr><td>Whole-Tumor</td><td>GSE242230 (needle biopsies, n=25)</td><td>35,008 pre-QC</td><td>All TME populations: fibroblasts, tumor, acinar, ductal, vascular, neural</td></tr>
+        <tr><td>Immune (CD45+)</td><td>GSE235452 (n=3)</td><td>6,553 post-QC</td><td>T cell subsets, B cells, NK, TAM, DC, monocytes, MAIT, γδT, basophils</td></tr>
+      </table>
+      <div class="why-box">
+        <div class="lbl">💡 Why Two Separate References and Not One?</div>
+        <p>The CD45+ enriched dataset provides high resolution immune cell states. The whole-tumor dataset captures stromal and tumor populations that would be rare in a CD45+ enriched dataset. Using both separately gives the best of both worlds: fine immune resolution AND stromal coverage.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">📚 The Specialist Library Analogy</div>
+        <p>You'd use a specialized immunology reference for immune cells (more detail on T cell subtypes) and a separate oncology/pathology reference for tumor and stromal cells. Using both together gives more accurate identification than either alone.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 4: QC ——— -->
+<div class="section" id="s4">
+  <div class="sec-tag">Step 04</div>
+  <h2>Single-Cell Quality Control</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 04 — Adaptive QC</div>
+      <h3>Dataset-Specific Adaptive Filtering</h3>
+      <span class="method-tag tag-a">Quality Control</span>
+      <p><strong>What it does:</strong> Low-quality cells (empty droplets, dead cells, doublets) need to be removed before analysis. Fixed thresholds applied identically to all datasets would either discard too many cells from sparse datasets or keep too many bad cells from dense ones.</p>
+      <div class="params">
+        <div class="lbl">⚙️ Adaptive QC Parameters</div>
+        <table>
+          <tr><th>Dataset</th><th>Feature Count Min</th><th>Feature Count Max</th><th>UMI Max</th><th>Mito Max</th></tr>
+          <tr><td>CD45+ Immune</td><td>max(200, 1st percentile)</td><td>min(6,000, 99th percentile)</td><td>&lt;98th percentile</td><td>&lt;min(20%, 95th pct)</td></tr>
+          <tr><td>Whole-Tumor</td><td>max(200, 0.5th percentile)</td><td>min(8,000, 99.5th percentile)</td><td>&lt;99th percentile</td><td>&lt;min(25%, 95th pct)</td></tr>
+        </table>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Adaptive Instead of Fixed Thresholds?</div>
+        <p>The whole-tumor dataset contains rare stromal and acinar cell types that genuinely have fewer genes than common immune cells. A fixed minimum of "200 genes" might inappropriately exclude these biologically real rare populations. Adaptive thresholds preserve rare populations while still removing genuinely low-quality cells.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">📏 The Height Chart Analogy</div>
+        <p>A fixed threshold of "must be under 165cm" for jockeys applied globally would exclude some perfectly good jockeys from a population where jockeys are naturally taller. An adaptive threshold — "bottom 5% of the specific population" — correctly identifies the smallest individuals regardless of where the overall population sits.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 5: ANNOTATION ——— -->
+<div class="section" id="s5">
+  <div class="sec-tag">Step 05</div>
+  <h2>Cell Type Annotation</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 05a — Malignancy</div>
+      <h3>CopyKat — Distinguishing Tumor from Normal Cells</h3>
+      <span class="method-tag tag-r">R Package</span>
+      <p><strong>What it does:</strong> CopyKat infers chromosomal copy number variations (CNV) from single-cell RNA expression data. Cancer cells carry large chromosomal gains and losses; normal cells are diploid. By computing CNV profiles, CopyKat classifies each epithelial cell as aneuploid (malignant) or diploid (normal).</p>
+      <div class="params">
+        <div class="lbl">⚙️ CopyKat Settings</div>
+        <div class="code">ngene.chr = 5, win.size = 25, KS.cut = 0.1</div>
+        <p style="font-size:10pt; margin-top:6px">Pre-processing: mitochondrial and ribosomal genes removed; genes expressed in &lt;1% of epithelial cells filtered. CopyKat uses diploid reference cells (normal fibroblasts and immune cells) to anchor copy number inference.</p>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Not Just Use Marker Genes?</div>
+        <p>Marker gene approaches can't distinguish malignant from normal ductal epithelial cells — both express EPCAM. CopyKat's CNV-based approach directly identifies genetic abnormalities that define malignancy.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🧬 The Karyotype Analogy</div>
+        <p>In pathology, karyotyping identifies cancer cells by looking at chromosomal abnormalities. CopyKat does the computational equivalent — it infers these chromosomal abnormalities from RNA expression patterns, identifying cancer cells by their genetic scars rather than just their surface markers.</p>
+      </div>
+    </div>
+
+    <div class="method-card">
+      <div class="step-num">Step 05b — Tumor Subtyping</div>
+      <h3>Basal-like vs Classical PDAC Subtypes</h3>
+      <span class="method-tag tag-a">Module Scoring</span>
+      <p>Aneuploid (malignant) cells were further divided into basal-like and classical PDAC subtypes using established gene signatures:</p>
+      <ul style="padding-left:20px; font-size:10pt; margin:8px 0">
+        <li><strong>Basal-like:</strong> S100A2, KRT6A, KRT17, SERPINB4, LY6D, HMGA2, TP63, KRT5, DSC3, PKP1</li>
+        <li><strong>Classical:</strong> TFF1, LGALS4, TSPAN8, REG4, ST6GALNAC1, CTSE, GATA6, HNF1A, HNF4A, FOXA2, FOXA3, PDX1</li>
+      </ul>
+      <p>Cells with basal score &gt; classical score AND &gt;0.20 → basal-like. Classical score dominant &gt;0.20 → classical. Remainder → unclassified tumor.</p>
+    </div>
+
+    <div class="method-card">
+      <div class="step-num">Step 05c — Immune Annotation</div>
+      <h3>SingleR Multi-Reference Consensus Strategy</h3>
+      <span class="method-tag tag-r">R Package</span>
+      <p><strong>What it does:</strong> SingleR is an automated cell type annotation tool. It compares each cell's expression profile against a reference database of known immune cell types using Spearman correlation. Four references used simultaneously: Monaco Immune, DICE, Blueprint, and Novershtern hematopoietic.</p>
+      <div class="params">
+        <div class="lbl">⚙️ SingleR Settings</div>
+        <div class="code">method = "wilcox", de.n = 50 (main) / 20 (fine)
+fine.tune = TRUE, tune.thresh = 0.05 (main) / 0.1 (fine)
+sd.thresh = 1 (main) / 1.5 (fine), prune = TRUE</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Four References and Not One?</div>
+        <p>Each reference database has different strengths. Monaco excels at T cell subtypes. DICE is strong for myeloid populations. Blueprint covers hematopoietic lineages broadly. Using four and taking consensus dramatically reduces misclassification compared to any single reference.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🩺 The Second Opinion Analogy</div>
+        <p>When a pathologist sees an unusual tumor, they consult multiple specialized references and reach a consensus. SingleR with four references does exactly this — using multiple independent "expert opinions" and resolving conflicts with domain knowledge.</p>
+      </div>
+
+      <div class="method-card" style="box-shadow:none; border-color:#eee; margin-top:14px">
+        <div class="step-num">Step 05d — TAM Identification</div>
+        <h3>Tumor-Associated Macrophage Discrimination</h3>
+        <span class="method-tag tag-v">Custom Algorithm</span>
+        <p>TAMs were distinguished from circulating monocytes using a Delta_MM score (MacroLin score − MonoLin score), z-score normalized globally. TAM criteria (all three mandatory):</p>
+        <ol style="padding-left:20px; font-size:10pt; margin:8px 0">
+          <li>Delta_MM z-score ≥1.0–1.8 (adaptive threshold to ensure ≥30 TAMs)</li>
+          <li>Expression of ≥3 TAM hallmark genes (C1QA, C1QB, C1QC, APOE, TREM2, SPP1, SIGLEC1, MARCO, MRC1, CD163) above gene-specific medians</li>
+          <li>Not in the top 10% for DC (FLT3, IRF8, CLEC9A) or neutrophil (CXCR2, MPO) signatures</li>
+        </ol>
+        <p style="font-size:10pt; margin-top:8px">Result: 211 TAM cells identified. Monaco-annotated DCs explicitly excluded from TAM consideration regardless of other scores.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 6: BAYESPRISM ——— -->
+<div class="section" id="s6">
+  <div class="sec-tag">Step 06</div>
+  <h2>BayesPrism Deconvolution</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 06 — Deconvolution</div>
+      <h3>BayesPrism — Cell-Type-Specific Expression from Bulk</h3>
+      <span class="method-tag tag-r">Three-Phase Process</span>
+      <p><strong>What it does:</strong> Bulk RNA-seq gives you an average of all cell types in the tumor mixed together. BayesPrism unmixes this using the scRNA-seq reference to estimate: (1) what fraction of each tumor sample is each cell type, and (2) what gene expression profile each cell type has in each specific patient.</p>
+      <p>Three separate deconvolution phases were run: Non-Immune (whole-tumor reference), Immune Coarse (coarse immune labels), and Immune Fine (fine immune cell states from CD45+ reference).</p>
+      <div class="params">
+        <div class="lbl">⚙️ BayesPrism Settings</div>
+        <div class="code">Gibbs sampling: 2,000 iterations
+Burn-in: 500 iterations
+Thinning factor: 2
+Outlier threshold: 0.05, cut: 0.01</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why BayesPrism and Not CIBERSORT or MuSiC?</div>
+        <p><strong>vs CIBERSORT:</strong> CIBERSORT returns only cell proportions, not cell-specific expression profiles. We need to know not just "how many CD8 T cells" but "what are those CD8 T cells expressing" to calculate signature scores per cell type. BayesPrism provides both.</p>
+        <p style="margin-top:8px"><strong>vs MuSiC:</strong> BayesPrism's fully Bayesian framework naturally handles uncertainty in both the reference and the bulk data, producing credible intervals alongside point estimates — essential for downstream hierarchical modeling.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🍲 The Recipe Reverse-Engineering Analogy</div>
+        <p>Imagine someone hands you a bowl of mixed curry and asks: "What are the proportions of chicken, potatoes, and sauce, and what does each ingredient taste like individually?" CIBERSORT tells you the proportions. BayesPrism tells you both the proportions AND estimates the individual flavor profile of each ingredient in this specific bowl.</p>
+      </div>
+      <div class="caution">
+        <div class="lbl">⚠️ Key Limitation</div>
+        <p>Deconvolution estimates are not directly measured — they are inferred from bulk data using the scRNA reference. Obesity-specific cell states may not be fully represented in the reference, which was built from patients of mixed BMI status.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 7: SIGNATURES ——— -->
+<div class="section" id="s7">
+  <div class="sec-tag">Step 07</div>
+  <h2>Custom Signature Database Construction</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 07 — Signatures</div>
+      <h3>2,143 Functional Gene Signatures Across 65 Cell Types</h3>
+      <span class="method-tag tag-a">Custom Curation</span>
+      <div class="stat-grid" style="margin:14px 0">
+        <div class="stat-card"><div class="stat-num">2,143</div><div class="stat-lbl">Total Signatures</div></div>
+        <div class="stat-card"><div class="stat-num">65</div><div class="stat-lbl">Cell Types</div></div>
+        <div class="stat-card"><div class="stat-num">~10</div><div class="stat-lbl">Avg Genes/Sig</div></div>
+      </div>
+      <p><strong>What it covers:</strong> Signatures were built for each cell type spanning metabolic states, immune dysfunction, and functional programs:</p>
+      <ul style="padding-left:20px; font-size:10pt; margin:8px 0">
+        <li>Cytolytic activity, exhaustion, senescence, immunosenescence</li>
+        <li>Metabolic reprogramming (glycolysis, fatty acid oxidation, OXPHOS)</li>
+        <li>Oxidative stress, ER stress, mitochondrial function</li>
+        <li>Tissue residency, ECM remodeling, fibrosis</li>
+        <li>Autophagy, apoptosis regulation, cell cycle dysregulation</li>
+        <li>Signaling pathways: KRAS, JAK-STAT, mTOR, TGF-β, NF-κB</li>
+      </ul>
+      <div class="why-box">
+        <div class="lbl">💡 Why Build a Custom Database?</div>
+        <p>Standard gene set databases (MSigDB, ImmPort) are built for general immunology, not for studying obesity-driven dysfunction in pancreatic cancer specifically. No existing database combines cell-type-specific metabolic, stress, and functional signatures tuned to the biology of obesogenic TME remodeling.</p>
+      </div>
+      <p><strong>Redundancy removal:</strong> Pairwise overlap was calculated using the Overlap Coefficient (O = |A∩B| / min(|A|, |B|)). Signature pairs with O &gt; 0.50 were flagged for manual review and consolidation.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 8: LLM ——— -->
+<div class="section" id="s8">
+  <div class="sec-tag">Step 08</div>
+  <h2>LLM-Assisted Signature Refinement</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 08 — LLM Refinement</div>
+      <h3>Google Gemini API for Signature Curation</h3>
+      <span class="method-tag tag-s">gemini-2.5-flash</span>
+      <p><strong>What it does:</strong> For each pair of signatures with Overlap Coefficient &gt; 0.50, a Python framework querying the Gemini API (gemini-2.5-flash, temperature = 0.2) assessed whether to retain both, merge, or remove one — given the biological context of "obesity and pancreatic cancer."</p>
+      <p><strong>Also used for:</strong> Proposing new signatures relevant to obesity-driven dysfunction in PDAC. Each proposed signature required 8–12 genes with &lt;20% overlap with any existing signature in that cell type.</p>
+      <div class="why-box">
+        <div class="lbl">💡 Why Use an LLM Here?</div>
+        <p>Manual curation of 2,143+ signature pairs would require thousands of expert hours. The LLM serves as a <strong>first-pass biological reasoner</strong>. The low temperature (0.2) ensures reproducible, conservative recommendations. <strong>Critically: all LLM suggestions were manually reviewed before acceptance.</strong></p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">👩‍🔬 The Research Assistant Analogy</div>
+        <p>Imagine having a highly knowledgeable research assistant who has read every immunology paper published in the last 20 years. You hand them two gene lists and ask: "Given we're studying obesity in pancreatic cancer, are these capturing the same thing or different aspects of it?" The assistant gives a reasoned recommendation. You — the expert — make the final call. That's exactly how the LLM was used here.</p>
+      </div>
+      <div class="caution">
+        <div class="lbl">⚠️ Responsible AI Use</div>
+        <p>The Gemini API use here is as a <em>computational tool</em> for curation assistance, not as an intellectual contributor — analogous to using BLAST for sequence alignment. All final scientific judgments were made by the human authors.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 9: Z-SCORES ——— -->
+<div class="section" id="s9">
+  <div class="sec-tag">Step 09</div>
+  <h2>Signature Score Calculation</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 09 — Z-scores</div>
+      <h3>Standardized Z-score Approach with Winsorization</h3>
+      <span class="method-tag tag-a">Data Processing</span>
+      <div class="params">
+        <div class="lbl">⚙️ Score Calculation Pipeline</div>
+        <div class="code">1. Mean-center gene expression (no log transform)
+2. Compute per-gene Z-score for each cell type
+3. Winsorize at ±3 (prevent extreme values from dominating)
+4. Signature score = mean Z-score across all detected signature genes
+5. Missing genes imputed as 0 (neutral contribution)
+6. Minimum 4 detectable genes required (else signature excluded)</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Winsorize at ±3?</div>
+        <p>Extreme outlier cells would inflate signature scores and potentially dominate the subsequent Bayesian model. Capping at ±3 standard deviations keeps the signal biologically interpretable: a Z-score of ±3 already represents an extreme departure from average, and anything beyond that is likely technical artifact or biologically irrelevant extreme.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🌡️ The Thermometer Analogy</div>
+        <p>If a faulty sensor occasionally reads -200°C or +500°C, these readings would destroy your average. Winsorization is like saying "anything below -30°C gets recorded as -30°C and anything above +60°C gets recorded as +60°C" — your data stays interpretable and extremes don't distort the analysis.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 10: STABL ——— -->
+<div class="section" id="s10">
+  <div class="sec-tag">Step 10</div>
+  <h2>Stabl — Machine Learning Feature Selection</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 10 — Stabl</div>
+      <h3>Stability-Based Feature Selection (v1.0.0)</h3>
+      <span class="method-tag tag-s">Python Package</span>
+      <p><strong>What it does:</strong> Stabl addresses the high-dimensional problem of 2,143 signatures × 140 patients. It runs logistic or LASSO regression 500 times, each time on a different random 80% subsample of patients ("bootstrap"). A signature is "stable" if it gets selected consistently across these 500 runs — not just in one lucky draw.</p>
+      <div class="params">
+        <div class="lbl">⚙️ Stabl Settings</div>
+        <div class="code">Bootstrap iterations: 500
+Train/test split: 80% / 20%
+Preprocessing: >50% missing → excluded; remaining → median imputation;
+               low-variance features → removed
+
+Categorical mode: Logistic regression (which sigs discriminate BMI groups?)
+Continuous mode: LASSO regression (which sigs scale linearly with BMI?)
+
+Final selection: Union of categorical + continuous selections</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Not Just Run LASSO Once?</div>
+        <p>Single LASSO runs are unstable — small changes in the data can flip which features get selected. With only 140 patients and 2,143 features, a single run is especially unreliable. Stability selection over 500 bootstrap runs identifies features that are consistently associated with BMI across many different "versions" of the dataset.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🗳️ The Election Analogy</div>
+        <p>Imagine running 500 different elections in slightly different constituencies (each one missing 20% of voters). A candidate who wins most of those elections is genuinely popular. Stabl identifies the "genuinely popular" signatures — the ones that consistently associate with BMI regardless of which 80% of patients you sample.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 11: BAYESIAN ——— -->
+<div class="section" id="s11">
+  <div class="sec-tag">Step 11</div>
+  <h2>Bayesian Hierarchical Modeling</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 11 — Bayesian Model</div>
+      <h3>PyMC with NUTS — Quantifying BMI Effects</h3>
+      <span class="method-tag tag-r">Python / PyMC</span>
+      <p><strong>What it does:</strong> Two models were built in PyMC: a <strong>categorical model</strong> comparing groups (Normal, Overweight, Obese) and a <strong>continuous model</strong> treating BMI as a dose-response variable. Both models use a hierarchical structure where information is shared across related signatures and cell types.</p>
+      <div class="params">
+        <div class="lbl">⚙️ MCMC Sampling Settings</div>
+        <div class="code">Sampler: NUTS (No-U-Turn Sampler)
+Chains: 4 independent chains
+Tuning: 2,000 steps (discarded)
+Sampling: 2,000 steps × 4 chains = 8,000 total samples
+Target acceptance rate: 0.99
+Convergence: R-hat &lt; 1.01, ESS &gt; 400, E-BFMI &gt; 0.3</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Bayesian and Not Mixed-Effects Models (lmer)?</div>
+        <p><strong>vs lmer/nlme:</strong> Mixed-effects models give a point estimate for each effect with a p-value. Bayesian models give the full posterior distribution of each effect. With n=18 obese patients, this uncertainty quantification is critical. Bayesian also naturally regularizes through priors, preventing overclaiming from small samples.</p>
+        <p style="margin-top:8px"><strong>vs simple ANOVA:</strong> ANOVA doesn't handle the nested structure (many signatures per cell type per patient) and doesn't naturally regularize — it would identify many false positives at this scale.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🌡️ The Weather Forecast Analogy</div>
+        <p>A frequentist mixed model is like saying "tomorrow's temperature will be exactly 28°C." A Bayesian model is like a weather forecast: "There's a 65% chance temperatures will be between 25–31°C, most likely around 28°C." The full probability distribution is far more useful than a single number.</p>
+      </div>
+
+      <div class="method-card" style="box-shadow:none; border-color:#eee; margin-top:14px">
+        <div class="step-num">Convergence Classification System</div>
+        <h3>Primary vs Marginal vs Exploratory</h3>
+        <span class="method-tag tag-v">Quality Control</span>
+        <table>
+          <tr><th>Status</th><th>R-hat</th><th>ESS</th><th>Treatment</th></tr>
+          <tr><td>Primary ✅</td><td>≤ 1.010</td><td>&gt; 400</td><td>Full confidence in results. Primary conclusions drawn from here.</td></tr>
+          <tr><td>Marginal ⚠️</td><td>1.010–1.020</td><td>Reduced but acceptable</td><td>Results reported with explicit caution. Direction noted but not used for primary claims.</td></tr>
+          <tr><td>Exploratory ❌</td><td>&gt; 1.020</td><td>&lt; 200</td><td>Reported as directional signals only. No credibility claims made.</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 12: TIMIGP ——— -->
+<div class="section" id="s12">
+  <div class="sec-tag">Step 12</div>
+  <h2>TimiGP — Cell-Cell Interactome Analysis</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 12 — Interactome</div>
+      <h3>TimiGP Framework — Immune Interaction Networks</h3>
+      <span class="method-tag tag-s">R Package</span>
+      <p><strong>What it does:</strong> TimiGP infers cell-cell communication networks from bulk RNA-seq data using gene pairs derived from immune cell marker signatures. It runs Cox proportional hazards regression for each gene pair to identify prognostically relevant interactions, then enriches for significant cell-cell interaction modules.</p>
+      <div class="params">
+        <div class="lbl">⚙️ TimiGP Analysis Settings</div>
+        <div class="code">Signatures used: Bindea et al. 2013 (28 cell types),
+                Newman LM22 (22 cell types),
+                Zheng et al. 2021 pan-cancer T cells
+
+Normalization: log-transform + geometric mean normalization
+Cox selection: raw p &lt; 0.01; top 5% of gene pairs by p-value
+Enrichment: Benjamini-Hochberg FDR &lt; 0.05
+Permutation FDR: n = 100 iterations
+Groups: Normal Weight and Overweight only (n=18 OB insufficient)</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Cox Regression for Cell-Cell Interactions?</div>
+        <p>TimiGP's innovation is connecting immune cell interactions to patient outcomes. By testing gene pairs in Cox regression, it identifies interactions where the balance between cell types actually predicts patient survival — going beyond simply counting cell types to identifying the <em>functional interactions</em> that are clinically relevant.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🤝 The Ecosystem Analogy</div>
+        <p>In an ecosystem, it's not enough to count wolves and rabbits separately. What matters is their interaction. TimiGP similarly asks: does the balance between T cells and macrophages predict whether a patient does well or poorly? This interaction-level analysis reveals dynamics invisible when looking at each cell type in isolation.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 13: GIGATIME ——— -->
+<div class="section" id="s13">
+  <div class="sec-tag">Step 13</div>
+  <h2>GigaTIME — Virtual Multiplex Immunofluorescence</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 13 — Spatial Analysis</div>
+      <h3>GigaTIME — AI-Generated Spatial Tissue Maps</h3>
+      <span class="method-tag tag-v">NestedUNet / HuggingFace</span>
+      <p><strong>What it does:</strong> GigaTIME is a multimodal image-to-image translator with a NestedUNet (UNet++) architecture. It was trained on 14,256 patients across 24 cancer types and generates 23-channel virtual multiplex immunofluorescence (mIF) images directly from standard H&amp;E histology slides — without requiring actual antibody staining.</p>
+      <p><strong>Model:</strong> Available at <code>huggingface.co/prov-gigatime/GigaTIME</code>. Whole-slide images obtained from the NCI Imaging Data Commons (IDC) using idc-index (V23).</p>
+      <div class="params">
+        <div class="lbl">⚙️ Inference Settings</div>
+        <div class="code">Tile size: 256×256 pixels, stride: 128 pixels (50% overlap)
+Upscaling: 256→512 (ImageNet normalization) → downscale back 512→256
+Aggregation: Logit averaging at overlapping positions
+Threshold: sigmoid > 0.5 for binary activation
+Tissue detection: mean pixel density &lt; 220 = tissue positive
+Section selection: highest CK channel density (proxy for tumor content)
+DAPI normalization: marker density / DAPI density (correct for variable area)</div>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Virtual mIF Instead of Real mIF?</div>
+        <p>Real multiplex immunofluorescence on FFPE tissue requires specialized equipment, trained technicians, expensive antibody panels, and months of protocol development. The CPTAC-PDAC cohort has H&amp;E slides available, not mIF slides. GigaTIME extracts spatial information from H&amp;E slides that already exist.</p>
+      </div>
+      <div class="analogy">
+        <div class="lbl">🎨 The Colorization Analogy</div>
+        <p>Old black-and-white photographs contain all the structural information of a scene, but no color. Modern AI can colorize them by learning from millions of paired color/B&W images. GigaTIME does the same: trained on paired H&E/mIF data from 14,256 patients, it has "learned" what protein expression patterns correspond to what tissue morphology features in H&E.</p>
+      </div>
+      <div class="caution">
+        <div class="lbl">⚠️ Key Limitation</div>
+        <p>Ground-truth paired mIF data from the CPTAC-PDAC cohort is not available, so pixel-level accuracy cannot be formally validated in this specific cohort. Spatial metrics derived from GigaTIME should be considered as directional signals requiring validation with actual mIF data in future studies.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<!-- ——— SECTION 14: STATS ——— -->
+<div class="section" id="s14">
+  <div class="sec-tag">Step 14</div>
+  <h2>Statistical Analysis of Spatial Metrics</h2>
+
+  <div class="timeline">
+    <div class="method-card">
+      <div class="step-num">Step 14 — Statistics</div>
+      <h3>Non-Parametric Tests for GigaTIME Spatial Metrics</h3>
+      <span class="method-tag tag-a">Python / SciPy</span>
+      <div class="params">
+        <div class="lbl">⚙️ Spatial Metric Definitions</div>
+        <table>
+          <tr><th>Metric</th><th>Definition</th><th>Biology</th></tr>
+          <tr><td>CD8-to-CK distance</td><td>Mean Euclidean distance from stromal-trapped CD8+ centroids to nearest CK+ pixel</td><td>How far stromal-trapped T cells are from the tumor boundary</td></tr>
+          <tr><td>Stromal area fraction</td><td>Transgelin+ pixels / total canvas pixels</td><td>Proportion of tissue that is dense stroma</td></tr>
+          <tr><td>CD34/Tg co-localization</td><td>Sørensen-Dice coefficient between CD34 and Transgelin masks</td><td>Association between vasculature and fibroblast compartments</td></tr>
+          <tr><td>CD8-to-PD-L1 distance</td><td>Distance from stromal CD8 centroids to nearest PD-L1+ pixel</td><td>Spatial separation from immunosuppressive signal</td></tr>
+        </table>
+      </div>
+      <div class="why-box">
+        <div class="lbl">💡 Why Spearman AND Pearson?</div>
+        <p>Spearman correlation is robust to outliers and non-normal distributions. Pearson is more powerful when the relationship is truly linear. Running both: if both agree, the relationship is robust; if they disagree, the relationship may be driven by outliers or non-linearity. A metric was considered significant if <em>either</em> test reached p &lt; 0.05.</p>
+      </div>
+      <div class="params">
+        <div class="lbl">⚙️ Categorical Comparisons</div>
+        <div class="code">Continuous BMI: Spearman + Pearson correlation (primary + secondary)
+BMI groups (3-way): Kruskal-Wallis test
+Multiple comparisons: Benjamini-Hochberg correction
+Pixel subsampling: max 5,000 pixels per marker (fixed random seed)</div>
+      </div>
+      <div class="analogy">
+        <div class="lbl">📍 Spatial Distance Computation</div>
+        <p>Stromal-trapped CD8+ T cells were defined as cells whose centroid falls within Transgelin+ (fibroblast) pixels. Their distance to the tumor boundary was computed using a k-d tree — a data structure that efficiently finds the nearest neighbor in a large point set. Think of it as the GPS shortest-path calculation from each T cell to the nearest tumor boundary pixel, done simultaneously for thousands of T cells.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<!-- ——— STICKY NAV SCROLL JS ——— -->
+<script>
+// window.scrollTo keeps scroll inside the iframe — avoids leaking to Streamlit parent
+document.querySelectorAll('.snav a').forEach(function(a) {
+  a.addEventListener('click', function(e) {
+    e.preventDefault();
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (!el) return;
+    var navH = (document.querySelector('.snav') || {}).offsetHeight || 48;
+    window.scrollTo({ top: el.offsetTop - navH, behavior: 'smooth' });
+  });
+});
+</script>
+
+<!-- ——— PIPELINE CANVAS JS ——— -->
+<script>
+(function() {
+  const canvas = document.getElementById('c-pipeline');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = 1100, H = 320;
+  ctx.fillStyle = '#1c2b3a'; ctx.fillRect(0, 0, W, H);
+
+  const stageColors = [
+    '#2a9db5', '#1a6b7a', '#2e7d56', '#a07800', '#0b3d45',
+    '#2a9db5', '#1a6b7a', '#7a1f35', '#0b3d45', '#2e7d56'
+  ];
+
+  const stages = [
+    { label: 'CPTAC-3', sub: 'n=140', x: 30 },
+    { label: 'DESeq2', sub: 'GSEA', x: 120 },
+    { label: 'LinkedOmics', sub: 'BMI corr', x: 220 },
+    { label: 'scRNA-seq', sub: 'References', x: 320 },
+    { label: 'BayesPrism', sub: 'Deconv', x: 420 },
+    { label: 'Signatures', sub: '2143 sigs', x: 520 },
+    { label: 'Stabl ML', sub: '500 boots', x: 620 },
+    { label: 'Bayesian', sub: 'Hierarchical', x: 720 },
+  ];
+
+  const mainY = 120;
+  const boxH = 64, boxW = 80;
+
+  stages.forEach((s, i) => {
+    const cx = s.x + boxW / 2;
+    const cy = mainY;
+    ctx.fillStyle = stageColors[i % stageColors.length];
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(s.x, cy - boxH/2, boxW, boxH, 6);
+    else ctx.rect(s.x, cy - boxH/2, boxW, boxH);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px "Fira Code", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(s.label, cx, cy - 6);
+    ctx.font = '8px "Fira Code", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(s.sub, cx, cy + 9);
+    if (i < stages.length - 1) {
+      const nx = s.x + boxW;
+      const ax = stages[i + 1].x;
+      ctx.strokeStyle = '#5aa8b8'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(nx, cy); ctx.lineTo(ax, cy); ctx.stroke();
+      ctx.fillStyle = '#5aa8b8';
+      ctx.beginPath();
+      ctx.moveTo(ax, cy - 4); ctx.lineTo(ax + 6, cy); ctx.lineTo(ax, cy + 4);
+      ctx.fill();
+    }
+  });
+
+  stages.forEach((s, i) => {
+    const cx = s.x + boxW / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '7px "Fira Code", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('0' + (i + 1), cx, mainY - boxH/2 - 5);
+  });
+
+  const lastX = stages[7].x + boxW;
+  const branchY1 = 210, branchY2 = 270;
+  const branchBoxes = [
+    { label: 'TimiGP', sub: 'Interactome', y: branchY1, color: '#b5294e' },
+    { label: 'GigaTIME', sub: 'Virtual mIF', y: branchY2, color: '#9a5c00' }
+  ];
+
+  branchBoxes.forEach(b => {
+    ctx.strokeStyle = '#5aa8b8'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(lastX - 5, mainY); ctx.lineTo(lastX + 20, b.y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(lastX + 20, b.y - 25, 80, 50, 6);
+    else ctx.rect(lastX + 20, b.y - 25, 80, 50);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px "Fira Code", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(b.label, lastX + 60, b.y - 5);
+    ctx.font = '8px "Fira Code", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.fillText(b.sub, lastX + 60, b.y + 10);
+  });
+
+  const resX = lastX + 120;
+  ctx.fillStyle = '#0b3d45';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(resX, mainY - 32, 90, 64, 6);
+  else ctx.rect(resX, mainY - 32, 90, 64);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 9px "Fira Code", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('RESULTS', resX + 45, mainY - 10);
+  ctx.font = '8px "Fira Code", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillText('HDI · ROPE', resX + 45, mainY + 5);
+  ctx.fillText('★ · ★★ · ●', resX + 45, mainY + 18);
+
+  ctx.strokeStyle = '#5aa8b8'; ctx.lineWidth = 2; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(lastX, mainY); ctx.lineTo(resX, mainY); ctx.stroke();
+  ctx.fillStyle = '#5aa8b8';
+  ctx.beginPath();
+  ctx.moveTo(resX, mainY - 4); ctx.lineTo(resX + 6, mainY); ctx.lineTo(resX, mainY + 4);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.font = '9px "Fira Code", monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('← Data Acquisition                         Analysis Chain                         Results →', W / 2, H - 12);
+})();
+</script>
+
+</body>
+</html>
