@@ -6,12 +6,12 @@
 <title>The Bayesian Model — Explained</title>
 <style>
 :root {
-  --text:      #24292f; --muted: #6e7781;
-  --bg:        #ffffff; --bg-subtle: #f6f8f9;
-  --border:    #d8dee4; --border-soft: #e8ebee;
+  --text:      #2a2e33; --muted: #6e7781;
+  --bg:        #fbfaf8; --bg-subtle: #f2f1ee;
+  --border:    #ddd9d2; --border-soft: #e9e6e0;
   --accent:    #2b6cb0;
   --caution:   #a13c34;
-  --width: 800px;
+  --width: 760px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -73,7 +73,7 @@ p { margin-bottom: 12px; }
   font-weight: 700; font-size: 11.5px;
   letter-spacing: .03em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
 }
-.formula-box { background: #fff; border: 1px solid var(--border-soft); border-left: 3px solid var(--muted); }
+.formula-box { background: var(--bg); border: 1px solid var(--border-soft); border-left: 3px solid var(--muted); }
 .icode { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
 .formula { font-size: 15px;
   text-align: center; padding: 12px 14px; background: var(--bg-subtle);
@@ -83,7 +83,7 @@ p { margin-bottom: 12px; }
 .fe-row:last-child { border-bottom: none; }
 .fe-sym { color: var(--text); font-weight: 700; min-width: 110px; font-size: 14px; padding-top: 1px; }
 .fe-def { line-height: 1.6; color: var(--text); }
-.warn-box { background: #fff; border: 1px solid var(--border-soft); border-left-color: var(--caution); }
+.warn-box { background: var(--bg); border: 1px solid var(--border-soft); border-left-color: var(--caution); }
 .warn-box .lbl { color: var(--caution); }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
 
@@ -98,7 +98,7 @@ p { margin-bottom: 12px; }
   line-height: 1.6; }
 
 /* —— TABLE —————————————————————————————————————————————————— */
-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+table { display: block; overflow-x: auto; width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; -webkit-overflow-scrolling: touch; }
 th { background: var(--bg-subtle); color: var(--text); padding: 9px 12px; text-align: left;
   font-size: 12.5px; letter-spacing: .02em; border-bottom: 1px solid var(--border); font-weight: 600; }
 td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top;
@@ -118,6 +118,22 @@ td:first-child { color: var(--text); font-weight: 600; }
 .sc-def { color: var(--text); line-height: 1.55; }
 
 .sep { height: 1px; background: var(--border-soft); margin: 8px auto 0; max-width: var(--width); }
+
+/* —— RESPONSIVE ——————————————————————————————————————————————— */
+@media (max-width: 700px) {
+  .hero { padding: 36px 18px 20px; }
+  .hero h1 { font-size: 24px; }
+  .hero p { font-size: 15px; }
+  .sticky-nav { top: 8px; margin: 0 auto 20px; padding: 6px 8px; border-radius: 12px; max-width: calc(100% - 16px); }
+  .sticky-nav a { font-size: 11.5px; padding: 4px 8px; }
+  .content { padding: 0 18px 44px; }
+  .two-col { grid-template-columns: 1fr; }
+  .fe-row { flex-direction: column; gap: 2px; }
+  .fe-sym { min-width: 0; }
+  .sc-row { grid-template-columns: 1fr; gap: 2px; }
+  .section h2 { font-size: 19px; }
+  .summary { padding: 20px 18px; }
+}
 </style>
 </head>
 <body>
@@ -163,7 +179,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p>Bayesian statistics is about <strong>updating a belief when new evidence arrives</strong>. It starts with some prior expectation, incorporates collected data, and revises the belief into a more informed posterior. Crucially, instead of one single answer (like a p-value), the result is a full <em>probability distribution</em> of possible answers — indicating not just the most likely answer, but how uncertain that estimate is.</p>
 
   <div class="analogy">
-    <div class="lbl">🔥 The Clinical Diagnosis Analogy</div>
+    <div class="lbl">The Clinical Diagnosis Analogy</div>
     <p>A patient walks in with a cough. Before any test, the doctor has a <strong>prior belief</strong>: "Most coughs are just colds — probably nothing serious." The chest X-ray comes back with a suspicious shadow. The doctor <strong>updates</strong>: "Okay, now I think there's a 30% chance of something more serious." The biopsy returns benign. Update again: "Probably a harmless lesion." Each piece of evidence shifts the belief. That final shifted belief is the <strong>posterior</strong>. Bayesian modeling is this process — mathematically formalized.</p>
   </div>
 
@@ -175,7 +191,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   </div>
 
   <div class="formula-box">
-    <div class="lbl">📐 The Core Bayesian Equation</div>
+    <div class="lbl">The Core Bayesian Equation</div>
     <div class="formula">Posterior  ∝  Prior  ×  Likelihood</div>
     <div style="margin-top:10px">
       <div class="fe-row"><div class="fe-sym">Posterior</div><div class="fe-def">The updated belief <em>after</em> seeing the data. A probability distribution — not a single number. This is what the model produces for every effect size.</div></div>
@@ -187,7 +203,7 @@ td:first-child { color: var(--text); font-weight: 600; }
 
   <div class="two-col">
     <div class="warn-box" style="margin:0">
-      <div class="lbl">✗ Regular Statistics (p-value)</div>
+      <div class="lbl">Regular Statistics (p-value)</div>
       <ul style="padding-left:18px; font-size:10pt;">
         <li>One single answer: significant or not</li>
         <li>Cannot quantify magnitude of effect</li>
@@ -197,7 +213,7 @@ td:first-child { color: var(--text); font-weight: 600; }
       </ul>
     </div>
     <div class="note-box" style="margin:0">
-      <div class="lbl">✓ Bayesian Statistics</div>
+      <div class="lbl">Bayesian Statistics</div>
       <ul style="padding-left:18px; font-size:10pt;">
         <li>Full distribution of probable effects</li>
         <li>Quantifies both size and direction</li>
@@ -219,7 +235,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p>The data has a natural <strong>nested structure</strong>. Signatures live inside cell types. Cell types live inside compartments. And all of this lives inside patients. Treating every comparison as fully independent ignores this structure and wastes information. Hierarchical modeling exploits the structure through <strong>partial pooling</strong> — related things share information with each other.</p>
 
   <div class="analogy">
-    <div class="lbl">🔥 Multi-Centre Drug Trial Analogy</div>
+    <div class="lbl">Multi-Centre Drug Trial Analogy</div>
     <p>Testing a drug across 10 hospitals. Hospital A has 5 patients, Hospital B has 50. Analyzing Hospital A alone gives unreliable results. Pooling everyone ignores real hospital differences. <strong>Hierarchical modeling does both at once</strong>: hospitals are distinct but related — Hospital A borrows statistical strength from the overall pattern. In this study, the 18 obese patients aren't analyzed in isolation — they benefit from the pattern seen across all 140 patients and all cell types in the same compartment.</p>
   </div>
 
@@ -305,7 +321,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <h3>Model A — Categorical (Comparing Groups)</h3>
 
   <div class="formula-box">
-    <div class="lbl">📐 Categorical Model</div>
+    <div class="lbl">Categorical Model</div>
     <div class="formula">μ_ij = α_j + γ_p[i] + β_OW_kj · I(BMI ∈ OW) + β_OB_kj · I(BMI ∈ OB)</div>
     <div style="text-align:center; font-size:9pt; color:var(--muted); margin:5px 0 10px; font-style:italic;">Expected Score = Baseline + Patient Offset + Overweight Effect + Obese Effect</div>
     <div style="margin-top:8px">
@@ -321,7 +337,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <h3>Model B — Continuous (Dose-Response)</h3>
 
   <div class="formula-box">
-    <div class="lbl">📐 Continuous Model</div>
+    <div class="lbl">Continuous Model</div>
     <div class="formula">μ_ij = α_j + γ_p[i] + β_slope_kj · BMI_std,i</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">β_slope_kj</div><div class="fe-def"><strong>Beta Slope — The Dose-Response.</strong> For every 1 standard deviation increase in BMI (~5 units), how much does the signature change? Key finding: Tumor Classical cells showed progressive KRAS, glycolysis, and mitochondrial signatures scaling continuously with BMI — invisible to the categorical model.</div></div>
@@ -330,13 +346,13 @@ td:first-child { color: var(--text); font-weight: 600; }
   </div>
 
   <div class="analogy">
-    <div class="lbl">🔬 qPCR Analogy — Categorical vs Continuous</div>
+    <div class="lbl">qPCR Analogy — Categorical vs Continuous</div>
     <p>The <strong>categorical model</strong> is like a Western blot with three lanes — Normal, Overweight, Obese — comparing band intensities between groups. But it cannot show what happens between the groups, or whether the change is truly gradual.</p>
     <p style="margin-top:8px">The <strong>continuous model</strong> is like a dose-response curve — titrating BMI from low to high and measuring the response at each level. This is how the study detected that oncogenic KRAS signatures in Tumor Classical cells accumulate continuously with BMI — the categorical model grouped patients into bins and missed this gradual accumulation entirely.</p>
   </div>
 
   <div class="formula-box">
-    <div class="lbl">📐 Patient Random Intercept</div>
+    <div class="lbl">Patient Random Intercept</div>
     <div class="formula">γ_p = γ̃_p · σ_patient,   γ̃_p ~ Normal(0, 1),   σ_patient ~ HalfNormal(0.50)</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">Why γ_p?</div><div class="fe-def">Each patient contributes one observation per signature across multiple cell types. Without this term, within-patient correlation inflates model confidence — making weak effects look stronger than they are. This is called pseudoreplication.</div></div>
@@ -355,7 +371,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p>The Bayesian formula specifies <em>what</em> is being calculated. MCMC is <em>how</em> the computer actually calculates it — because the math is too complex to solve directly for models with hundreds of parameters.</p>
 
   <div class="analogy">
-    <div class="lbl">🗺 Mapping a Hilly Landscape Blindfolded</div>
+    <div class="lbl">Mapping a Hilly Landscape Blindfolded</div>
     <p>Picture someone blindfolded on a hilly landscape, tasked with mapping where the peaks and valleys are, able only to feel the ground underfoot. Strategy: <strong>wander randomly for thousands of steps</strong>. Time is naturally spent more often near peaks (the terrain holds the walker there). After enough steps, the record of "places visited" builds a map — places visited most frequently are the highest probability regions.</p>
     <p style="margin-top:8px">In this study, the <strong>landscape</strong> is the space of all possible effect sizes for all 2,143 signatures. The <strong>peaks</strong> are where the most probable effect sizes live. The <strong>map of visited locations</strong> becomes the posterior distribution.</p>
   </div>
@@ -379,7 +395,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   </div>
 
   <div class="formula-box" style="margin-top:14px">
-    <div class="lbl">📐 Chain Setup</div>
+    <div class="lbl">Chain Setup</div>
     <div class="formula">4 chains × (2,000 tuning + 2,000 sampling steps) = 8,000 total samples</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">4 chains</div><div class="fe-def">Four independent walkers from four different random starting points. Like biological replicates — all four must agree before the result is trusted.</div></div>
@@ -399,7 +415,7 @@ td:first-child { color: var(--text); font-weight: 600; }
 
   <h3>R-hat — The Agreement Score</h3>
   <div class="formula-box">
-    <div class="lbl">📐 R-hat Conceptual Formula</div>
+    <div class="lbl">R-hat Conceptual Formula</div>
     <div class="formula">R-hat = Variation BETWEEN chains ÷ Variation WITHIN chains</div>
     <table style="margin-top:10px">
       <tr><th>R-hat</th><th>Meaning</th><th>In This Study</th></tr>
@@ -412,7 +428,7 @@ td:first-child { color: var(--text); font-weight: 600; }
 
   <h3>ESS — Effective Sample Size</h3>
   <div class="analogy">
-    <div class="lbl">🔬 Correlated vs Independent Samples Analogy</div>
+    <div class="lbl">Correlated vs Independent Samples Analogy</div>
     <p>Consider estimating the average height in Kerala by sampling 100 people — but all from one family reunion. They're related, so heights are correlated. That's technically 100 data points, but they carry far less information than 100 truly random strangers would.</p>
     <p style="margin-top:8px">MCMC has the same problem. Step 501 is right next to step 500 — they're correlated. 8,000 total steps might only carry the independent information of 600 truly random samples. <strong>That 600 is the ESS.</strong></p>
   </div>
@@ -425,7 +441,7 @@ td:first-child { color: var(--text); font-weight: 600; }
 
   <h3>E-BFMI — Did the Walker Move Freely?</h3>
   <div class="formula-box">
-    <div class="lbl">📐 E-BFMI Threshold</div>
+    <div class="lbl">E-BFMI Threshold</div>
     <div class="formula">E-BFMI &gt; 0.3  →  Sampler explored adequately ✅</div>
     <p style="margin-top:8px; font-size:10pt; color:#444"><strong>Biology analogy:</strong> Checks whether the MCMC walkers had their feet stuck in mud and couldn't explore freely. E-BFMI below 0.3 means the sampler was getting trapped. <strong>This study: 0.787–0.981 across all chains — all well above threshold. Walkers moved freely throughout.</strong></p>
   </div>
@@ -447,18 +463,18 @@ td:first-child { color: var(--text); font-weight: 600; }
 
   <h3>HDI — Highest Density Interval</h3>
   <div class="analogy">
-    <div class="lbl">🔬 Why HDI is Better than a Classical Confidence Interval</div>
+    <div class="lbl">Why HDI is Better than a Classical Confidence Interval</div>
     <p>A 95% HDI means: <strong>"There is a 95% probability that the true effect size falls within this range."</strong> This is what most biologists intuitively think a confidence interval means — but it's only technically valid for HDI, not for classical CIs. The HDI is the region that contains the most probable values from the posterior distribution.</p>
   </div>
 
   <h3>ROPE — Region of Practical Equivalence</h3>
   <div class="analogy">
-    <div class="lbl">🔬 Minimum Meaningful Fold Change — qPCR Analogy</div>
+    <div class="lbl">Minimum Meaningful Fold Change — qPCR Analogy</div>
     <p>In a qPCR experiment, a researcher might say: "Only fold changes above 1.5× matter — anything below that might be real but is too small to matter biologically." ROPE does exactly this for Bayesian models. It defines a "dead zone" around zero — effects within this zone are treated as practically equivalent to no effect, even if the model is very confident they're technically non-zero.</p>
   </div>
 
   <div class="formula-box">
-    <div class="lbl">📐 Annotation System in This Study</div>
+    <div class="lbl">Annotation System in This Study</div>
     <table style="margin-top:5px">
       <tr><th>Symbol</th><th>Criterion</th><th>Meaning</th></tr>
       <tr><td>★</td><td>95% HDI excludes zero</td><td>Statistically credible — real, not noise. But might be small.</td></tr>
@@ -469,7 +485,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   </div>
 
   <div class="warn-box">
-    <div class="lbl">⚠️ Narrow HDI ≠ Biologically Important</div>
+    <div class="lbl">Narrow HDI ≠ Biologically Important</div>
     <p>A <strong>narrow HDI means high precision — not a large effect</strong>. If the model is very confident the true effect is 0.04 on a Z-score scale, that is a very small effect that may not translate to meaningful protein-level or functional changes. The fibroblast findings reported in this study are precisely estimated (narrow HDI) but individually small in magnitude. The biological argument rests on their being <em>widespread and coordinated across many signatures simultaneously</em> — not on individual large magnitudes.</p>
   </div>
 </div>
@@ -484,7 +500,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p>Before seeing any data, the model must know how much variation to expect at each hierarchical level. These are priors. The sigma values are "leash lengths" — how wide or narrow the prior allows things to vary.</p>
 
   <div class="analogy">
-    <div class="lbl">🐕 The Leash Analogy</div>
+    <div class="lbl">The Leash Analogy</div>
     <p><strong>Short leash (small sigma):</strong> "I don't expect huge effects here. Pull the estimate back toward zero if the data suggests something extreme." This protects against overclaiming with n=18 obese patients.<br><br>
     <strong>Long leash (large sigma):</strong> "A wide range of values is plausible. Let the data decide." Used where there genuinely is no prior expectation — like what the baseline expression of any given signature will be.</p>
   </div>
@@ -501,7 +517,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p class="fig-cap" style="margin-top:8px; max-width:none; text-align:left">Values above match the manuscript's prior specification exactly: <span class="icode">feature_sigma</span>, <span class="icode">patient_sigma</span>, <span class="icode">baseline_sigma</span>, and <span class="icode">obs_sigma</span> are shared between the categorical and continuous models in every compartment; <span class="icode">celltype_sigma</span> is the sole exception, differing only for Immune Coarse.</p>
 
   <div class="formula-box">
-    <div class="lbl">📐 Why the Z-score Scale Constrains Everything</div>
+    <div class="lbl">Why the Z-score Scale Constrains Everything</div>
     <div class="formula">All signature scores: Z-score ∈ [−3, +3]  (winsorized hard cap)</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">Z = 0</div><div class="fe-def">Patient has exactly average expression for this signature</div></div>
@@ -520,7 +536,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   <h2>Stabl Then Bayesian — Not Redundant, Complementary</h2>
 
   <div class="warn-box">
-    <div class="lbl">❓ Common Question — Isn't Both Selecting on BMI?</div>
+    <div class="lbl">Common Question — Isn't Both Selecting on BMI?</div>
     <p><strong>No. They ask fundamentally different questions.</strong> Stabl asks: <em>which signatures are consistently related to BMI at all?</em> Bayesian modeling asks: <em>how much do they change, with what certainty, and is it biologically meaningful?</em> Running both is not redundant — it is essential. Without Stabl, Bayesian modeling on all 2,143 signatures with 140 patients is computationally impossible. Without Bayesian modeling after Stabl, the result is just a list with no effect sizes or uncertainty.</p>
   </div>
 
@@ -586,12 +602,12 @@ td:first-child { color: var(--text); font-weight: 600; }
   <p>Every claim so far assumes the real cohort (N = 51 normal, 58 overweight, 18 obese) is large enough for the hierarchical model to detect a genuine BMI effect without also inventing effects that are not there. A simulation study tests this directly, using synthetic data with a known ground truth instead of the real (unknown) biology.</p>
 
   <div class="analogy">
-    <div class="lbl">🔬 The Instrument Calibration Analogy</div>
+    <div class="lbl">The Instrument Calibration Analogy</div>
     <p>Before trusting a new assay on real patient samples, a lab runs it on a calibration standard — a sample with a known, pre-defined concentration — to confirm the assay can actually detect that concentration reliably, and does not report a signal when the true concentration is zero. The cohort-adequacy simulation plays the same role for the Bayesian model: known effects are injected into synthetic data at the real sample sizes, and the model's ability to recover them (and to stay silent when there is nothing to find) is measured directly.</p>
   </div>
 
   <div class="formula-box">
-    <div class="lbl">📐 Simulation Setup</div>
+    <div class="lbl">Simulation Setup</div>
     <div style="margin-top:8px">
       <div class="fe-row"><div class="fe-sym">Structure</div><div class="fe-def">Same three-level hierarchy, priors, and NUTS sampler settings as the manuscript model, matched to the immune-coarse compartment: 9 cell types × 6 signatures/cell type = 54 features, with a non-centered patient-level random intercept.</div></div>
       <div class="fe-row"><div class="fe-sym">Cohort sizes</div><div class="fe-def">Real sizes preserved exactly: N = 51 normal, 58 overweight, 18 obese — the same imbalance that makes the obese group the most fragile in the actual analysis.</div></div>
@@ -610,12 +626,12 @@ td:first-child { color: var(--text); font-weight: 600; }
   </table>
 
   <div class="note-box">
-    <div class="lbl">✓ Interpretation</div>
+    <div class="lbl">Interpretation</div>
     <p>At the real cohort sizes, the model has roughly 59% power to recover a true overweight-vs-normal effect of 0.5 SD — a moderate but real detection rate, not a coin flip. More importantly, the false-positive rate across 216 null tests is 0% — well below the nominal 5% — meaning the hierarchical priors are regularizing appropriately rather than manufacturing spurious effects out of noise. This is a check of statistical adequacy at this sample size, not a replication of the biological findings themselves.</p>
   </div>
 
   <div class="warn-box">
-    <div class="lbl">⚠️ What This Does Not Show</div>
+    <div class="lbl">What This Does Not Show</div>
     <p>A ~59% power means some true effects of this magnitude in the real data may go undetected (a false negative), particularly in the 18-patient obese group. It does not mean the reported findings are wrong — it means the study is conservative: the model is more likely to under-report real effects than to over-report false ones, which is the appropriate failure mode for a discovery-stage biological study.</p>
   </div>
 </div>
@@ -649,7 +665,7 @@ td:first-child { color: var(--text); font-weight: 600; }
   </div>
 
   <div class="analogy">
-    <div class="lbl">🎯 The Whole Story in One Paragraph</div>
+    <div class="lbl">The Whole Story in One Paragraph</div>
     <p>The dataset comprises 140 PDAC patients with BMI data and 2,143 immune and stromal gene signatures across 65 cell types. <strong>Stabl</strong> screens these like a rapid skin test — 500 bootstrap iterations to find signatures robustly linked to BMI, reducing the problem to a manageable size. <strong>Bayesian hierarchical modeling</strong> then performs the detailed workup — estimating with full uncertainty how much each signature changes with BMI at both the cell type and signature level. The <strong>hierarchical structure</strong> pools information across related signatures, cell types, and patients, allowing confident statements even about the small n=18 obese group. <strong>NUTS-MCMC</strong> with <strong>4 independent chains</strong> maps the full probability distribution of every effect size. <strong>R-hat, ESS, and E-BFMI</strong> verify each calculation was reliable — comparisons that fail these checks are clearly flagged as Exploratory. Finally, <strong>HDI</strong> identifies real effects and <strong>ROPE</strong> identifies meaningful ones. The non-linear patterns revealed — NK cells activated in overweight then collapsed in obesity, Tumor Classical cells showing dose-dependent KRAS accumulation — are findings that no standard analysis method could have detected.</p>
   </div>
 </div>
