@@ -6,109 +6,108 @@
 <title>Methodology — PDAC BMI Study</title>
 <style>
 :root {
-  --text:      #1f2328; --muted: #59636e;
-  --bg:        #ffffff; --bg-subtle: #f6f8fa;
-  --border:    #d0d7de;
-  --link:      #0969da;
-  --note:      #0969da; --tip: #1a7f37;
-  --important: #8250df; --caution: #cf222e;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --text:      #24292f; --muted: #6e7781;
+  --bg:        #ffffff; --bg-subtle: #f6f8f9;
+  --border:    #d8dee4; --border-soft: #e8ebee;
+  --accent:    #2b6cb0;
+  --caution:   #a13c34;
+  --width: 800px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  font-size: 16px; line-height: 1.65;
+  font-size: 16px; line-height: 1.7;
   color: var(--text); background: var(--bg);
   max-width: 100%;
 }
+a { color: var(--accent); }
 
 /* —— HERO ——————————————————————————————————————————————————— */
-.hero { padding: 44px 40px 32px; border-bottom: 1px solid var(--border); }
-.hero-tag { font-family: var(--mono); font-size: 12px;
-  letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; font-weight: 600; }
+.hero { max-width: var(--width); margin: 0 auto; padding: 52px 24px 26px; }
+.hero-tag { font-size: 13px; letter-spacing: .03em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 16px; font-weight: 600; }
 .hero h1 { font-size: 30px; font-weight: 700; line-height: 1.2; margin-bottom: 12px; color: var(--text); }
-.hero p { color: var(--muted); font-size: 16px; max-width: 620px; margin-bottom: 20px; }
-.hero-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.chip { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.chip:not(:last-child)::after { content: " \00b7"; margin-left: 4px; color: var(--border); }
+.hero p { color: var(--muted); font-size: 17px; max-width: 620px; margin-bottom: 20px; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 4px; font-size: 13px; color: var(--muted); }
+.chip { color: var(--muted); }
+.chip:not(:last-child)::after { content: " \00b7"; margin-left: 4px; color: var(--muted); }
 
-/* —— STICKY NAV —————————————————————————————————————————————— */
+/* —— STICKY NAV (light glass) ——————————————————————————————— */
 .snav {
-  position: sticky; top: 0; z-index: 100;
-  background: #fff; border-bottom: 1px solid var(--border); padding: 9px 18px;
-  display: flex; gap: 4px; flex-wrap: wrap;
+  position: sticky; top: 12px; z-index: 100;
+  max-width: var(--width); margin: 0 auto 28px;
+  background: rgba(255,255,255,0.6);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(36,41,47,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+  padding: 8px 12px; display: flex; gap: 2px; flex-wrap: wrap; justify-content: center;
 }
-.snav a { font-family: var(--mono); font-size: 11.5px;
-  color: var(--link); text-decoration: none; padding: 4px 9px; border-radius: 4px; white-space: nowrap; }
-.snav a:hover { background: var(--bg-subtle); text-decoration: underline; }
+.snav a { font-size: 12.5px; color: var(--text); text-decoration: none;
+  padding: 5px 10px; border-radius: 8px; white-space: nowrap; transition: background 0.15s; }
+.snav a:hover { background: rgba(255,255,255,0.85); }
 
 /* —— LAYOUT ————————————————————————————————————————————————— */
-.content { max-width: 900px; margin: 0 auto; padding: 0 40px 60px; }
+.content { max-width: var(--width); margin: 0 auto; padding: 0 24px 60px; }
 
 /* —— TIMELINE / METHOD CARD ——————————————————————————————— */
 .timeline { margin: 26px 0 10px; }
 .method-card {
   margin-bottom: 32px; padding: 22px 24px;
-  background: #fff; border: 1px solid var(--border); border-radius: 6px;
+  background: #fff; border: 1px solid var(--border-soft); border-radius: 6px;
 }
-.step-num { font-family: var(--mono); font-size: 11.5px;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.step-num { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
 .method-card h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 10px; line-height: 1.3; }
-.method-tag { display: inline-block; font-family: var(--mono); font-size: 11px;
+.method-tag { display: inline-block; font-size: 12px;
   letter-spacing: .02em; color: var(--muted); background: var(--bg-subtle);
-  border: 1px solid var(--border); padding: 2px 9px; border-radius: 4px; margin-bottom: 14px; }
+  border: 1px solid var(--border-soft); padding: 2px 9px; border-radius: 4px; margin-bottom: 14px; }
 .tag-r, .tag-s, .tag-a, .tag-v { color: var(--muted); background: var(--bg-subtle); }
 
-/* —— CALLOUT BOXES (GitHub-alert style) ————————————————————— */
+/* —— CALLOUT BOXES (plain, neutral asides — one accent reserved for actual cautions) —— */
 .why-box, .analogy, .params, .caution {
-  border-left: 3px solid var(--border); padding: 10px 16px; margin: 14px 0;
+  background: var(--bg-subtle);
+  border-left: 3px solid var(--muted); padding: 12px 18px; margin: 16px 0;
 }
 .why-box .lbl, .analogy .lbl, .params .lbl, .caution .lbl {
-  font-family: var(--mono); font-weight: 700; font-size: 11.5px;
-  letter-spacing: .03em; text-transform: uppercase; margin-bottom: 6px;
+  font-weight: 700; font-size: 11.5px;
+  letter-spacing: .03em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;
 }
-.why-box { border-left-color: var(--note); }
-.why-box .lbl { color: var(--note); }
-.analogy { border-left-color: var(--tip); }
-.analogy .lbl { color: var(--tip); }
-.params { border-left-color: var(--important); }
-.params .lbl { color: var(--important); }
-.caution { border-left-color: var(--caution); }
+.caution { background: #fff; border: 1px solid var(--border-soft); border-left: 3px solid var(--caution); }
 .caution .lbl { color: var(--caution); }
 
 /* —— FORMULA ——————————————————————————————————————————————————— */
-.code { font-family: var(--mono); font-size: 13px;
-  background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 4px;
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px;
+  background: var(--bg-subtle); border: 1px solid var(--border-soft); border-radius: 4px;
   padding: 10px 14px; margin: 10px 0; color: var(--text); white-space: pre-wrap; }
 
 /* —— TABLE ————————————————————————————————————————————————— */
-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
-th { background: var(--bg-subtle); color: var(--text); padding: 8px 12px; text-align: left;
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+th { background: var(--bg-subtle); color: var(--text); padding: 9px 12px; text-align: left;
   font-size: 12.5px; letter-spacing: .02em; border-bottom: 1px solid var(--border); font-weight: 600; }
-td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: top; line-height: 1.55; }
 
 /* —— PIPELINE SECTION ————————————————————————————————— */
-.pipeline-wrap { background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 6px;
+.pipeline-wrap { background: var(--bg-subtle); border: 1px solid var(--border-soft); border-radius: 6px;
   padding: 24px 20px; margin: 24px 0; overflow-x: auto; }
 .pipeline-wrap h3 { font-size: 15px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 16px; }
 
 /* —— STAT CARDS ——————————————————————————————————————————————— */
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0; }
-.stat-card { background: #fff; border: 1px solid var(--border); padding: 16px; border-radius: 6px; text-align: center; }
-.stat-num { font-size: 24px; font-weight: 700; color: var(--link); }
-.stat-lbl { font-family: var(--mono); font-size: 11px;
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0; }
+.stat-card { background: var(--bg-subtle); border: 1px solid var(--border-soft); padding: 16px; border-radius: 6px; text-align: center; }
+.stat-num { font-size: 24px; font-weight: 700; color: var(--accent); }
+.stat-lbl { font-size: 11.5px;
   letter-spacing: .03em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 
 /* —— SECTION HEADER ————————————————————————————————————————— */
-.section { padding-top: 34px; }
-.sec-tag { font-family: var(--mono); font-size: 11.5px;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-.section h2 { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--border); line-height: 1.3; }
+.section { padding-top: 36px; }
+.sec-tag { font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+.section h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft); line-height: 1.3; }
 
-.sep { height: 1px; background: var(--border); margin: 8px 0 24px; }
-p { margin-bottom: 11px; }
+.sep { height: 1px; background: var(--border-soft); margin: 8px auto 0; max-width: var(--width); }
+p { margin-bottom: 12px; }
 </style>
 </head>
 <body>
