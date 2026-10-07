@@ -554,6 +554,31 @@ st.markdown("""
     .header-spacer { height: 0; transition: height 0.4s var(--ease); }
     .header-spacer.active { height: 0; }
 
+    /* ---------- Compact spacing ---------- */
+
+    [data-testid="stMainBlockContainer"], .main .block-container,
+    section[data-testid="stMain"] .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+    [data-testid="stVerticalBlock"] { gap: 0.6rem; }
+    [data-testid="stHorizontalBlock"] { gap: 0.75rem; }
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 { padding: 0.25rem 0 0.25rem 0; margin: 0; }
+    .stMarkdown h3 { font-size: 1.15rem; }
+    .stMarkdown h4 { font-size: 1rem; }
+    .stMarkdown p { margin-bottom: 0.4rem; }
+    .stMarkdown hr, hr { margin: 0.5rem 0 !important; }
+    .stMetric { padding: 0.3rem 0.6rem; }
+    [data-testid="stCaptionContainer"] { margin: 0; }
+    [data-testid="stAlert"] { padding: 0.5rem 0.75rem; }
+    [data-testid="stExpander"] summary { padding: 0.4rem 0.75rem; }
+    .stTabs { margin-top: 0.25rem; }
+    .stTabs [data-baseweb="tab-panel"] { padding-top: 0.5rem; }
+    .st-key-ctrl_bar { gap: 0.25rem; }
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem; }
+    [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
+    .main-header { padding-top: 0.25rem !important; margin-bottom: 0.5rem !important; }
+    h1.main-header { padding: 0.25rem 0 0.5rem 0 !important; }
+    .info-box, .method-box, .warning-box { margin: 0.4rem 0; padding: 0.5rem 0.85rem; }
+    .app-footer { margin-top: 1.5rem; padding-top: 1rem; }
+
     /* ---------- Footer ---------- */
 
     .app-footer {
@@ -5255,7 +5280,6 @@ def render_signature_survival():
     **p-value:** {sig_row['hr_p']:.3e}
     """)
 
-    st.divider()
 
     # ================= MAIN ANALYSIS =================
     feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
@@ -5394,7 +5418,6 @@ def render_continuous_analysis():
     **Credible:** {n_credible}
     """)
 
-    st.divider()
     
     st.markdown(f'<div class="sub-header">{selected_cell_display} - Continuous Analysis</div>', 
                unsafe_allow_html=True)
@@ -6655,7 +6678,6 @@ def render_individual_interaction():
                 key="indiv_source_cell",
             )
 
-    st.markdown("---")
 
     # ── Fetch matching rows ───────────────────────────────────────────────────
     nw_row = nw_df[
@@ -6686,7 +6708,6 @@ def render_individual_interaction():
         "Green = Favorable cell type (source genes on LEFT arc) - "
         "Red = Unfavorable cell type (target genes on RIGHT arc)"
     )
-    st.markdown("---")
 
     # ── Side-by-side chord diagrams ───────────────────────────────────────────
     col1, col2 = st.columns(2)
@@ -7043,7 +7064,6 @@ def _main_impl():
     if len(sig_name) > 50:
         st.sidebar.caption(f"Full name: {sig_name.replace('_', ' ')}")
 
-    st.divider()
 
     # Main content
     st.markdown(f'<div class="sub-header"> Interactive Analysis Results</div>', 
