@@ -501,7 +501,8 @@ st.markdown("""
     }
 
     /* On scroll the page title folds away so the pinned controls get the room */
-    .main-header { max-height: 6rem; overflow: hidden; }
+    h1.main-header { font-size: 1.75rem !important; font-weight: 600 !important; line-height: 1.25 !important; padding: 1rem 0 0.75rem 0 !important; }
+    .main-header { max-height: 12rem; overflow: hidden; }
 
     .main-header.shrunk {
         max-height: 0 !important;
@@ -552,6 +553,28 @@ st.markdown("""
 
     .header-spacer { height: 0; transition: height 0.4s var(--ease); }
     .header-spacer.active { height: 0; }
+
+    /* ---------- Footer ---------- */
+
+    .app-footer {
+        margin-top: 3rem;
+        padding: 1.5rem 0 1rem 0;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.6;
+    }
+    .app-footer-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1.4fr;
+        gap: 2rem;
+    }
+    .app-footer-title { font-weight: 600; color: var(--text); margin-bottom: 0.4rem; font-size: 0.85rem; }
+    .app-footer p { margin: 0 0 0.5rem 0; }
+    .app-footer a { color: var(--accent); text-decoration: none; transition: color 0.2s var(--ease); }
+    .app-footer a:hover { text-decoration: underline; }
+    .app-footer-note { margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid var(--border); font-size: 0.75rem; }
+    @media (max-width: 900px) { .app-footer-grid { grid-template-columns: 1fr; gap: 1rem; } }
 
     /* ---------- Callout boxes ---------- */
 
@@ -6727,7 +6750,7 @@ def render_individual_interaction():
         st.metric("Overweight - Shared IMGP gene pairs", len(ow_genes))
 
 
-def main():
+def _main_impl():
     # Analysis type selector
     st.sidebar.title("Analysis Type")
 
@@ -7220,15 +7243,44 @@ def main():
             if fig:
                 st.plotly_chart(fig, width='stretch')
 
-    # Footer
-    st.markdown("---")
-    st.markdown("""
-    <div style='text-align: center; color: #666; padding: 2rem;'>
-    <b>Interactive Cell Analysis Viewer</b><br>
-    Real-time interactive visualizations with Plotly<br>
-    <i>Zoom - Pan - Hover - Explore</i>
-    </div>
-    """, unsafe_allow_html=True)
+
+def render_footer():
+    """Repository, data and citation links shown at the bottom of every page."""
+    st.markdown(
+        """
+        <div class="app-footer">
+          <div class="app-footer-grid">
+            <div>
+              <div class="app-footer-title">Obesity-Driven PDAC: An ML-driven Bayesian Model</div>
+              <p>Interactive viewer accompanying a study of obesity-driven remodeling of the tumor
+              microenvironment in pancreatic ductal adenocarcinoma. CPTAC-PAAD cohort, 140 samples.</p>
+              <p>Citation details will be provided upon publication of the associated manuscript.
+              Interim DOI for the repository:
+              <a href="https://doi.org/10.5281/zenodo.19386459" target="_blank">10.5281/zenodo.19386459</a></p>
+            </div>
+            <div>
+              <div class="app-footer-title">Code</div>
+              <a href="https://github.com/arunviswanathan91/cell-analysis-viewer" target="_blank">Viewer repository</a><br>
+              <a href="https://github.com/arunviswanathan91/obese-model" target="_blank">Analysis code repository</a>
+            </div>
+            <div>
+              <div class="app-footer-title">Data and services</div>
+              <a href="https://huggingface.co/datasets/arunviswanathan91/cell-analysis-vectors" target="_blank">Dataset on Hugging Face</a><br>
+              <a href="https://huggingface.co/spaces/arunviswanathan91/cell-analysis-rag-api" target="_blank">Ask the Model API (HF Space)</a><br>
+              <a href="https://obese-pdac-model.streamlit.app/" target="_blank">Live app</a>
+            </div>
+          </div>
+          <div class="app-footer-note">Built with Streamlit and Plotly - Contact the author from the sidebar</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def main():
+    _main_impl()
+    render_footer()
+
 
 if __name__ == "__main__":
     main()
