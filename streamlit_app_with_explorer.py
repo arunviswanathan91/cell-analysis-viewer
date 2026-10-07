@@ -500,18 +500,47 @@ st.markdown("""
         will-change: transform, font-size, padding;
     }
 
+    /* On scroll the page title folds away so the pinned controls get the room */
+    .main-header { max-height: 6rem; overflow: hidden; }
+
     .main-header.shrunk {
-        font-size: 1.15rem !important;
-        padding: 0.6rem 1.5rem !important;
-        margin-bottom: 0.5rem !important;
-        position: fixed !important;
-        top: 3.5rem !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        background: rgba(255, 255, 255, 0.98) !important;
-        z-index: 999 !important;
-        border-bottom: 1px solid var(--border-strong) !important;
+        max-height: 0 !important;
+        opacity: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+        border-bottom-width: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* ---------- Pinned selector bar + tab strip ---------- */
+    /* Selectors sit in st.container(key="ctrl_bar"); its wrapper sticks under the
+       Streamlit toolbar so selection, tabs and plot stay on one screen. */
+
+    :root { --toolbar-h: 3.75rem; --ctrl-h: 5.6rem; }
+
+    div:has(> .st-key-ctrl_bar) {
+        position: sticky;
+        top: var(--toolbar-h);
+        z-index: 990;
+        background: var(--bg);
+        padding: 0.25rem 0 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .st-key-ctrl_bar [data-testid="stSelectbox"] label p,
+    .st-key-ctrl_bar [data-testid="stRadio"] label p { font-size: 0.75rem; margin-bottom: 0; }
+
+    .st-key-ctrl_bar [data-testid="stHorizontalBlock"] { gap: 0.75rem; }
+
+    /* nested tab strips stay inline */
+    .stTabs .stTabs [data-baseweb="tab-list"] { position: static; }
+
+    .stTabs [data-baseweb="tab-list"] {
+        position: sticky;
+        top: calc(var(--toolbar-h) + var(--ctrl-h));
+        z-index: 980;
+        background: var(--bg);
     }
 
     .sub-header {
@@ -522,7 +551,7 @@ st.markdown("""
     }
 
     .header-spacer { height: 0; transition: height 0.4s var(--ease); }
-    .header-spacer.active { height: 5rem; }
+    .header-spacer.active { height: 0; }
 
     /* ---------- Callout boxes ---------- */
 
@@ -4823,10 +4852,8 @@ def render_signature_explorer():
         return
     
     # --- MOVED FROM SIDEBAR TO MAIN PAGE ---
-    st.markdown("### Search Criteria")
-    
-    # Create two columns for the dropdowns
-    sel_col1, sel_col2 = st.columns(2)
+    ctrl = st.container(key="ctrl_bar")
+    sel_col1, sel_col2, _sp = ctrl.columns([1, 1.4, 1.6])
     
     # Step 1: Compartment selection (Main Page)
     with sel_col1:
@@ -4868,16 +4895,7 @@ def render_signature_explorer():
     # --- END OF SELECTION SECTION ---
 
     # Display summary metrics
-    st.markdown("---")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Compartment", compartment)
-    with col2:
-        st.metric("Cell Type", selected_cell_display)
-    with col3:
-        st.metric("Signatures Found", len(cell_signatures))
-    
-    st.markdown("---")
+    st.caption(f"{compartment} - {selected_cell_display} - {len(cell_signatures)} signatures")
     
     if not cell_signatures:
         st.warning(f"No signatures found for {selected_cell}")
@@ -5118,9 +5136,8 @@ def render_signature_survival():
         return
 
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### Data Selection")
-
-    sel_col1, sel_col2 = st.columns(2)
+    ctrl = st.container(key="ctrl_bar")
+    sel_col1, sel_col2, sel_col3, sel_col4 = ctrl.columns(4)
 
     # Step 1: Comparison
     with sel_col1:
@@ -5172,8 +5189,6 @@ def render_signature_survival():
     if not available_cells:
         st.warning("No cell types found")
         return
-
-    sel_col3, sel_col4 = st.columns(2)
 
     cell_display = {c.replace('_', ' ').title(): c for c in available_cells}
     with sel_col3:
@@ -5295,9 +5310,8 @@ def render_continuous_analysis():
         """)
     
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### Data Selection")
-
-    sel_col1, sel_col2 = st.columns(2)
+    ctrl = st.container(key="ctrl_bar")
+    sel_col1, sel_col2, _sp = ctrl.columns([1, 1.4, 1.6])
 
     # Step 1: Compartment
     with sel_col1:
@@ -5362,13 +5376,7 @@ def render_continuous_analysis():
     st.markdown(f'<div class="sub-header">{selected_cell_display} - Continuous Analysis</div>', 
                unsafe_allow_html=True)
         
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Compartment", compartment)
-    with col2:
-        st.metric("Cell Type", selected_cell_display)
-    with col3:
-        st.metric("Credible Signatures", n_credible)
+    st.caption(f"{compartment} - {selected_cell_display} - {n_credible} credible signatures")
     
     # Create tabs
     tabs = st.tabs(["Heatmap", "Ridge Plot", "Diagnostics"])
@@ -6060,21 +6068,16 @@ def render_interactome_analysis():
         return
 
     # First row: Dataset and Condition selection
-    col1, col2 = st.columns([1, 1])
+    # Filters live in the sidebar so they stay visible next to the network
+    st.sidebar.markdown("### Filters")
+    dataset_choice = st.sidebar.radio("**Dataset:**",
+                                      ["All Combined", "Bindea", "Zheng", "Newman"],
+                                      index=0)
 
-    with col1:
-        dataset_choice = st.radio("**Dataset:**",
-                                  ["All Combined", "Bindea", "Zheng", "Newman"],
-                                  index=0, horizontal=True)
-
-    with col2:
-        condition_filter = st.radio("**Condition Display:**",
-                                   ["Both", "Normal Weight", "Overweight"],
-                                   index=0, horizontal=True,
-                                   help="Green = Normal Weight - Red = Overweight")
-
-    # Second row: Significance filter
-    st.markdown("---")
+    condition_filter = st.sidebar.radio("**Condition Display:**",
+                                        ["Both", "Normal Weight", "Overweight"],
+                                        index=0,
+                                        help="Green = Normal Weight - Red = Overweight")
     
     # Determine available options based on dataset choice
     if dataset_choice in ["Bindea", "Zheng", "Newman"]:
@@ -6094,20 +6097,17 @@ def render_interactome_analysis():
             "This option compares interactions across multiple datasets"
         ]
 
-    sig_filter = st.radio("**Show Interactions:**",
-                          sig_options,
-                          index=default_index, 
-                          horizontal=True)
-    
+    sig_filter = st.sidebar.radio("**Show Interactions:**",
+                                  sig_options,
+                                  index=default_index)
+
     # Show appropriate notes
     for note in disabled_notes:
-        st.caption(note)
+        st.sidebar.caption(note)
 
-    # Third row: Cell type filter
-    st.markdown("---")
-    cell_filter_mode = st.radio("**Cell Type Filter:**",
-                                ["All Cell Types", "Select Specific"],
-                                index=0, horizontal=True)
+    cell_filter_mode = st.sidebar.radio("**Cell Type Filter:**",
+                                        ["All Cell Types", "Select Specific"],
+                                        index=0)
 
     selected_cells = None
     if cell_filter_mode == "Select Specific":
@@ -6123,9 +6123,9 @@ def render_interactome_analysis():
             available_cell_types = get_all_cell_types_interactome(dataset_specific_data)
             helper_text = f"Showing cell types from {dataset_choice} dataset only"
         
-        st.caption(f"ℹ️ {helper_text}")
-        
-        selected_cells = st.multiselect(
+        st.sidebar.caption(helper_text)
+
+        selected_cells = st.sidebar.multiselect(
             "Choose one or more cell types:",
             sorted(available_cell_types),
             default=None,
@@ -6572,14 +6572,15 @@ def render_individual_interaction():
     """, unsafe_allow_html=True)
 
     # ── Main-page controls ────────────────────────────────────────────────────
-    st.markdown("---")
+    ctrl = st.container(key="ctrl_bar")
+    c_sig, c_mode, col_a, col_b = ctrl.columns([1.1, 1.1, 1.4, 1.4])
 
-    # Row 1 - Signature
-    signature = st.selectbox(
-        "Signature dataset",
-        options=list(INDIVIDUAL_INTERACTION_SIGNATURES.keys()),
-        key="indiv_signature",
-    )
+    with c_sig:
+        signature = st.selectbox(
+            "Signature dataset",
+            options=list(INDIVIDUAL_INTERACTION_SIGNATURES.keys()),
+            key="indiv_signature",
+        )
 
     # Load interaction map (cached)
     try:
@@ -6590,16 +6591,13 @@ def render_individual_interaction():
         return
 
     # Row 2 - Selection direction
-    start_mode = st.radio(
-        "Start selection from:",
-        options=["Favorable cell", "Unfavorable cell"],
-        horizontal=True,
-        key="indiv_start_mode",
-        help="Choose which cell type to pick first - the second dropdown will show only cells that interact with your first choice.",
-    )
-    st.caption("① pick first  →  ② list is filtered to matching interactions only")
-
-    col_a, col_b = st.columns(2)
+    with c_mode:
+        start_mode = st.radio(
+            "Start selection from:",
+            options=["Favorable cell", "Unfavorable cell"],
+            key="indiv_start_mode",
+            help="Choose which cell type to pick first - the second dropdown will show only cells that interact with your first choice.",
+        )
 
     if start_mode == "Favorable cell":
         with col_a:
@@ -6946,9 +6944,8 @@ def main():
         """)
     
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### Data Selection")
-
-    sel_col1, sel_col2 = st.columns(2)
+    ctrl = st.container(key="ctrl_bar")
+    sel_col1, sel_col2, sel_col3 = ctrl.columns([1, 1.3, 1.7])
 
     # Step 1: Compartment
     with sel_col1:
@@ -7000,13 +6997,14 @@ def main():
         display_text = f"{formatted_name} ({len(s['genes'])} genes)"
         sig_options[display_text] = s
 
-    selected_sig_display = st.selectbox(
-        f"3. Choose signature ({len(signatures)} available):",
-        options=list(sig_options.keys()),
-        index=0,
-        help="Signature names are truncated for readability. Full name shown in results.",
-        key='cat_signature',
-    )
+    with sel_col3:
+        selected_sig_display = st.selectbox(
+            f"3. Choose signature ({len(signatures)} available):",
+            options=list(sig_options.keys()),
+            index=0,
+            help="Signature names are truncated for readability. Full name shown in results.",
+            key='cat_signature',
+        )
     selected_sig_info = sig_options[selected_sig_display]
     sig_name = selected_sig_info['signature']
     genes = selected_sig_info['genes']
@@ -7028,15 +7026,7 @@ def main():
     st.markdown(f'<div class="sub-header"> Interactive Analysis Results</div>', 
                unsafe_allow_html=True)
         
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Compartment", compartment)
-    with col2:
-        st.metric("Cell Type", selected_cell_display)
-    with col3:
-        st.metric("Signature", sig_name.replace('_', ' '))
-    with col4:
-        st.metric("Genes", len(genes))
+    st.caption(f"{compartment} - {selected_cell_display} - {sig_name.replace('_', ' ')} - {len(genes)} genes")
     
     # Tabs (Ask Model is the global mode - no per-tab Ask AI)
     tabs = st.tabs([
