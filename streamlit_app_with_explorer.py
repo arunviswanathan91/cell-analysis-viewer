@@ -351,7 +351,7 @@ def _render_new_tab_page(url: str, title: str, subtitle: str,
     as a user gesture.  A prominent manual button is always shown as a
     fallback in case the browser blocks the popup.
 
-    No iframe is rendered — the HTML page lives in its own tab where
+    No iframe is rendered - the HTML page lives in its own tab where
     CSS position:sticky, anchor links, canvas, and scroll all work
     natively with zero polyfills.
     """
@@ -377,15 +377,13 @@ def _render_new_tab_page(url: str, title: str, subtitle: str,
             justify-content:center; min-height:60vh; text-align:center;
             padding:2rem;
         ">
-          <div style="font-size:3.5rem; margin-bottom:1rem;">{icon}</div>
-          <h2 style="margin:0 0 0.5rem; font-size:1.6rem; color:#1a1a1a;">{title}</h2>
+                    <h2 style="margin:0 0 0.5rem; font-size:1.6rem; color:#1a1a1a;">{title}</h2>
           <p style="color:#555; margin-bottom:2rem; max-width:480px;">{subtitle}</p>
           <a href="{url}" target="_blank"
              style="
                display:inline-block; padding:0.65rem 1.6rem;
-               background:{hero_color}; color:#fff; border-radius:8px;
-               text-decoration:none; font-size:1rem; font-weight:700;
-               letter-spacing:0.02em; box-shadow:0 2px 8px rgba(0,0,0,0.18);
+               background:{hero_color}; color:#fff; border-radius:4px;
+               text-decoration:none; font-size:0.95rem; font-weight:500;
              ">
             Open page ↗
           </a>
@@ -414,11 +412,11 @@ def render_study_methodology():
         url=f"{_GHPAGES_BASE}/methodology.html",
         title="Study Methodology",
         subtitle=(
-            "A full walkthrough of every analytical step — "
+            "A full walkthrough of every analytical step - "
             "cohort design, deconvolution, signatures, Bayesian modelling, and more."
         ),
         hero_color="#1a6b7a",
-        icon="📖",
+        icon="",
     )
 
 
@@ -426,13 +424,13 @@ def render_bayesian_explained():
     """Open Bayesian Model Explained in a new browser tab (served via jsDelivr CDN)."""
     _render_new_tab_page(
         url=f"{_GHPAGES_BASE}/bayesian_model.html",
-        title="The Bayesian Model — Explained",
+        title="The Bayesian Model - Explained",
         subtitle=(
-            "Everything you need to understand the hierarchical Bayesian approach — "
+            "Everything you need to understand the hierarchical Bayesian approach - "
             "with analogies, formulas, and figures."
         ),
         hero_color="#0b1f3a",
-        icon="🧮",
+        icon="",
     )
 
 
@@ -452,142 +450,59 @@ st.set_page_config(
 # Custom CSS - Advanced Material Design 3 + Creative Modern UI
 st.markdown("""
 <style>
-    /* ========== ADVANCED DESIGN SYSTEM ========== */
-    
-    /* Google Fonts - Material + Display */
-    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap');
-    
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
     :root {
-        /* Material Design 3 - Dynamic Color Palette */
-        --md-primary-50: #E3F2FD;
-        --md-primary-100: #BBDEFB;
-        --md-primary-200: #90CAF9;
-        --md-primary-300: #64B5F6;
-        --md-primary-400: #42A5F5;
-        --md-primary-500: #2196F3;
-        --md-primary-600: #1E88E5;
-        --md-primary-700: #1976D2;
-        --md-primary-800: #1565C0;
-        
-        /* Accent Colors */
-        --md-accent-teal: #00BCD4;
-        --md-accent-purple: #9C27B0;
-        --md-accent-orange: #FF9800;
-        
-        /* Success, Warning, Error */
-        --md-success-50: #E8F5E9;
-        --md-success-500: #4CAF50;
-        --md-success-700: #388E3C;
-        --md-warning-50: #FFF8E1;
-        --md-warning-500: #FFC107;
-        --md-error-50: #FFEBEE;
-        --md-error-500: #F44336;
-        
-        /* Sophisticated Neutral Palette */
-        --md-grey-0: #FFFFFF;
-        --md-grey-50: #FAFAFA;
-        --md-grey-100: #F5F5F5;
-        --md-grey-200: #EEEEEE;
-        --md-grey-300: #E0E0E0;
-        --md-grey-400: #BDBDBD;
-        --md-grey-500: #9E9E9E;
-        --md-grey-600: #757575;
-        --md-grey-700: #616161;
-        --md-grey-800: #424242;
-        --md-grey-900: #212121;
-        
-        /* Glassmorphism */
-        --glass-bg: rgba(255, 255, 255, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.18);
-        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        
-        /* Modern Gradients */
-        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --gradient-success: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        --gradient-info: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
-        --gradient-cosmic: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        --gradient-ocean: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        --gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        
-        /* Premium Shadows - Multi-layered */
-        --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-        --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        --shadow-glow: 0 0 20px rgba(33, 150, 243, 0.3);
-        --shadow-glow-hover: 0 0 30px rgba(33, 150, 243, 0.5);
-        
-        /* Smooth Animations */
-        --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-        --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        --ease-in-out-back: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        --bg: #ffffff;
+        --surface: #f7f8fa;
+        --border: #e3e6ea;
+        --border-strong: #cfd4da;
+        --text: #1f2328;
+        --muted: #656d76;
+        --accent: #1f4e8c;
+        --accent-soft: #eef3fa;
+        --warn: #9a6700;
+        --warn-soft: #fff8e6;
+        --ok: #1a7f37;
+        --err: #b42318;
+        --ease: cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
-    * {
-        font-family: 'Inter', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    html, body, [class*="css"], .stApp, .stMarkdown, button, input, textarea, select {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
-    
-    /* ========== MAIN LAYOUT - Subtle Texture ========== */
-    
-    .main {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        background-attachment: fixed;
-        position: relative;
-    }
-    
-    .main::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: 
-            radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
-            radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.05) 0%, transparent 50%);
-        pointer-events: none;
-        z-index: 0;
-    }
-    
-    /* ========== BLOCK CONTAINER — Reduce default Streamlit whitespace ========== */
-    /* Streamlit's block-container defaults to ~6 rem top, 10 rem bottom, and 1 rem
-       sides — creating the large blank gutters visible around every page. */
+
+    .main, .stApp { background: var(--bg); }
 
     .main .block-container,
     section[data-testid="stMain"] .block-container {
-        padding-top: 1.5rem !important;      /* Just enough to clear the fixed toolbar */
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        padding-bottom: 2rem !important;     /* Down from Streamlit's default 10 rem  */
+        padding-top: 1.5rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+        padding-bottom: 2rem !important;
         max-width: 100% !important;
     }
 
-    /* ========== HEADERS - Gradient Text with Depth ========== */
-    
+    /* ---------- Headings ---------- */
+
     .main-header {
-        font-size: 3rem;
-        font-weight: 800;
-        background: var(--gradient-cosmic);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-align: center;
-        padding: 2.5rem 0 1.5rem 0;
-        margin-bottom: 2rem;
-        letter-spacing: -0.03em;
-        line-height: 1.1;
-        position: relative;
-        animation: fadeInDown 0.8s var(--ease-smooth);
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: var(--text);
+        text-align: left;
+        padding: 1rem 0 0.75rem 0;
+        margin-bottom: 1rem;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+        border-bottom: 1px solid var(--border);
+        animation: fadeIn 0.4s var(--ease);
+        transition: all 0.4s var(--ease);
         will-change: transform, font-size, padding;
     }
-    
-    /* Shrunk state when scrolled */
+
     .main-header.shrunk {
-        font-size: 1.6rem !important;
-        padding: 0.8rem 0 !important;
+        font-size: 1.15rem !important;
+        padding: 0.6rem 1.5rem !important;
         margin-bottom: 0.5rem !important;
         position: fixed !important;
         top: 3.5rem !important;
@@ -595,28 +510,44 @@ st.markdown("""
         right: 0 !important;
         width: 100% !important;
         background: rgba(255, 255, 255, 0.98) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
         z-index: 999 !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
-        border-bottom: 3px solid rgba(102, 126, 234, 0.3) !important;
+        border-bottom: 1px solid var(--border-strong) !important;
     }
-    
-    /* Info box transitions */
-    .info-box {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border-left: 4px solid var(--md-primary-600);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        box-shadow: var(--shadow-md);
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+    .sub-header {
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0.5rem 0 0.75rem 0;
+    }
+
+    .header-spacer { height: 0; transition: height 0.4s var(--ease); }
+    .header-spacer.active { height: 5rem; }
+
+    /* ---------- Callout boxes ---------- */
+
+    .info-box, .method-box, .warning-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 4px;
+        padding: 0.75rem 1rem;
+        margin: 0.75rem 0;
+        font-size: 0.85rem;
+        line-height: 1.5;
         opacity: 1;
         max-height: 500px;
         overflow: hidden;
-        will-change: opacity, max-height;
+        transition: opacity 0.4s var(--ease), max-height 0.4s var(--ease),
+                    margin 0.4s var(--ease), padding 0.4s var(--ease);
     }
-    
+
+    .method-box { border-left-color: var(--ok); }
+    .warning-box { background: var(--warn-soft); border-left-color: var(--warn); }
+
+    .info-box h3 { font-size: 0.95rem !important; font-weight: 600; margin: 0 0 0.25rem 0 !important; }
+    .info-box p, .method-box p, .method-box li { font-size: 0.85rem !important; margin: 0.15rem 0 !important; }
+
     .info-box.hidden {
         opacity: 0 !important;
         max-height: 0 !important;
@@ -624,548 +555,207 @@ st.markdown("""
         padding: 0 !important;
         pointer-events: none !important;
     }
-    
-    /* Spacer for when header becomes fixed */
-    .header-spacer {
-        height: 0;
-        transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .header-spacer.active {
-        height: 6rem;
-    }
-    
-    /* ========== COMPACT CARDS - Scientific Usability ========== */
 
-    .info-box {
-        background: var(--glass-bg);
-        backdrop-filter: blur(10px) saturate(150%);
-        -webkit-backdrop-filter: blur(10px) saturate(150%);
-        padding: 0.75rem 1rem;
-        border-radius: 8px;
-        margin: 0.75rem 0;
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-sm);
-        position: relative;
-        overflow: hidden;
+    /* ---------- Buttons ---------- */
+
+    .stButton>button, .stDownloadButton button {
+        background: var(--bg);
+        color: var(--text);
+        font-weight: 500;
+        font-size: 0.875rem;
+        padding: 0.45rem 1rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 4px;
+        box-shadow: none;
+        transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
     }
 
-    .info-box::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--gradient-info);
+    .stButton>button:hover, .stDownloadButton button:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+        color: var(--accent);
     }
 
-    .info-box h3 {
-        font-size: 0.9rem !important;
-        margin: 0 0 0.25rem 0 !important;
+    .stButton>button:active, .stDownloadButton button:active { background: var(--accent-soft); }
+
+    .stButton>button[kind="primary"], .stDownloadButton button[kind="primary"] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #ffffff;
     }
 
-    .info-box p {
+    .stButton>button[kind="primary"]:hover { background: #173d70; color: #ffffff; }
+
+    /* ---------- Inputs ---------- */
+
+    .stSelectbox label, .stTextInput label, .stTextArea label, .stRadio label, .stMultiSelect label {
+        font-weight: 500 !important;
+        color: var(--muted) !important;
         font-size: 0.8rem !important;
-        margin: 0 !important;
-        line-height: 1.4 !important;
     }
 
-    .method-box {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
-        backdrop-filter: blur(10px) saturate(150%);
-        -webkit-backdrop-filter: blur(10px) saturate(150%);
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
-        margin: 0.75rem 0;
-        border: 1px solid rgba(76, 175, 80, 0.2);
-        box-shadow: var(--shadow-sm);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .method-box::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--gradient-success);
-    }
-
-    .method-box b {
-        font-size: 0.85rem !important;
-    }
-
-    .method-box li, .method-box p {
-        font-size: 0.8rem !important;
-        margin: 0.15rem 0 !important;
-        line-height: 1.3 !important;
-    }
-
-    .warning-box {
-        background: linear-gradient(135deg, rgba(255, 248, 225, 0.95) 0%, rgba(255, 248, 225, 0.85) 100%);
-        backdrop-filter: blur(10px);
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        border-left: 3px solid var(--md-warning-500);
-        box-shadow: var(--shadow-xs);
-        font-size: 0.8rem;
-    }
-    
-    /* ========== MODERN BUTTONS - Gradient with Shine Effect ========== */
-    
-    .stButton>button {
-        width: 100%;
-        background: var(--gradient-primary);
-        color: white;
-        font-weight: 600;
-        font-size: 0.9375rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        padding: 1rem 2rem;
-        border: none;
-        border-radius: 12px;
-        box-shadow: var(--shadow-lg), var(--shadow-glow);
-        transition: all 0.3s var(--ease-smooth);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stButton>button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transition: left 0.5s var(--ease-smooth);
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-xl), var(--shadow-glow-hover);
-    }
-    
-    .stButton>button:hover::before {
-        left: 100%;
-    }
-    
-    .stButton>button:active {
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
-    }
-    
-    /* ========== PREMIUM INPUTS - Floating Labels Effect ========== */
-    
-    .stSelectbox label, .stTextInput label, .stTextArea label {
-        font-weight: 600 !important;
-        color: var(--md-grey-700) !important;
-        font-size: 0.875rem !important;
-        letter-spacing: 0.02em !important;
-        margin-bottom: 0.5rem !important;
-        text-transform: uppercase;
-    }
-    
     .stSelectbox > div > div,
     .stTextInput > div > div,
     .stTextArea > div > div {
-        border-radius: 12px !important;
-        border: 2px solid var(--md-grey-200) !important;
-        background: white !important;
-        transition: all 0.3s var(--ease-smooth) !important;
-        box-shadow: var(--shadow-sm) !important;
+        border-radius: 4px !important;
+        border: 1px solid var(--border-strong) !important;
+        background: var(--bg) !important;
+        box-shadow: none !important;
+        transition: border-color 0.2s var(--ease) !important;
     }
-    
+
     .stSelectbox > div > div:hover,
     .stTextInput > div > div:hover,
-    .stTextArea > div > div:hover {
-        border-color: var(--md-primary-300) !important;
-        box-shadow: var(--shadow-md), 0 0 0 4px rgba(33, 150, 243, 0.1) !important;
-    }
-    
+    .stTextArea > div > div:hover { border-color: var(--accent) !important; }
+
     .stSelectbox > div > div:focus-within,
     .stTextInput > div > div:focus-within,
     .stTextArea > div > div:focus-within {
-        border-color: var(--md-primary-600) !important;
-        box-shadow: var(--shadow-md), 0 0 0 4px rgba(33, 150, 243, 0.15) !important;
-        transform: translateY(-2px);
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
     }
-    
-    /* ========== COMPACT METRICS - Scientific Display ========== */
+
+    /* ---------- Metrics ---------- */
 
     .stMetric {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        background: var(--bg);
         padding: 0.5rem 0.75rem;
-        border-radius: 8px;
-        box-shadow: var(--shadow-xs);
-        border: 1px solid var(--md-grey-200);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stMetric::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 3px;
-        height: 100%;
-        background: var(--gradient-primary);
+        border: 1px solid var(--border);
+        border-radius: 4px;
     }
 
     .stMetric label {
-        font-weight: 600 !important;
-        color: var(--md-grey-600) !important;
-        font-size: 0.65rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        font-weight: 500 !important;
+        color: var(--muted) !important;
+        font-size: 0.7rem !important;
     }
 
     .stMetric [data-testid="stMetricValue"] {
-        background: var(--gradient-primary);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-size: 1.1rem !important;
-        font-weight: 700 !important;
+        color: var(--text);
+        font-size: 1.15rem !important;
+        font-weight: 600 !important;
     }
-    
-    /* ========== MODERN TABS - Pill Style with Glow ========== */
-    
-    .stTabs {
-        background-color: transparent;
-        margin-top: 2.5rem;
-    }
-    
+
+    /* ---------- Tabs: flat, underline on active ---------- */
+
+    .stTabs { margin-top: 1rem; }
+
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0.75rem;
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(10px);
-        padding: 0.75rem;
-        border-radius: 16px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        gap: 0.25rem;
+        background: transparent;
+        padding: 0;
+        border-bottom: 1px solid var(--border);
     }
-    
+
     .stTabs [data-baseweb="tab"] {
         height: auto;
-        padding: 0.875rem 1.75rem;
+        padding: 0.6rem 1rem;
         background: transparent;
-        border-radius: 12px;
-        color: var(--md-grey-700);
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: 2px solid transparent;
-        transition: all 0.3s var(--ease-smooth);
+        border-radius: 0;
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 0.9rem;
+        border-bottom: 2px solid transparent;
+        transition: color 0.2s var(--ease), border-color 0.2s var(--ease), background 0.2s var(--ease);
     }
-    
-    .stTabs [data-baseweb="tab"]:hover {
-        background: rgba(33, 150, 243, 0.08);
-        color: var(--md-primary-700);
-        transform: translateY(-2px);
-    }
-    
+
+    .stTabs [data-baseweb="tab"]:hover { color: var(--text); background: var(--surface); }
+
     .stTabs [aria-selected="true"] {
-        background: var(--gradient-primary) !important;
-        color: white !important;
-        box-shadow: var(--shadow-md), var(--shadow-glow);
-        border-color: transparent !important;
+        background: transparent !important;
+        color: var(--text) !important;
+        border-bottom: 2px solid var(--accent) !important;
     }
-    
-    /* ========== PREMIUM DATAFRAMES ========== */
-    
+
+    .stTabs [data-baseweb="tab-highlight"] { background-color: var(--accent) !important; }
+    .stTabs [data-baseweb="tab-border"] { background-color: var(--border) !important; }
+
+    /* ---------- Tables ---------- */
+
     .stDataFrame {
-        border-radius: 16px;
+        border-radius: 4px;
         overflow: hidden;
-        box-shadow: var(--shadow-lg);
-        border: 1px solid var(--md-grey-200);
-        background: white;
+        border: 1px solid var(--border);
+        background: var(--bg);
     }
-    
-    .stDataFrame thead tr th {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: white !important;
-        font-weight: 700 !important;
-        font-size: 0.8125rem !important;
-        padding: 1.25rem !important;
-        border: none !important;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-    
-    .stDataFrame tbody tr {
-        transition: all 0.2s var(--ease-smooth);
-        border-bottom: 1px solid var(--md-grey-100);
-    }
-    
-    .stDataFrame tbody tr:hover {
-        background: linear-gradient(90deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.02) 100%) !important;
-        transform: translateX(4px);
-    }
-    
-    .stDataFrame tbody tr:last-child {
-        border-bottom: none;
-    }
-    
-    /* ========== GLASSMORPHISM SIDEBAR ========== */
-    
+
+    /* ---------- Sidebar ---------- */
+
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
-        border-right: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: var(--shadow-xl);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
     }
-    
-    /* ========== MODERN EXPANDER ========== */
-    
-    .streamlit-expanderHeader {
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        border: 1px solid var(--md-grey-200);
-        border-radius: 12px;
-        padding: 1.25rem 1.75rem;
-        font-weight: 600;
-        color: var(--md-grey-900);
-        transition: all 0.3s var(--ease-smooth);
-        box-shadow: var(--shadow-sm);
+
+    /* ---------- Expanders ---------- */
+
+    .streamlit-expanderHeader, [data-testid="stExpander"] summary {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-weight: 500;
+        color: var(--text);
+        transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
     }
-    
-    .streamlit-expanderHeader:hover {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        box-shadow: var(--shadow-md);
-        transform: translateY(-2px);
-        border-color: var(--md-primary-300);
+
+    .streamlit-expanderHeader:hover, [data-testid="stExpander"] summary:hover {
+        background: var(--surface);
+        border-color: var(--border-strong);
     }
-    
-    .streamlit-expanderContent {
-        border: 1px solid var(--md-grey-200);
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        padding: 2rem;
-        background: white;
-        box-shadow: var(--shadow-sm);
-    }
-    
-    /* ========== STYLED ALERTS ========== */
-    
-    .stAlert {
-        border-radius: 12px;
-        padding: 1.25rem 1.75rem;
-        box-shadow: var(--shadow-md);
-        border: none;
-        backdrop-filter: blur(10px);
-    }
-    
-    .stSuccess {
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(56, 142, 60, 0.1) 100%);
-        color: var(--md-success-700);
-        border-left: 4px solid var(--md-success-500);
-    }
-    
-    .stInfo {
-        background: linear-gradient(135deg, rgba(33, 150, 243, 0.15) 0%, rgba(25, 118, 210, 0.1) 100%);
-        color: var(--md-primary-800);
-        border-left: 4px solid var(--md-primary-500);
-    }
-    
-    .stWarning {
-        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 160, 0, 0.1) 100%);
-        color: #f57c00;
-        border-left: 4px solid var(--md-warning-500);
-    }
-    
-    .stError {
-        background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(211, 47, 47, 0.1) 100%);
-        color: #c62828;
-        border-left: 4px solid var(--md-error-500);
-    }
-    
-    /* ========== PREMIUM DOWNLOAD BUTTON ========== */
-    
-    .stDownloadButton button {
-        background: var(--gradient-success);
-        color: white;
-        font-weight: 600;
-        font-size: 0.9375rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: none;
-        border-radius: 12px;
-        padding: 1rem 2rem;
-        box-shadow: var(--shadow-md), 0 4px 20px rgba(76, 175, 80, 0.3);
-        transition: all 0.3s var(--ease-smooth);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stDownloadButton button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        transition: left 0.5s var(--ease-smooth);
-    }
-    
-    .stDownloadButton button:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-lg), 0 8px 30px rgba(76, 175, 80, 0.4);
-    }
-    
-    .stDownloadButton button:hover::before {
-        left: 100%;
-    }
-    
-    /* ========== PLOTLY CHARTS - Static Scientific Display ========== */
+
+    [data-testid="stExpander"] { border: 1px solid var(--border); border-radius: 4px; box-shadow: none; }
+
+    /* ---------- Alerts ---------- */
+
+    .stAlert { border-radius: 4px; padding: 0.75rem 1rem; box-shadow: none; border: 1px solid var(--border); }
+
+    /* ---------- Plots ---------- */
 
     .js-plotly-plot {
-        border-radius: 8px;
+        border-radius: 4px;
         overflow: hidden;
-        background: white;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--md-grey-200);
+        background: var(--bg);
+        border: 1px solid var(--border);
     }
 
-    /* Disable hover animations on plots for scientific inspection */
-    .js-plotly-plot:hover {
-        box-shadow: var(--shadow-sm);
-        transform: none;
-    }
-    
-    /* ========== ELEGANT DIVIDER ========== */
-    
-    hr {
-        margin: 3rem 0;
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent 0%, var(--md-grey-300) 50%, transparent 100%);
-    }
-    
-    /* ========== ENHANCED TEXT ========== */
-    
-    .stMarkdown p, .stMarkdown li {
-        color: var(--md-grey-800) !important;
-        line-height: 1.7;
-        font-weight: 400;
-    }
-    
-    .stMarkdown strong {
-        color: var(--md-grey-900) !important;
-        font-weight: 700;
-    }
-    
+    /* ---------- Misc ---------- */
+
+    hr { margin: 1.5rem 0; border: none; height: 1px; background: var(--border); }
+
+    .stMarkdown p, .stMarkdown li { color: var(--text); line-height: 1.6; }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
     .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-        color: var(--md-grey-900) !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.02em;
+        color: var(--text);
+        font-weight: 600;
+        letter-spacing: -0.01em;
     }
-    
+
     .stMarkdown code {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        padding: 0.25rem 0.5rem;
-        border-radius: 6px;
-        color: var(--md-primary-700);
+        background: var(--surface);
+        padding: 0.1rem 0.35rem;
+        border-radius: 3px;
+        color: var(--accent);
         font-size: 0.9em;
         font-family: 'Roboto Mono', monospace;
-        font-weight: 500;
-        border: 1px solid var(--md-grey-300);
-        box-shadow: var(--shadow-xs);
+        border: 1px solid var(--border);
     }
-    
-    /* ========== MODERN SCROLLBAR ========== */
-    
-    ::-webkit-scrollbar {
-        width: 14px;
-        height: 14px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: var(--md-grey-100);
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, var(--md-grey-400) 0%, var(--md-grey-500) 100%);
-        border-radius: 10px;
-        border: 3px solid var(--md-grey-100);
-        transition: background 0.3s var(--ease-smooth);
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(180deg, var(--md-primary-400) 0%, var(--md-primary-600) 100%);
-    }
-    
-    /* ========== LOADING SPINNER ========== */
 
-    .stSpinner > div > div {
-        border-color: var(--md-primary-500) transparent transparent transparent !important;
-    }
-    
-    /* ========== CHECKBOX & RADIO - Modern Toggle ========== */
-    
-    .stCheckbox, .stRadio {
-        padding: 0.25rem;
-        border-radius: 8px;
-        transition: background 0.3s var(--ease-smooth);
-    }
-    
-    .stCheckbox:hover, .stRadio:hover {
-        background: rgba(33, 150, 243, 0.05);
-    }
-    
-    /* Reduce spacing between radio options */
-    .stRadio > div {
-        gap: 0.1rem !important;
-    }
-    
-    .stRadio label {
-        margin-bottom: 0 !important;
-        padding: 0.2rem 0.5rem !important;
-    }
-    
-    div[role="radiogroup"] {
-        gap: 0.1rem !important;
-    }
-    
-    /* ========== PROFESSIONAL CAPTION ========== */
-    
-    .stCaption {
-        color: var(--md-grey-600) !important;
-        font-size: 0.875rem !important;
-        font-weight: 400 !important;
-    }
-    
-    /* ========== MODERN PROGRESS BAR ========== */
-    
-    .stProgress > div > div {
-        background: var(--gradient-primary) !important;
-        border-radius: 10px !important;
-    }
-    
-    /* ========== FADE IN ANIMATION FOR ALL ELEMENTS ========== */
-    
-    .element-container {
-        animation: fadeIn 0.5s var(--ease-smooth);
-    }
-    
+    .stCaption { color: var(--muted) !important; font-size: 0.8rem !important; }
+
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 5px; border: 2px solid var(--surface); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    .stProgress > div > div { background: var(--accent) !important; border-radius: 2px !important; }
+
+    .stRadio > div, div[role="radiogroup"] { gap: 0.1rem !important; }
+    .stRadio label { margin-bottom: 0 !important; padding: 0.2rem 0.5rem !important; }
+
+    .element-container { animation: fadeIn 0.4s var(--ease); }
+
     @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1487,7 +1077,7 @@ def load_compartment_data_continuous(compartment):
         results_file = os.path.join(DATA_DIR, "bayesian_continuous", f"{comp_key}_continuous.csv")
         data['continuous_results'] = pd.read_csv(results_file)
     except Exception as e:
-        st.warning(f"⚠️ Could not load continuous results: {e}")
+        st.warning(f"Could not load continuous results: {e}")
         data['continuous_results'] = None
     
     # Load posterior samples and diagnostics from continuous-specific folder
@@ -1533,7 +1123,7 @@ def load_compartment_data_continuous(compartment):
             data['credible_intervals'] = None
             
     except Exception as e:
-        st.warning(f"⚠️ Could not load continuous diagnostics: {e}")
+        st.warning(f"Could not load continuous diagnostics: {e}")
         data['posterior_bmi_slope'] = None
         data['diagnostics'] = None
         data['energy'] = None
@@ -1622,12 +1212,12 @@ def load_zscore_data_survival():
 
     # Show any errors
     if errors:
-        with st.expander("⚠️ Z-score loading issues", expanded=False):
+        with st.expander("Z-score loading issues", expanded=False):
             for err in errors:
                 st.warning(err)
     
     if not dfs:
-        st.error(f"❌ No z-score files loaded from {base}/")
+        st.error(f"No z-score files loaded from {base}/")
         st.info("Expected files: " + ", ".join(files.values()))
         return None
 
@@ -1652,7 +1242,7 @@ def load_significant_features():
     
     # Check if file exists
     if not os.path.exists(sig_file):
-        st.error(f"❌ File not found: {sig_file}")
+        st.error(f"File not found: {sig_file}")
         return None
     
     # Try multiple encodings
@@ -1670,7 +1260,7 @@ def load_significant_features():
             continue
     
     if sig_df is None:
-        st.error(f"❌ Could not read survival features file")
+        st.error(f"Could not read survival features file")
         return None
     
     # Look for p-value column (try different possible names)
@@ -1681,14 +1271,14 @@ def load_significant_features():
             break
     
     if p_col is None:
-        st.warning(f"⚠️ No p-value column found in survival data")
+        st.warning(f"No p-value column found in survival data")
         return sig_df
     
     # Filter for significant features
     sig_df_filtered = sig_df[sig_df[p_col] < 0.05].copy()
     
     if len(sig_df_filtered) == 0:
-        st.error(f"❌ No significant features found (all p-values ≥ 0.05)")
+        st.error(f"No significant features found (all p-values ≥ 0.05)")
         return None
     
     # Success - return filtered data
@@ -1737,11 +1327,11 @@ def get_available_cells(compartment):
         
         if len(cells) == 0:
             # Debug: show what columns are available
-            st.sidebar.warning(f"❌ No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
+            st.sidebar.warning(f"No cell types found in z-score data. Available columns: {list(comp_data['zscores'].columns)}")
         
         return cells
     else:
-        st.sidebar.error(f"❌ Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
+        st.sidebar.error(f"Z-score data not loaded for {compartment}. Check if file exists: data/zscores/{compartment.lower().replace(' ', '_').replace('-', '_')}_zscores.csv")
     return []
 
 
@@ -1899,14 +1489,14 @@ def format_signature_name(sig_name, max_length=40):
 def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     """Generate interactive Stabl Z-score heatmap"""
     if comp_data['zscores'] is None or comp_data['stabl'] is None:
-        st.warning("❌ Stabl data not available")
+        st.warning("Stabl data not available")
         return None
     
     zscores = comp_data['zscores']
     zscores = zscores[zscores['CellType'].str.upper() == cell_type.upper()].copy()
     
     if len(zscores) == 0:
-        st.warning(f"❌ No Z-scores found for {cell_type}")
+        st.warning(f"No Z-scores found for {cell_type}")
         return None
     
     zscores = zscores.merge(clinical[['sample_id', 'bmi_category']], 
@@ -1927,7 +1517,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
     for sig in heatmap_data.index:
         feature_name = f"{cell_type}||{sig}"
         if feature_name in stabl_features:
-            signatures.append(f"{sig} ⭐")
+            signatures.append(f"{sig} *")
         else:
             signatures.append(sig)
     
@@ -1953,7 +1543,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='BMI Category',
-        yaxis_title='Signatures (⭐= STABL-selected)',
+        yaxis_title='Signatures (* = STABL-selected)',
         height=max(600, len(heatmap_data) * 25),
         template=PLOTLY_TEMPLATE,
         hovermode='closest'
@@ -1964,7 +1554,7 @@ def plot_stabl_heatmap_interactive(cell_type, sig_name, comp_data, clinical):
 def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     """Generate interactive Bayesian effect size heatmap"""
     if comp_data['bayesian'] is None:
-        st.warning("❌ Bayesian data not available")
+        st.warning(" Bayesian data not available")
         return None
     
     bayes = comp_data['bayesian'].copy()
@@ -1980,7 +1570,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
     cell_bayes = bayes[bayes['cell_normalized'] == cell_norm].copy()
     
     if len(cell_bayes) == 0:
-        st.warning(f"❌ No Bayesian results for {cell_type}")
+        st.warning(f"No Bayesian results for {cell_type}")
         return None
     
     cell_bayes['signature'] = cell_bayes['feature'].apply(
@@ -1996,7 +1586,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
                 break
     
     if len(effect_data) == 0:
-        st.warning("❌ No effect size columns found")
+        st.warning("No effect size columns found")
         return None
     
     heatmap_data = pd.concat(effect_data, axis=1).T
@@ -2038,7 +1628,7 @@ def plot_bayesian_heatmap_interactive(cell_type, sig_name, comp_data):
 def plot_overlapped_ridges_interactive(cell_type, comp_data):
     """Generate interactive overlapped ridge plot"""
     if comp_data['posterior_overweight'] is None or comp_data['posterior_obese'] is None:
-        st.info("❌ Posterior data not available - ridge plot skipped")
+        st.info("Posterior data not available - ridge plot skipped")
         return None
     
     try:
@@ -2209,7 +1799,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
             template=PLOTLY_TEMPLATE,
             hovermode='closest',
         
-            # ✅ Legend outside to the right
+            # Legend outside to the right
             legend=dict(
                 orientation="v",
                 x=1.02,
@@ -2218,7 +1808,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
                 yanchor="middle"
             ),
         
-            # ✅ Add right margin so legend has space
+            # Add right margin so legend has space
             margin=dict(l=60, r=180, t=80, b=60)
         )
 
@@ -2226,7 +1816,7 @@ def plot_overlapped_ridges_interactive(cell_type, comp_data):
         return fig
         
     except Exception as e:
-        st.warning(f"❌ Error creating ridge plot: {e}")
+        st.warning(f"Error creating ridge plot: {e}")
         return None
  
 def plot_gene_bmi_interactive(genes, clinical, tpm):
@@ -2387,7 +1977,7 @@ def plot_gene_bmi_interactive(genes, clinical, tpm):
 def plot_energy_diagnostic(comp_data):
     """Generate interactive energy diagnostic plot"""
     if comp_data['energy'] is None:
-        st.info("❌ Energy data not available")
+        st.info("Energy data not available")
         return None
     
     energy = comp_data['energy']
@@ -2431,7 +2021,7 @@ def plot_trace_diagnostic(comp_data, selected_cell=None, n_celltypes=6):
         n_celltypes: Number of cell types to show if no selection
     """
     if comp_data['posterior_overweight'] is None:
-        st.info("❌ Posterior data not available")
+        st.info(" Posterior data not available")
         return None
     
     # Get posterior data
@@ -2749,7 +2339,7 @@ def plot_autocorrelation(comp_data, selected_cell=None, n_celltypes=6, max_lag=4
 def plot_ess_rhat(comp_data):
     """Generate ESS and R-hat diagnostic plots with proper cell type names"""
     if comp_data['diagnostics'] is None:
-        st.info("❌ Diagnostic summary not available")
+        st.info("Diagnostic summary not available")
         return None
     
     diag = comp_data['diagnostics']
@@ -2761,7 +2351,7 @@ def plot_ess_rhat(comp_data):
         diag = diag.set_index(diag.columns[0])
     
     if isinstance(diag.index, pd.RangeIndex):
-        st.warning("❌ Diagnostic data doesn't have parameter names")
+        st.warning("Diagnostic data doesn't have parameter names")
         return None
     
     # Convert index to string
@@ -2776,7 +2366,7 @@ def plot_ess_rhat(comp_data):
     ]
     
     if len(diag_filtered) == 0:
-        st.warning("❌ No cell type diagnostics found")
+        st.warning("No cell type diagnostics found")
         return None
     
     # Load celltype mapping to get actual names
@@ -2835,7 +2425,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if ess_col is None:
-        st.warning("❌ ESS column not found")
+        st.warning("ESS column not found")
         return None
     
     ess_bulk = diag_filtered[ess_col].values
@@ -2867,7 +2457,7 @@ def plot_ess_rhat(comp_data):
             break
     
     if rhat_col is None:
-        st.warning("⚠️ R-hat column not found - showing ESS only")
+        st.warning("R-hat column not found - showing ESS only")
         fig.update_xaxes(title_text='Effective Sample Size', row=1, col=1)
         fig.update_layout(
             title='Bayesian Diagnostic Statistics (ESS only)',
@@ -2932,7 +2522,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
     import re
 
     if comp_data['diagnostics'] is None:
-        st.info("❌ Diagnostic summary not available")
+        st.info("Diagnostic summary not available")
         return None
 
     diag = comp_data['diagnostics'].copy()
@@ -2943,7 +2533,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
         diag = diag.set_index(diag.columns[0])
 
     if isinstance(diag.index, pd.RangeIndex):
-        st.warning("❌ Diagnostic data doesn't have parameter names")
+        st.warning("Diagnostic data doesn't have parameter names")
         return None
 
     diag.index = diag.index.astype(str)
@@ -2952,7 +2542,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
     diag_filtered = diag[diag.index.str.contains('celltype_effect', na=False, case=False)].copy()
 
     if len(diag_filtered) == 0:
-        st.warning("❌ No cell type diagnostics found")
+        st.warning("No cell type diagnostics found")
         return None
 
     # Build celltype mapping (single source of truth)
@@ -2984,7 +2574,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
         st.info(f"ℹ️ {rows_excluded} diagnostic rows were excluded because they are not part of the Bayesian model.")
 
     if len(diag_filtered) == 0:
-        st.warning("❌ No diagnostics remaining after filtering")
+        st.warning("No diagnostics remaining after filtering")
         return None
 
     # Filter to selected cell's indices if specified
@@ -2992,7 +2582,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
         diag_filtered = diag_filtered[diag_filtered['celltype_idx'].isin(allowed_idx)]
 
     if len(diag_filtered) == 0:
-        st.warning(f"❌ No diagnostics found for {selected_cell}")
+        st.warning(f"No diagnostics found for {selected_cell}")
         return None
 
     # Sort by index for consistent ordering
@@ -3011,7 +2601,7 @@ def plot_ess_rhat_categorical(comp_data, selected_cell=None):
     # ESS
     ess_col = next((c for c in ['ess_bulk', 'ess_mean', 'ess', 'n_eff'] if c in diag_filtered.columns), None)
     if not ess_col:
-        st.warning("❌ ESS column not found")
+        st.warning("ESS column not found")
         return None
 
     ess_vals = diag_filtered[ess_col].values
@@ -3099,7 +2689,7 @@ def get_continuous_celltype_index_map(comp_data):
 def plot_ess_rhat_continuous(comp_data, selected_cell=None):
     """ESS & R-hat for CONTINUOUS analysis - single cell or all cells"""
     if comp_data['diagnostics'] is None:
-        st.info("❌ Diagnostic summary not available")
+        st.info("Diagnostic summary not available")
         return None
     
     diag = comp_data['diagnostics']
@@ -3110,14 +2700,14 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
         diag = diag.set_index(diag.columns[0])
     
     if isinstance(diag.index, pd.RangeIndex):
-        st.warning("❌ Diagnostic data doesn't have parameter names")
+        st.warning("Diagnostic data doesn't have parameter names")
         return None
     
     diag.index = diag.index.astype(str)
     
     # Filter for CELL-TYPE-LEVEL bmi_slope parameters only.
     # We exclude feature_bmi_slope (signature-level) because that produces
-    # one bar per signature per cell — dozens of bars that make the chart
+    # one bar per signature per cell - dozens of bars that make the chart
     # unreadably wide.  The cell-type-level parameter is the key convergence
     # diagnostic: one bar per cell type shows whether the overall BMI slope
     # for that cell type has converged.
@@ -3130,7 +2720,7 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
     ]
     
     if len(diag_filtered) == 0:
-        st.warning("❌ No BMI slope diagnostics found")
+        st.warning("No BMI slope diagnostics found")
         return None
     
     # Build integer→name mapping as fallback for old-format diagnostics
@@ -3180,7 +2770,7 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
             indices_to_keep.append(i)
     
     if len(indices_to_keep) == 0:
-        st.warning(f"❌ No diagnostics found for {selected_cell if selected_cell else 'any cell'}")
+        st.warning(f"No diagnostics found for {selected_cell if selected_cell else 'any cell'}")
         return None
     
     # Filter to selected indices
@@ -3196,7 +2786,7 @@ def plot_ess_rhat_continuous(comp_data, selected_cell=None):
     # ESS
     ess_col = next((c for c in ['ess_bulk', 'ess_mean', 'ess', 'n_eff'] if c in diag_filtered.columns), None)
     if not ess_col:
-        st.warning("❌ ESS column not found")
+        st.warning("ESS column not found")
         return None
     
     ess_vals = diag_filtered[ess_col].values
@@ -3621,7 +3211,7 @@ def plot_survival_forest_bmi(patient_data, signature_name):
 
  
 def plot_survival_interaction_tertile(patient_data, signature_name):
-    """Plot 5: BMI Ã— Signature Interaction (Tertiles)"""
+    """Plot 5: BMI x Signature Interaction (Tertiles)"""
     if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
         return None
     
@@ -3665,7 +3255,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     
     fig = make_subplots(
         rows=1, cols=2,
-        subplot_titles=('Median Survival by BMI Ã— Signature', 'Event Rate by BMI Ã— Signature'),
+        subplot_titles=('Median Survival by BMI x Signature', 'Event Rate by BMI x Signature'),
         horizontal_spacing=0.12
     )
     
@@ -3747,7 +3337,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
     
     fig.update_layout(
-        title_text=f'{signature_name}<br>BMI Ã— Signature Interaction (Tertiles)',
+        title_text=f'{signature_name}<br>BMI x Signature Interaction (Tertiles)',
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
         height=500,
@@ -3758,7 +3348,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
 
  
 def plot_survival_interaction_median(patient_data, signature_name):
-    """Plot 6: BMI Ã— Signature Interaction (Median Split)"""
+    """Plot 6: BMI x Signature Interaction (Median Split)"""
     if 'BMI' not in patient_data.columns or patient_data['BMI'].isna().all():
         return None
     
@@ -3802,7 +3392,7 @@ def plot_survival_interaction_median(patient_data, signature_name):
     
     fig = make_subplots(
         rows=1, cols=2,
-        subplot_titles=('Median Survival by BMI Ã— Signature', 'Event Rate by BMI Ã— Signature'),
+        subplot_titles=('Median Survival by BMI x Signature', 'Event Rate by BMI x Signature'),
         horizontal_spacing=0.12
     )
     
@@ -3884,7 +3474,7 @@ def plot_survival_interaction_median(patient_data, signature_name):
     fig.update_yaxes(title_text='Event Rate (%)', row=1, col=2)
     
     fig.update_layout(
-        title_text=f'{signature_name}<br>BMI Ã— Signature Interaction (Median Split: High vs Low)',
+        title_text=f'{signature_name}<br>BMI x Signature Interaction (Median Split: High vs Low)',
         template=PLOTLY_TEMPLATE,
         hovermode='closest',
         height=500,
@@ -4228,7 +3818,7 @@ def plot_survival_forest_bmi(patient_data, signature_name):
     return fig
  
 def plot_survival_interaction_tertile(patient_data, signature_name):
-    """Plot 5: BMI Ã— Signature (Tertiles)"""
+    """Plot 5: BMI x Signature (Tertiles)"""
     if 'BMI' not in patient_data.columns:
         return None
     patient_data = patient_data.copy()
@@ -4277,7 +3867,7 @@ def plot_survival_interaction_tertile(patient_data, signature_name):
     return fig
  
 def plot_survival_interaction_median(patient_data, signature_name):
-    """Plot 6: BMI Ã— Signature (Median Split)"""
+    """Plot 6: BMI x Signature (Median Split)"""
     if 'BMI' not in patient_data.columns:
         return None
     patient_data = patient_data.copy()
@@ -4485,12 +4075,12 @@ def plot_gene_survival_interactive(genes, clinical, tpm):
 def plot_continuous_cell_heatmap(selected_cell, comp_data):
     """Cell-specific HEATMAP showing signatures for selected cell with credibility markers"""
     if comp_data['continuous_results'] is None:
-        st.warning("❌ Continuous results not available")
+        st.warning("Continuous results not available")
         return None
     
     results = comp_data['continuous_results'].copy()
     
-    # Parse features — normalise underscores→spaces in cell type so the parsed
+    # Parse features - normalise underscores→spaces in cell type so the parsed
     # value matches the cell_type column (e.g. TUMOR_EPITHELIAL → TUMOR EPITHELIAL)
     def parse_feature(feature):
         if "||" in str(feature):
@@ -4504,7 +4094,7 @@ def plot_continuous_cell_heatmap(selected_cell, comp_data):
     cell_results = results[results['cell_type_parsed'].str.upper() == selected_cell.upper()].copy()
     
     if len(cell_results) == 0:
-        st.warning(f"❌ No data for {selected_cell}")
+        st.warning(f"No data for {selected_cell}")
         return None
     
     # Assign priorities
@@ -4594,7 +4184,7 @@ def plot_continuous_cell_heatmap(selected_cell, comp_data):
     fig.update_layout(
         annotations=annotations,
         title=dict(
-            text=f'{selected_cell} - BMI Slope per Signature<br><sub>★★ HDI+ROPE>0.2 | ★ HDI+ROPE>0.1 | ○ HDI only</sub>',
+            text=f'{selected_cell} - BMI Slope per Signature<br><sub>★★ HDI+ROPE>0.2 - ★ HDI+ROPE>0.1 - ○ HDI only</sub>',
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='',
@@ -4617,7 +4207,7 @@ def plot_continuous_cell_heatmap(selected_cell, comp_data):
 def plot_trace_continuous(comp_data, selected_cell):
     """Trace plot for selected cell in continuous analysis"""
     if comp_data['posterior_bmi_slope'] is None:
-        st.info("❌ Posterior data not available")
+        st.info("Posterior data not available")
         return None
 
     df_slope = comp_data['posterior_bmi_slope']
@@ -4628,12 +4218,12 @@ def plot_trace_continuous(comp_data, selected_cell):
     cell_idx = name_to_idx.get(selected_cell.upper())
 
     if cell_idx is None:
-        st.warning(f"❌ Cell index not found for {selected_cell}")
+        st.warning(f"Cell index not found for {selected_cell}")
         return None
     
     col_name = f'celltype_{cell_idx}'
     if col_name not in df_slope.columns:
-        st.warning(f"❌ Column {col_name} not found")
+        st.warning(f"Column {col_name} not found")
         return None
     
     samples = df_slope[col_name].values
@@ -4674,7 +4264,7 @@ def plot_trace_continuous(comp_data, selected_cell):
 def plot_rank_continuous(comp_data, selected_cell):
     """Rank plot for selected cell"""
     if comp_data['posterior_bmi_slope'] is None:
-        st.info("❌ Posterior data not available")
+        st.info("Posterior data not available")
         return None
 
     df_slope = comp_data['posterior_bmi_slope']
@@ -4684,12 +4274,12 @@ def plot_rank_continuous(comp_data, selected_cell):
     cell_idx = name_to_idx.get(selected_cell.upper())
 
     if cell_idx is None:
-        st.warning(f"❌ Cell index not found for {selected_cell}")
+        st.warning(f"Cell index not found for {selected_cell}")
         return None
     
     col_name = f'celltype_{cell_idx}'
     if col_name not in df_slope.columns:
-        st.warning(f"❌ Column {col_name} not found")
+        st.warning(f"Column {col_name} not found")
         return None
     
     samples = df_slope[col_name].values
@@ -4732,7 +4322,7 @@ def plot_rank_continuous(comp_data, selected_cell):
 def plot_autocorrelation_continuous(comp_data, selected_cell, max_lag=40):
     """Autocorrelation plot for selected cell"""
     if comp_data['posterior_bmi_slope'] is None:
-        st.info("❌ Posterior data not available")
+        st.info("Posterior data not available")
         return None
 
     df_slope = comp_data['posterior_bmi_slope']
@@ -4742,12 +4332,12 @@ def plot_autocorrelation_continuous(comp_data, selected_cell, max_lag=40):
     cell_idx = name_to_idx.get(selected_cell.upper())
 
     if cell_idx is None:
-        st.warning(f"❌ Cell index not found for {selected_cell}")
+        st.warning(f"Cell index not found for {selected_cell}")
         return None
     
     col_name = f'celltype_{cell_idx}'
     if col_name not in df_slope.columns:
-        st.warning(f"❌ Column {col_name} not found")
+        st.warning(f"Column {col_name} not found")
         return None
     
     samples = df_slope[col_name].values
@@ -4802,7 +4392,7 @@ def plot_autocorrelation_continuous(comp_data, selected_cell, max_lag=40):
 def plot_continuous_ridge_plot(selected_cell, comp_data):
     """Plot ridge plot for SINGLE CELL TYPE in continuous analysis"""
     if comp_data['posterior_bmi_slope'] is None:
-        st.info("❌ Posterior BMI slope data not available")
+        st.info("Posterior BMI slope data not available")
         return None
     
     try:
@@ -4814,13 +4404,13 @@ def plot_continuous_ridge_plot(selected_cell, comp_data):
         cell_idx = name_to_idx.get(selected_cell.upper())
 
         if cell_idx is None:
-            st.warning(f"❌ Could not find index for {selected_cell}")
+            st.warning(f"Could not find index for {selected_cell}")
             return None
         
         col_name = f'celltype_{cell_idx}'
         
         if col_name not in df_slope.columns:
-            st.warning(f"❌ Column {col_name} not found in posterior data")
+            st.warning(f"Column {col_name} not found in posterior data")
             return None
         
         # Extract samples for this cell
@@ -4876,7 +4466,7 @@ def plot_continuous_ridge_plot(selected_cell, comp_data):
         return fig
         
     except Exception as e:
-        st.warning(f"❌ Error creating ridge plot: {e}")
+        st.warning(f"Error creating ridge plot: {e}")
         return None
 
 def plot_continuous_slope_heatmap(compartment, comp_data):
@@ -4885,12 +4475,12 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
     Marks credible features: ★★ (ROPE 0.2), ★ (ROPE 0.1), ○ (HDI only)
     """
     if comp_data['continuous_results'] is None:
-        st.warning("❌ Continuous results not available")
+        st.warning("Continuous results not available")
         return None
     
     results = comp_data['continuous_results'].copy()
     
-    # Parse feature to get cell type and signature — normalise underscores→spaces
+    # Parse feature to get cell type and signature - normalise underscores→spaces
     def parse_feature(feature):
         if "||" in str(feature):
             cell_type, signature = str(feature).split("||", 1)
@@ -4921,7 +4511,7 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
     credible = results[results['priority'] <= 3].copy()
     
     if len(credible) == 0:
-        st.warning("❌ No credible features found")
+        st.warning("No credible features found")
         return None
     
     # Sort and limit
@@ -4949,7 +4539,7 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
     ).fillna(4)
     
     if pivot_slope.empty:
-        st.warning("❌ No data to display")
+        st.warning("No data to display")
         return None
     
     # Sort rows and columns
@@ -5021,7 +4611,7 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
     fig.update_layout(
         annotations=annotations,
         title=dict(
-            text=f'{compartment} - Continuous BMI Slopes<br><sub>★★ ROPE>0.2 | ★ ROPE>0.1 | ○ HDI only</sub>',
+            text=f'{compartment} - Continuous BMI Slopes<br><sub>★★ ROPE>0.2 - ★ ROPE>0.1 - ○ HDI only</sub>',
             font=dict(size=16, color='#2c3e50')
         ),
         xaxis_title='Cell Type',
@@ -5040,7 +4630,7 @@ def plot_continuous_slope_heatmap(compartment, comp_data):
 def plot_continuous_ridge_plot(cell_type, comp_data):
     """Plot ridge plot for continuous BMI slopes."""
     if comp_data['posterior_bmi_slope'] is None:
-        st.info("❌ Posterior BMI slope data not available")
+        st.info("Posterior BMI slope data not available")
         return None
     
     try:
@@ -5147,14 +4737,14 @@ def plot_continuous_ridge_plot(cell_type, comp_data):
         return fig
         
     except Exception as e:
-        st.warning(f"❌ Error creating ridge plot: {e}")
+        st.warning(f"Error creating ridge plot: {e}")
         return None
 
 
 def plot_continuous_tier_summary(comp_data):
     """Plot tier-based evidence summary."""
     if comp_data['continuous_results'] is None:
-        st.warning("❌ Continuous results not available")
+        st.warning("Continuous results not available")
         return None
     
     results = comp_data['continuous_results'].copy()
@@ -5216,11 +4806,11 @@ def plot_continuous_tier_summary(comp_data):
 # ==================================================================================
 def render_signature_explorer():
     """Render the signature database explorer interface"""
-    st.markdown('<div class="sub-header">🔍 Signature Database Explorer</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Signature Database Explorer</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-    <b>📚 Browse the Complete Signature Database</b><br>
+    <b>Browse the Complete Signature Database</b><br>
     Explore all metabolic and functional signatures across different cell types and compartments.
     </div>
     """, unsafe_allow_html=True)
@@ -5229,11 +4819,11 @@ def render_signature_explorer():
     signatures = load_signatures()
     
     if not signatures:
-        st.error("❌ Failed to load signature database")
+        st.error("Failed to load signature database")
         return
     
     # --- MOVED FROM SIDEBAR TO MAIN PAGE ---
-    st.markdown("### 🛠️ Search Criteria")
+    st.markdown("### Search Criteria")
     
     # Create two columns for the dropdowns
     sel_col1, sel_col2 = st.columns(2)
@@ -5251,7 +4841,7 @@ def render_signature_explorer():
     available_cells = get_available_cells(compartment)
     
     if not available_cells:
-        st.warning(f"⚠️ No cell types found for {compartment}")
+        st.warning(f"No cell types found for {compartment}")
         # Show what is available in the JSON just in case z-scores are missing
         all_cell_types = sorted(list(set([s['cell_type'] for s in signatures])))
         with st.expander("See all cell types available in database", expanded=False):
@@ -5281,20 +4871,20 @@ def render_signature_explorer():
     st.markdown("---")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("📂 Compartment", compartment)
+        st.metric("Compartment", compartment)
     with col2:
-        st.metric("🔬 Cell Type", selected_cell_display)
+        st.metric("Cell Type", selected_cell_display)
     with col3:
-        st.metric("📝 Signatures Found", len(cell_signatures))
+        st.metric("Signatures Found", len(cell_signatures))
     
     st.markdown("---")
     
     if not cell_signatures:
-        st.warning(f"⚠️ No signatures found for {selected_cell}")
+        st.warning(f"No signatures found for {selected_cell}")
         return
     
     # Create tabs for different views
-    sig_tabs = st.tabs(["📋 Summary Table", "🔬 Detailed View", "📊 Statistics"])
+    sig_tabs = st.tabs(["Summary Table", "Detailed View", "Statistics"])
     
     # Tab 1: Summary Table
     with sig_tabs[0]:
@@ -5334,7 +4924,7 @@ def render_signature_explorer():
         selected_sig = cell_signatures[selected_sig_idx]
         
         # Display detailed info
-        st.markdown(f"#### 🧬 {selected_sig['signature']}")
+        st.markdown(f"#### {selected_sig['signature']}")
         
         col1, col2 = st.columns([1, 2])
         
@@ -5377,7 +4967,7 @@ def render_signature_explorer():
     
     # Tab 3: Statistics
     with sig_tabs[2]:
-        st.markdown("#### 📊 Database Statistics")
+        st.markdown("#### Database Statistics")
         
         # Signature size distribution for current cell type
         st.markdown(f"##### Signature Sizes for {selected_cell_display}")
@@ -5503,17 +5093,17 @@ def _try_send_contact_email(sender_name, subject, message):
 
 def render_signature_survival():
     """Mode 3: Dedicated Signature Survival Analysis"""
-    st.markdown('<div class="sub-header">🎯 Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Signature-Level Survival Analysis</div>', unsafe_allow_html=True)
 
     st.warning(
         "**Note:** Signature Survival Analysis is not part of the published paper. "
         "This section is provided as an exploratory tool. The paper citation will be updated here upon publication.",
-        icon="📌"
+        icon=""
     )
 
     st.markdown("""
     <div class="info-box">
-    <b>📋 BMI-Stratified Survival Analysis</b><br>
+    <b>BMI-Stratified Survival Analysis</b><br>
     Explore how signature expression affects patient outcomes across BMI categories using Cox proportional hazards modeling.
     </div>
     """, unsafe_allow_html=True)
@@ -5524,11 +5114,11 @@ def render_signature_survival():
     zscore_data = load_zscore_data_survival()
 
     if sig_features is None or len(sig_features) == 0:
-        st.error("❌ No survival features available")
+        st.error("No survival features available")
         return
 
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### 🛠️ Data Selection")
+    st.markdown("### Data Selection")
 
     sel_col1, sel_col2 = st.columns(2)
 
@@ -5552,7 +5142,7 @@ def render_signature_survival():
     )
 
     if not available_compartments:
-        st.warning("⚠️ No compartments available for this comparison")
+        st.warning("No compartments available for this comparison")
         return
 
     with sel_col2:
@@ -5570,7 +5160,7 @@ def render_signature_survival():
     ].copy()
 
     if filtered_sigs.empty:
-        st.warning("⚠️ No signatures for this selection")
+        st.warning("No signatures for this selection")
         return
 
     # ================= CELL TYPE =================
@@ -5580,7 +5170,7 @@ def render_signature_survival():
 
     available_cells = sorted(filtered_sigs['cell_type'].dropna().unique())
     if not available_cells:
-        st.warning("⚠️ No cell types found")
+        st.warning("No cell types found")
         return
 
     sel_col3, sel_col4 = st.columns(2)
@@ -5596,7 +5186,7 @@ def render_signature_survival():
 
     cell_filtered = filtered_sigs[filtered_sigs['cell_type'] == selected_cell].copy()
     if cell_filtered.empty:
-        st.warning("⚠️ No signatures for selected cell type")
+        st.warning("No signatures for selected cell type")
         return
 
     # ================= SIGNATURE =================
@@ -5632,7 +5222,7 @@ def render_signature_survival():
     # ================= MAIN ANALYSIS =================
     feature_data = zscore_data[zscore_data['feature'] == selected_feature].copy()
     if feature_data.empty:
-        st.error("❌ No z-score data found")
+        st.error("No z-score data found")
         return
 
     patient_data = clinical.merge(
@@ -5648,10 +5238,10 @@ def render_signature_survival():
     ]
 
     if len(patient_data) < 30:
-        st.warning("⚠️ Insufficient data for survival analysis")
+        st.warning("Insufficient data for survival analysis")
         return
 
-    st.markdown("### 📊 Interactive Survival Plots")
+    st.markdown("### Interactive Survival Plots")
 
     plot_configs = [
         ("BMI vs Time", plot_survival_bmi_vs_time),
@@ -5679,12 +5269,12 @@ def render_continuous_analysis():
     """Mode: Continuous BMI Analysis - Cell-Level"""
     
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
-    st.markdown('<h1 class="main-header">📈 Continuous BMI Association Analysis</h1>', 
+    st.markdown('<h1 class="main-header">Continuous BMI Association Analysis</h1>', 
                 unsafe_allow_html=True)
     
     st.markdown("""
     <div class="info-box">
-        <h3>📊 Cell-Level BMI Slope Analysis</h3>
+        <h3>Cell-Level BMI Slope Analysis</h3>
         <p>Explore how signatures change continuously with BMI for a specific cell type. 
         Credible features marked: ★★ (ROPE > 0.2), ★ (ROPE > 0.1), ○ (HDI only).</p>
     </div>
@@ -5692,7 +5282,7 @@ def render_continuous_analysis():
     
     with st.expander("**About the Analysis**", expanded=False):
         st.markdown("""
-        ### 🔬 Continuous BMI Modeling
+        ### Continuous BMI Modeling
         
         Models BMI as continuous variable (dose-response).
         
@@ -5705,7 +5295,7 @@ def render_continuous_analysis():
         """)
     
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### 🛠️ Data Selection")
+    st.markdown("### Data Selection")
 
     sel_col1, sel_col2 = st.columns(2)
 
@@ -5729,7 +5319,7 @@ def render_continuous_analysis():
     available_cells = get_available_cells_continuous(compartment)
 
     if not available_cells:
-        st.error("❌ No cell types with sufficient data for continuous modeling found")
+        st.error("No cell types with sufficient data for continuous modeling found")
         return
 
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -5769,7 +5359,7 @@ def render_continuous_analysis():
 
     st.divider()
     
-    st.markdown(f'<div class="sub-header">📈 {selected_cell_display} - Continuous Analysis</div>', 
+    st.markdown(f'<div class="sub-header">{selected_cell_display} - Continuous Analysis</div>', 
                unsafe_allow_html=True)
         
     col1, col2, col3 = st.columns(3)
@@ -5781,17 +5371,17 @@ def render_continuous_analysis():
         st.metric("Credible Signatures", n_credible)
     
     # Create tabs
-    tabs = st.tabs(["📊 Heatmap", "🌊 Ridge Plot", "🔍 Diagnostics"])
+    tabs = st.tabs(["Heatmap", "Ridge Plot", "Diagnostics"])
     
     # Tab 1: Cell-specific Heatmap
     with tabs[0]:
-        st.markdown(f"### 📊 BMI Slope Heatmap - {selected_cell_display}")
+        st.markdown(f"### BMI Slope Heatmap - {selected_cell_display}")
         st.markdown("""
         <div class="method-box">
-        <b>💡 Reading the Heatmap</b><br>
+        <b>Reading the Heatmap</b><br>
         Shows signatures (rows) for this cell type only.<br>
-        • <b>Color:</b> Red = positive slope, Blue = negative<br>
-        • <b>★★:</b> HDI + ROPE > 0.2 | <b>★:</b> ROPE > 0.1 | <b>○:</b> HDI only
+        - <b>Color:</b> Red = positive slope, Blue = negative<br>
+        - <b>★★:</b> HDI + ROPE > 0.2 - <b>★:</b> ROPE > 0.1 - <b>○:</b> HDI only
         </div>
         """, unsafe_allow_html=True)
         
@@ -5802,9 +5392,9 @@ def render_continuous_analysis():
     
     # Tab 2: Ridge Plot
     with tabs[1]:
-        st.markdown(f"### 🌊 Posterior Distribution - {selected_cell_display}")
+        st.markdown(f"### Posterior Distribution - {selected_cell_display}")
         
-        with st.expander("📖 Understanding Ridge Plots", expanded=False):
+        with st.expander("Understanding Ridge Plots", expanded=False):
             st.markdown("""
             Shows the full posterior distribution of BMI slopes.
             - **Width:** Uncertainty in slope estimate
@@ -5980,9 +5570,9 @@ def load_interactome_data():
                 df['Condition'] = parts[1]
                 data[name] = df
             else:
-                st.warning(f"⚠️ File not found: {filepath}")
+                st.warning(f"File not found: {filepath}")
         except Exception as e:
-            st.error(f"❌ Error loading {filename}: {str(e)}")
+            st.error(f"Error loading {filename}: {str(e)}")
 
     return data
 
@@ -6256,7 +5846,7 @@ def plot_interactome_sankey(filtered_data, dataset_choice, condition_filter):
                 link_colors.append('rgba(149, 165, 166, 0.4)')
 
         # Custom Hover (shows full names)
-        link_labels = [f"<b>{row['Favorable.Cell.Type']} ➞ {row['Unfavorable.Cell.Type']}</b><br>Ratio: {row['Enrichment.Ratio']:.2f}" for _, row in filtered_data.iterrows()]
+        link_labels = [f"<b>{row['Favorable.Cell.Type']} -> {row['Unfavorable.Cell.Type']}</b><br>Ratio: {row['Enrichment.Ratio']:.2f}" for _, row in filtered_data.iterrows()]
 
         # --- 2. Create Plot with "Fit to Screen" Settings ---
         fig = go.Figure(data=[go.Sankey(
@@ -6347,16 +5937,16 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
         
         with col1:
             normal_count = len(filtered_data[filtered_data['Condition'] == 'Normal'])
-            st.metric("🟢 Normal Weight Interactions", normal_count)
+            st.metric("Normal Weight Interactions", normal_count)
         
         with col2:
             overweight_count = len(filtered_data[filtered_data['Condition'] == 'Overweight'])
-            st.metric("🔴 Overweight Interactions", overweight_count)
+            st.metric("Overweight Interactions", overweight_count)
     
     # Dataset breakdown
     if 'Dataset' in filtered_data.columns:
         st.markdown("---")
-        st.markdown("#### 📊 Dataset Distribution")
+        st.markdown("#### Dataset Distribution")
         dataset_counts = filtered_data['Dataset'].value_counts()
         col1, col2, col3 = st.columns(3)
         
@@ -6366,7 +5956,7 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
     
     # Top interactions table
     st.markdown("---")
-    st.markdown("#### 🔝 Top 10 Interactions by Enrichment Ratio")
+    st.markdown("#### Top 10 Interactions by Enrichment Ratio")
     
     display_cols = ['Favorable.Cell.Type', 'Unfavorable.Cell.Type', 
                    'Enrichment.Ratio', 'Permutation.FDR']
@@ -6384,7 +5974,7 @@ def show_interaction_stats(filtered_data, dataset_choice, sig_filter, condition_
     
     # Distribution plots
     st.markdown("---")
-    st.markdown("#### 📊 Distribution Analysis")
+    st.markdown("#### Distribution Analysis")
     
     col1, col2 = st.columns(2)
     
@@ -6451,12 +6041,12 @@ def render_interactome_analysis():
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
     
     # Header
-    st.markdown('<h1 class="main-header">🔗 Cell-Cell Interactome Network Analysis</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">Cell-Cell Interactome Network Analysis</h1>', unsafe_allow_html=True)
 
     # Info box
     st.markdown("""
     <div class="info-box">
-        <h3>📊 Interactive Cell-Cell Interaction Network</h3>
+        <h3>Interactive Cell-Cell Interaction Network</h3>
         <p>Explore cell-cell interactions across different immune profiling signatures (Bindea, Zheng, Newman) 
         comparing normal weight vs overweight conditions.</p>
     </div>
@@ -6466,22 +6056,22 @@ def render_interactome_analysis():
         interactome_data = load_interactome_data()
 
     if not interactome_data:
-        st.error("❌ Could not load interactome data.")
+        st.error("Could not load interactome data.")
         return
 
     # First row: Dataset and Condition selection
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        dataset_choice = st.radio("📊 **Dataset:**",
+        dataset_choice = st.radio("**Dataset:**",
                                   ["All Combined", "Bindea", "Zheng", "Newman"],
                                   index=0, horizontal=True)
 
     with col2:
-        condition_filter = st.radio("🎨 **Condition Display:**",
+        condition_filter = st.radio("**Condition Display:**",
                                    ["Both", "Normal Weight", "Overweight"],
                                    index=0, horizontal=True,
-                                   help="🟢 Green = Normal Weight | 🔴 Red = Overweight")
+                                   help="Green = Normal Weight - Red = Overweight")
 
     # Second row: Significance filter
     st.markdown("---")
@@ -6492,19 +6082,19 @@ def render_interactome_analysis():
         sig_options = ["All Interactions (Per Signature)", "Top 30 All", "Significant Per Dataset"]
         default_index = 0
         disabled_notes = [
-            f"✅ Shows top {MAX_ALL_INTERACTIONS} interactions (sorted by Enrichment Ratio) for the selected signature",
-            "⚠️ *'Significant Across All' requires 'All Combined' dataset*"
+            f"Shows top {MAX_ALL_INTERACTIONS} interactions (sorted by Enrichment Ratio) for the selected signature",
+            "*'Significant Across All' requires 'All Combined' dataset*"
         ]
     else:
         # For "All Combined": don't allow "All Interactions"
         sig_options = ["Top 30 All", "Significant Across All", "Significant Per Dataset"]
         default_index = 0
         disabled_notes = [
-            "⚠️ *'All Interactions' is only available when selecting a specific signature (Bindea, Zheng, or Newman)*",
-            "✅ This option compares interactions across multiple datasets"
+            "*'All Interactions' is only available when selecting a specific signature (Bindea, Zheng, or Newman)*",
+            "This option compares interactions across multiple datasets"
         ]
 
-    sig_filter = st.radio("🎯 **Show Interactions:**",
+    sig_filter = st.radio("**Show Interactions:**",
                           sig_options,
                           index=default_index, 
                           horizontal=True)
@@ -6515,7 +6105,7 @@ def render_interactome_analysis():
 
     # Third row: Cell type filter
     st.markdown("---")
-    cell_filter_mode = st.radio("🔬 **Cell Type Filter:**",
+    cell_filter_mode = st.radio("**Cell Type Filter:**",
                                 ["All Cell Types", "Select Specific"],
                                 index=0, horizontal=True)
 
@@ -6548,27 +6138,27 @@ def render_interactome_analysis():
     )
 
     if filtered_data.empty:
-        st.warning("⚠️ No interactions found with current filters.")
+        st.warning("No interactions found with current filters.")
         return
 
     # Show capping warning if data was capped
     if was_capped:
         st.warning(f"""
-        ⚠️ **Data Capped for Performance**  
+        **Data Capped for Performance**  
         Original interactions: **{original_count}**  
         Displaying top: **{MAX_ALL_INTERACTIONS}** (sorted by Enrichment Ratio)  
         """)
     # Display Sankey diagram
     st.markdown("---")
-    st.markdown("### 🌐 Interaction Network")
+    st.markdown("### Interaction Network")
     
     # Add legend
     if condition_filter == "Both":
         st.markdown("""
         <div style='padding: 10px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;'>
         <b>Legend:</b> 
-        <span style='color: #2ecc71; font-weight: bold;'>🟢 Green connections</span> = Normal Weight | 
-        <span style='color: #e74c3c; font-weight: bold;'>🔴 Red connections</span> = Overweight
+        <span style='color: #2ecc71; font-weight: bold;'>Green connections</span> = Normal Weight - 
+        <span style='color: #e74c3c; font-weight: bold;'>Red connections</span> = Overweight
         </div>
         """, unsafe_allow_html=True)
     
@@ -6945,7 +6535,7 @@ def render_individual_interaction():
     """Render the Explore Individual Interaction mode with beautiful chord diagrams."""
     st.markdown('<div class="header-spacer"></div>', unsafe_allow_html=True)
     st.markdown(
-        '<h1 class="main-header">🎵 Gene-Level Interaction Explorer</h1>',
+        '<h1 class="main-header">Gene-Level Interaction Explorer</h1>',
         unsafe_allow_html=True
     )
 
@@ -6958,12 +6548,12 @@ def render_individual_interaction():
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <span style="width:14px; height:14px; border-radius:3px;
                      background:#c8488c; display:inline-block;"></span>
-        <span><b style="color:#1a7a3a;">Favorable (source)</b> gene arcs — left half, pink palette</span>
+        <span><b style="color:#1a7a3a;">Favorable (source)</b> gene arcs - left half, pink palette</span>
       </span>
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <span style="width:14px; height:14px; border-radius:3px;
                      background:#3182bd; display:inline-block;"></span>
-        <span><b style="color:#b22222;">Unfavorable (target)</b> gene arcs — right half, blue palette</span>
+        <span><b style="color:#b22222;">Unfavorable (target)</b> gene arcs - right half, blue palette</span>
       </span>
       <span style="display:inline-flex; align-items:center; gap:6px;">
         <span style="width:14px; height:14px; border-radius:3px;
@@ -6975,7 +6565,7 @@ def render_individual_interaction():
 
     st.markdown("""
     <div class="info-box">
-        <h3>🧬 Gene Interaction Chord Diagrams</h3>
+        <h3>Gene Interaction Chord Diagrams</h3>
         <p>Use the controls below to select a signature and cell type pair. Both Normal Weight (left) and Overweight (right) chord diagrams are
         shown side by side, plotting the <b>Shared IMGP</b> gene pairs for each group.</p>
     </div>
@@ -6984,9 +6574,9 @@ def render_individual_interaction():
     # ── Main-page controls ────────────────────────────────────────────────────
     st.markdown("---")
 
-    # Row 1 — Signature
+    # Row 1 - Signature
     signature = st.selectbox(
-        "📊 Signature dataset",
+        "Signature dataset",
         options=list(INDIVIDUAL_INTERACTION_SIGNATURES.keys()),
         key="indiv_signature",
     )
@@ -6999,13 +6589,13 @@ def render_individual_interaction():
         st.error(f"Could not load data for {signature}: {e}")
         return
 
-    # Row 2 — Selection direction
+    # Row 2 - Selection direction
     start_mode = st.radio(
-        "🔀 Start selection from:",
+        "Start selection from:",
         options=["Favorable cell", "Unfavorable cell"],
         horizontal=True,
         key="indiv_start_mode",
-        help="Choose which cell type to pick first — the second dropdown will show only cells that interact with your first choice.",
+        help="Choose which cell type to pick first - the second dropdown will show only cells that interact with your first choice.",
     )
     st.caption("① pick first  →  ② list is filtered to matching interactions only")
 
@@ -7072,8 +6662,8 @@ def render_individual_interaction():
         unsafe_allow_html=True
     )
     st.caption(
-        "🟢 Green = Favorable cell type (source genes on LEFT arc) | "
-        "🔴 Red = Unfavorable cell type (target genes on RIGHT arc)"
+        "Green = Favorable cell type (source genes on LEFT arc) - "
+        "Red = Unfavorable cell type (target genes on RIGHT arc)"
     )
     st.markdown("---")
 
@@ -7086,7 +6676,7 @@ def render_individual_interaction():
             unsafe_allow_html=True
         )
         # Stats first so they're visible without scrolling
-        st.markdown("**Interaction Statistics — Normal Weight**")
+        st.markdown("**Interaction Statistics - Normal Weight**")
         _show_interaction_stats_row(nw_row if not nw_row.empty else None, "Normal Weight")
         if nw_genes.empty:
             st.info("No Shared IMGP gene pairs found for this interaction in the Normal Weight dataset.")
@@ -7094,7 +6684,7 @@ def render_individual_interaction():
             try:
                 result_nw = build_chord_figure_plotly(
                     nw_genes,
-                    f"Normal Weight — {source_cell} → {target_cell}"
+                    f"Normal Weight - {source_cell} → {target_cell}"
                 )
                 if result_nw is not None:
                     fig_nw, nr_nw = result_nw
@@ -7111,7 +6701,7 @@ def render_individual_interaction():
             unsafe_allow_html=True
         )
         # Stats first so they're visible without scrolling
-        st.markdown("**Interaction Statistics — Overweight**")
+        st.markdown("**Interaction Statistics - Overweight**")
         _show_interaction_stats_row(ow_row if not ow_row.empty else None, "Overweight")
         if ow_genes.empty:
             st.info("No Shared IMGP gene pairs found for this interaction in the Overweight dataset.")
@@ -7119,7 +6709,7 @@ def render_individual_interaction():
             try:
                 result_ow = build_chord_figure_plotly(
                     ow_genes,
-                    f"Overweight — {source_cell} → {target_cell}"
+                    f"Overweight - {source_cell} → {target_cell}"
                 )
                 if result_ow is not None:
                     fig_ow, nr_ow = result_ow
@@ -7134,9 +6724,9 @@ def render_individual_interaction():
     st.markdown("---")
     s1, s2 = st.columns(2)
     with s1:
-        st.metric("Normal Weight — Shared IMGP gene pairs", len(nw_genes))
+        st.metric("Normal Weight - Shared IMGP gene pairs", len(nw_genes))
     with s2:
-        st.metric("Overweight — Shared IMGP gene pairs", len(ow_genes))
+        st.metric("Overweight - Shared IMGP gene pairs", len(ow_genes))
 
 
 def main():
@@ -7152,8 +6742,8 @@ def main():
             "Signature Survival",
             "Interactome Analysis",
             "Explore Individual Interaction",
-            "📖 Study Methodology",
-            "🧮 Bayesian Model Explained",
+            "Study Methodology",
+            "Bayesian Model Explained",
         ],
         index=1,
         key="analysis_mode_selector"
@@ -7169,9 +6759,9 @@ def main():
         st.sidebar.warning("Survival analysis stratified by BMI")
     elif analysis_mode == "Interactome Analysis":
         st.sidebar.info("Explore cell-cell interaction networks")
-    elif analysis_mode == "📖 Study Methodology":
+    elif analysis_mode == "Study Methodology":
         st.sidebar.info("Full walkthrough of every analytical step")
-    elif analysis_mode == "🧮 Bayesian Model Explained":
+    elif analysis_mode == "Bayesian Model Explained":
         st.sidebar.info("Deep-dive into the Bayesian hierarchical model")
     else:
         st.sidebar.info("Drill into gene-level interactions for a specific cell pair")
@@ -7231,10 +6821,10 @@ def main():
         """, height=290)
 
     # ── Full-page HTML doc views: exit BEFORE any Streamlit header is rendered ──
-    if analysis_mode == "📖 Study Methodology":
+    if analysis_mode == "Study Methodology":
         render_study_methodology()
         return
-    elif analysis_mode == "🧮 Bayesian Model Explained":
+    elif analysis_mode == "Bayesian Model Explained":
         render_bayesian_explained()
         return
 
@@ -7346,17 +6936,17 @@ def main():
         ---
         
         #### **Analysis Workflow**
-        1. **Deconvolution:** BayesPrism ➜ Cell type proportions/Cell-specific expression matrix
-        2. **Expression:** TPM values from CPTAC-3 ➜ Gene expression matrix of PDAC patients
-        3. **Signatures:** Custom signature databse ➜ Signature scores (Z-scores)
-        4. **Selection:** Sabl ML based  ➜ Robust BMI-associated features
-        5. **Modeling:** Bayesian hierarchical with MCMC ➜ Effect sizes with uncertainty (Feature level/ Cell level)
-        6. **Validation:** MCMC diagnostics ➜ Convergence checks
-        7. **Survival:** Cox regression ➜ Clinical relevance of creble signature/features and cell type
+        1. **Deconvolution:** BayesPrism -> Cell type proportions/Cell-specific expression matrix
+        2. **Expression:** TPM values from CPTAC-3 -> Gene expression matrix of PDAC patients
+        3. **Signatures:** Custom signature databse -> Signature scores (Z-scores)
+        4. **Selection:** Sabl ML based  -> Robust BMI-associated features
+        5. **Modeling:** Bayesian hierarchical with MCMC -> Effect sizes with uncertainty (Feature level/ Cell level)
+        6. **Validation:** MCMC diagnostics -> Convergence checks
+        7. **Survival:** Cox regression -> Clinical relevance of creble signature/features and cell type
         """)
     
     # ── Main-page selection controls ──────────────────────────────────────────
-    st.markdown("### 🛠️ Data Selection")
+    st.markdown("### Data Selection")
 
     sel_col1, sel_col2 = st.columns(2)
 
@@ -7383,7 +6973,7 @@ def main():
     available_cells = get_available_cells(compartment)
 
     if not available_cells:
-        st.error("❌ No cell types found")
+        st.error("No cell types found")
         return
 
     cell_display = {cell.replace('_', ' ').title(): cell for cell in available_cells}
@@ -7401,7 +6991,7 @@ def main():
     signatures = get_cell_signatures(selected_cell)
 
     if not signatures:
-        st.warning(f"❌ No signatures found for {selected_cell}")
+        st.warning(f"No signatures found for {selected_cell}")
         return
 
     sig_options = {}
@@ -7448,7 +7038,7 @@ def main():
     with col4:
         st.metric("Genes", len(genes))
     
-    # Tabs (Ask Model is the global mode — no per-tab Ask AI)
+    # Tabs (Ask Model is the global mode - no per-tab Ask AI)
     tabs = st.tabs([
         "STABL & Bayesian",
         "Ridge Plot",
@@ -7463,14 +7053,14 @@ def main():
         
         st.markdown("""
         <div class="method-box">
-        <b>❓ What is STABL?</b><br>
+        <b>What is STABL?</b><br>
         STABL (STABility-driven feature seLection) identifies robust biomarkers by:
         <ol>
         <li>Running feature selection on multiple bootstrap samples</li>
         <li>Counting how often each feature is selected</li>
         <li>Keeping only features selected consistently (stable features)</li>
         </ol>
-        <b>⭐ Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
+        <b> Stars mark STABL-selected features</b> - these show the most robust associations with BMI status.
         </div>
         """, unsafe_allow_html=True)
         
@@ -7483,11 +7073,11 @@ def main():
         
         st.markdown("---")
         
-        st.markdown("### 📝 Bayesian Effect Size Estimation")
+        st.markdown("### Bayesian Effect Size Estimation")
         
         st.markdown("""
         <div class="method-box">
-        <b>📛 Bayesian Hierarchical Model</b><br>
+        <b>Bayesian Hierarchical Model</b><br>
         Estimates how much each cell type's signature changes with increasing BMI:
         <ul>
         <li><b>Blue bars:</b> Overweight vs Normal effect</li>
@@ -7499,8 +7089,8 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("#### 📝 Effect Sizes with Credible Intervals")
-        st.caption("Hover for exact effect sizes | Click legend to toggle comparisons")
+        st.markdown("#### Effect Sizes with Credible Intervals")
+        st.caption("Hover for exact effect sizes - Click legend to toggle comparisons")
         with st.spinner("Loading chart..."):
             fig = plot_bayesian_heatmap_interactive(selected_cell, sig_name, comp_data)
             if fig:
@@ -7509,10 +7099,10 @@ def main():
     
     # Tab 2: Ridge Plot
     with tabs[1]:
-        st.markdown("### 🧾 Posterior Distribution Visualization")
+        st.markdown("### Posterior Distribution Visualization")
     
-        # 🔽 Dropdown explanation
-        with st.expander("📖 How to interpret the ridge plot", expanded=False):
+        # Dropdown explanation
+        with st.expander("How to interpret the ridge plot", expanded=False):
             st.markdown("""
             <div class="method-box">
             <b>Ridge Plots Explained</b><br>
@@ -7527,9 +7117,9 @@ def main():
             </div>
             """, unsafe_allow_html=True)
     
-        # ✅ Now actually draw the ridge plot
-        st.markdown("#### 📊 Overlapped Posterior Distributions")
-        st.caption("Interactive ridge plot | Hover for details | Scroll to zoom | Double-click to reset")
+        # Now actually draw the ridge plot
+        st.markdown("#### Overlapped Posterior Distributions")
+        st.caption("Interactive ridge plot - Hover for details - Scroll to zoom - Double-click to reset")
     
         with st.spinner("Loading chart..."):
             fig = plot_overlapped_ridges_interactive(selected_cell, comp_data)
@@ -7583,7 +7173,7 @@ def main():
                 if fig:
                     st.plotly_chart(fig, width='stretch')
 
-        # Row 2: Trace Plot (full width — needs space for many chains)
+        # Row 2: Trace Plot (full width - needs space for many chains)
         st.markdown("#### Trace Plot")
         with st.expander("What does this show?", expanded=False):
             st.markdown("""
@@ -7622,8 +7212,8 @@ def main():
                 
     # Tab 4: Gene BMI
     with tabs[3]:
-        st.markdown("### 📈  Gene-Level BMI Associations")
-        st.info(" Hover for statistics| Click-drag to zoom | Double-click to reset")
+        st.markdown("###   Gene-Level BMI Associations")
+        st.info(" Hover for statistics - Click-drag to zoom - Double-click to reset")
         with st.spinner("Loading chart..."):
             fig1, fig2 = plot_gene_bmi_interactive(genes, clinical, tpm)
             if fig1:
@@ -7633,7 +7223,7 @@ def main():
     
     # Tab 5: Gene Survival
     with tabs[4]:
-        st.markdown("### 📈  Gene-Level Survival Analysis")
+        st.markdown("###   Gene-Level Survival Analysis")
         st.info("Forest plot with confidence intervals| Hover for full statistics")
         with st.spinner("Loading chart..."):
             fig = plot_gene_survival_interactive(genes, clinical, tpm)
@@ -7646,7 +7236,7 @@ def main():
     <div style='text-align: center; color: #666; padding: 2rem;'>
     <b>Interactive Cell Analysis Viewer</b><br>
     Real-time interactive visualizations with Plotly<br>
-    <i>Zoom | Pan | Hover | Explore</i>
+    <i>Zoom - Pan - Hover - Explore</i>
     </div>
     """, unsafe_allow_html=True)
 
