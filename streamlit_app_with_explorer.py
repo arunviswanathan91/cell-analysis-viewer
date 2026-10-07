@@ -518,7 +518,7 @@ st.markdown("""
     /* Selectors sit in st.container(key="ctrl_bar"); its wrapper sticks under the
        Streamlit toolbar so selection, tabs and plot stay on one screen. */
 
-    :root { --toolbar-h: 3.75rem; --ctrl-h: 5.6rem; }
+    :root { --toolbar-h: 3.75rem; --ctrl-h: 5rem; }
 
     div:has(> .st-key-ctrl_bar) {
         position: sticky;
@@ -534,15 +534,17 @@ st.markdown("""
 
     .st-key-ctrl_bar [data-testid="stHorizontalBlock"] { gap: 0.75rem; }
 
-    /* nested tab strips stay inline */
-    .stTabs .stTabs [data-baseweb="tab-list"] { position: static; }
-
-    .stTabs [data-baseweb="tab-list"] {
+    /* The tab strip's wrapper is as tall as the strip itself, so the wrapper
+       (not the strip) has to be the sticky element. */
+    .stTabs div:has(> [data-baseweb="tab-list"]) {
         position: sticky;
         top: calc(var(--toolbar-h) + var(--ctrl-h));
         z-index: 980;
         background: var(--bg);
     }
+
+    /* nested tab strips stay inline */
+    .stTabs .stTabs div:has(> [data-baseweb="tab-list"]) { position: static; }
 
     .sub-header {
         font-size: 1.35rem;
@@ -5163,8 +5165,7 @@ def render_signature_survival():
 
     st.warning(
         "**Note:** Signature Survival Analysis is not part of the published paper. "
-        "This section is provided as an exploratory tool. The paper citation will be updated here upon publication.",
-        icon=""
+        "This section is provided as an exploratory tool. The paper citation will be updated here upon publication."
     )
 
     st.markdown("""
