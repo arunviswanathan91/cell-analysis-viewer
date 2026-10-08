@@ -44,6 +44,10 @@ PROVIDERS: Dict[str, Provider] = {
     "openai": Provider(
         "openai", "OpenAI", "https://api.openai.com/v1", ("OPENAI_API_KEY",),
         ("gpt-4.1", "gpt-4o", "gpt-4.1-mini", "gpt-4o-mini"), "https://platform.openai.com/api-keys"),
+    # deepseek-chat is the tool-calling model; deepseek-reasoner is listed second as a fallback
+    "deepseek": Provider(
+        "deepseek", "DeepSeek", "https://api.deepseek.com/v1", ("DEEPSEEK_API_KEY",),
+        ("deepseek-chat", "deepseek-reasoner"), "https://platform.deepseek.com/api_keys"),
     # any OpenAI-compatible server (Ollama, vLLM, LM Studio, a proxy ...)
     "custom": Provider(
         "custom", "Custom endpoint", os.environ.get("ASK_MODEL_BASE_URL", "http://localhost:11434/v1").rstrip("/"),
