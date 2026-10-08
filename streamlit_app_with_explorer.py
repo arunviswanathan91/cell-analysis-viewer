@@ -6785,6 +6785,7 @@ def _main_impl():
             "Signature Survival",
             "Interactome Analysis",
             "Explore Individual Interaction",
+            "Ask the Model",
             "Study Methodology",
             "Bayesian Model Explained",
         ],
@@ -6802,6 +6803,8 @@ def _main_impl():
         st.sidebar.warning("Survival analysis stratified by BMI")
     elif analysis_mode == "Interactome Analysis":
         st.sidebar.info("Explore cell-cell interaction networks")
+    elif analysis_mode == "Ask the Model":
+        st.sidebar.info("Chat with the study results - answers are checked against live queries")
     elif analysis_mode == "Study Methodology":
         st.sidebar.info("Full walkthrough of every analytical step")
     elif analysis_mode == "Bayesian Model Explained":
@@ -6862,6 +6865,16 @@ def _main_impl():
           });
         </script>
         """, height=290)
+
+    # ── Chat view: has its own title and layout ──
+    if analysis_mode == "Ask the Model":
+        try:
+            from src.ask_model.ui import render_ask_model
+        except Exception as e:  # noqa: BLE001
+            st.error(f"Ask the Model could not be loaded: {e}")
+        else:
+            render_ask_model()
+        return
 
     # ── Full-page HTML doc views: exit BEFORE any Streamlit header is rendered ──
     if analysis_mode == "Study Methodology":
@@ -7285,9 +7298,8 @@ def render_footer():
               <a href="https://github.com/arunviswanathan91/obese-model" target="_blank">Analysis code repository</a>
             </div>
             <div>
-              <div class="app-footer-title">Data and services</div>
+              <div class="app-footer-title">Data</div>
               <a href="https://huggingface.co/datasets/arunviswanathan91/cell-analysis-vectors" target="_blank">Dataset on Hugging Face</a><br>
-              <a href="https://huggingface.co/spaces/arunviswanathan91/cell-analysis-rag-api" target="_blank">Ask the Model API (HF Space)</a><br>
               <a href="https://obese-pdac-model.streamlit.app/" target="_blank">Live app</a>
             </div>
           </div>

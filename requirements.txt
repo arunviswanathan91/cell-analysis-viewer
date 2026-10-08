@@ -12,7 +12,7 @@ statsmodels>=0.14.0
 
 # Data processing
 pyarrow>=14.0.0
-duckdb>=0.9.0
+duckdb>=1.0.0
 
 # Fuzzy matching
 rapidfuzz>=3.0.0
