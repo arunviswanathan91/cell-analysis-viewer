@@ -476,7 +476,7 @@ st.markdown("""
 
     .main .block-container,
     section[data-testid="stMain"] .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 4rem !important;
         padding-left: 1.5rem !important;
         padding-right: 1.5rem !important;
         padding-bottom: 2rem !important;
@@ -559,7 +559,7 @@ st.markdown("""
     /* ---------- Compact spacing ---------- */
 
     [data-testid="stMainBlockContainer"], .main .block-container,
-    section[data-testid="stMain"] .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+    section[data-testid="stMain"] .block-container { padding-top: 4rem !important; padding-bottom: 1rem !important; }
     [data-testid="stVerticalBlock"] { gap: 0.6rem; }
     [data-testid="stHorizontalBlock"] { gap: 0.75rem; }
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4 { padding: 0.25rem 0 0.25rem 0; margin: 0; }
@@ -577,7 +577,7 @@ st.markdown("""
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] { gap: 0.5rem; }
     [data-testid="stSidebarUserContent"] { padding-top: 1rem; }
     .main-header { padding-top: 0.25rem !important; margin-bottom: 0.5rem !important; }
-    h1.main-header { padding: 0.25rem 0 0.5rem 0 !important; }
+    h1.main-header { padding: 0.4rem 0 0.5rem 0 !important; line-height: 1.3 !important; }
     .info-box, .method-box, .warning-box { margin: 0.4rem 0; padding: 0.5rem 0.85rem; }
     .app-footer { margin-top: 1.5rem; padding-top: 1rem; }
 
